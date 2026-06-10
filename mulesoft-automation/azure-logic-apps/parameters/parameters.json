@@ -1,0 +1,30 @@
+{
+  "muleWebAppUrl": {
+    "type": "String",
+    "value": "https://3pl-onboarding.azurewebsites.net"
+  },
+  "muleBranchManagementUrl": {
+    "type": "String",
+    "value": "https://mulesoft-automation-dev.azurewebsites.net/api/wf-mule-branch-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "yamlPatchManagementUrl": {
+    "type": "String",
+    "value": "https://mulesoft-automation-dev.azurewebsites.net/api/wf-mule-yaml-patch-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "translationManagementUrl": {
+    "type": "String",
+    "value": "https://mulesoft-automation-dev.azurewebsites.net/api/wf-mule-translation-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "mulePrManagementUrl": {
+    "type": "String",
+    "value": "https://mulesoft-automation-dev.azurewebsites.net/api/wf-mule-pr-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "mainOrchestratorUrl": {
+    "type": "String",
+    "value": "https://mulesoft-automation-dev.azurewebsites.net/api/wf-mule-main-orchestrator/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "githubApiBaseUrl": {
+    "type": "String",
+    "value": "https://api.github.com"
+  }
+}

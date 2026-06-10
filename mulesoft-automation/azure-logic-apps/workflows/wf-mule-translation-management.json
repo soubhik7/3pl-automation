@@ -1,0 +1,135 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "muleWebAppUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "Base URL of the deployed 3pl-automation web app"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "required": ["onboardingInput"],
+            "properties": {
+              "onboardingInput": {
+                "type": "object",
+                "description": "Full 3PL OnboardingInput — same schema as POST /api/tools/translation body",
+                "required": ["country_key", "country_code", "nav", "translation"],
+                "properties": {
+                  "partner_comment": { "type": "string" },
+                  "country_key":     { "type": "string" },
+                  "country_code":    { "type": "string" },
+                  "created_by":      { "type": "string" },
+                  "nav":             { "type": "object" },
+                  "translation": {
+                    "type": "object",
+                    "required": ["receiver_name", "message_types"],
+                    "properties": {
+                      "receiver_name":                  { "type": "string" },
+                      "message_types":                  { "type": "array", "items": { "type": "string" } },
+                      "source_destination_combinations": { "type": "array" },
+                      "uom_mappings":                   { "type": "array" }
+                    }
+                  }
+                }
+              },
+              "muleWebAppUrl": {
+                "type": "string",
+                "description": "Override web app URL (defaults to workflow parameter)"
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+
+      "Initialize_webAppBaseUrl": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{
+            "name": "webAppBaseUrl",
+            "type": "string",
+            "value": "@{coalesce(triggerBody()?['muleWebAppUrl'], parameters('muleWebAppUrl'))}"
+          }]
+        },
+        "runAfter": {}
+      },
+
+      "Invoke_Translation_WebApp": {
+        "type": "Http",
+        "inputs": {
+          "method": "POST",
+          "uri": "@{concat(variables('webAppBaseUrl'), '/api/tools/translation')}",
+          "headers": { "Content-Type": "application/json" },
+          "body": "@triggerBody()?['onboardingInput']"
+        },
+        "runAfter": { "Initialize_webAppBaseUrl": ["Succeeded"] }
+      },
+
+      "Check_Translation_Success": {
+        "type": "If",
+        "expression": {
+          "and": [{ "equals": ["@outputs('Invoke_Translation_WebApp')['statusCode']", 200] }]
+        },
+        "actions": {
+          "Response_Success": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "headers": { "Content-Type": "application/json" },
+              "body": {
+                "step": 8,
+                "stepKey": "translation",
+                "status": "ok",
+                "run_id": "@{body('Invoke_Translation_WebApp')?['run_id']}",
+                "country_key": "@{triggerBody()?['onboardingInput']?['country_key']}",
+                "receiver_name": "@{triggerBody()?['onboardingInput']?['translation']?['receiver_name']}",
+                "rowCount": "@{body('Invoke_Translation_WebApp')?['data']?['row_count']}",
+                "downloadUrls": {
+                  "xlsx": "@{concat(variables('webAppBaseUrl'), '/api/download/', body('Invoke_Translation_WebApp')?['run_id'], '/xlsx')}",
+                  "csv":  "@{concat(variables('webAppBaseUrl'), '/api/download/', body('Invoke_Translation_WebApp')?['run_id'], '/csv')}"
+                },
+                "sharepointTarget": "sites/pubsubpatterntesting/Lists/TranslationData_TST"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "else": {
+          "actions": {
+            "Response_Translation_Error": {
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": "@{outputs('Invoke_Translation_WebApp')['statusCode']}",
+                "headers": { "Content-Type": "application/json" },
+                "body": {
+                  "step": 8,
+                  "stepKey": "translation",
+                  "status": "error",
+                  "detail": "Translation web app returned an error",
+                  "webAppStatus": "@{outputs('Invoke_Translation_WebApp')['statusCode']}",
+                  "webAppError": "@{body('Invoke_Translation_WebApp')}"
+                }
+              },
+              "runAfter": {}
+            }
+          }
+        },
+        "runAfter": { "Invoke_Translation_WebApp": ["Succeeded", "Failed"] }
+      }
+
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

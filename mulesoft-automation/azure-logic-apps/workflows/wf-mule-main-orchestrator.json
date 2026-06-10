@@ -1,0 +1,463 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "muleWebAppUrl":           { "type": "String", "defaultValue": "", "description": "Deployed 3pl-automation web app base URL" },
+      "muleBranchManagementUrl": { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of mule-branch-management workflow" },
+      "yamlPatchManagementUrl":  { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of yaml-patch-management workflow" },
+      "translationManagementUrl":{ "type": "String", "defaultValue": "", "description": "HTTP trigger URL of translation-management workflow" },
+      "mulePrManagementUrl":     { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of mule-pr-management workflow" }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "required": ["onboardingInput"],
+            "description": "MuleSoft 3PL onboarding orchestrator — covers steps 6-10: GitHub branch, YAML patch, translation table, PR + review",
+            "properties": {
+              "onboardingInput": {
+                "type": "object",
+                "description": "Full 3PL OnboardingInput — country_key, country_code, nav, nav_tst?, nav_prod?, translation",
+                "required": ["country_key", "country_code", "nav", "translation"],
+                "properties": {
+                  "partner_comment": { "type": "string" },
+                  "country_key":     { "type": "string" },
+                  "country_code":    { "type": "string" },
+                  "created_by":      { "type": "string" },
+                  "nav":             { "type": "object" },
+                  "nav_tst":         { "type": "object" },
+                  "nav_prod":        { "type": "object" },
+                  "translation":     { "type": "object" }
+                }
+              },
+              "muleWebAppUrl": {
+                "type": "string",
+                "description": "Override web app URL (defaults to workflow parameter muleWebAppUrl)"
+              },
+              "githubCredentials": {
+                "type": "object",
+                "properties": {
+                  "pat": { "type": "string", "description": "GitHub PAT with repo scope — required for branch create and PR" }
+                }
+              },
+              "repoConfig": {
+                "type": "object",
+                "description": "MuleSoft config repository details",
+                "properties": {
+                  "owner":        { "type": "string" },
+                  "repo":         { "type": "string" },
+                  "baseBranch":   { "type": "string", "description": "defaults to main" },
+                  "appYamlPath":  { "type": "string", "description": "defaults to src/main/resources/app.yaml" },
+                  "devYamlPath":  { "type": "string", "description": "defaults to src/main/resources/dev.yaml" },
+                  "tstYamlPath":  { "type": "string", "description": "defaults to src/main/resources/tst.yaml" },
+                  "prodYamlPath": { "type": "string", "description": "defaults to src/main/resources/prod.yaml" }
+                }
+              },
+              "notificationConfig": {
+                "type": "object",
+                "description": "Teams notification config for PR creation",
+                "properties": {
+                  "channel":             { "type": "string", "description": "teams | none" },
+                  "teamsWebhookUrl":     { "type": "string" },
+                  "reviewerDisplayName": { "type": "string" }
+                }
+              },
+              "branchName":  { "type": "string", "description": "Feature branch name — auto-generated as feat/3pl-{country_key}-{yyyyMMdd} if omitted" },
+              "prTitle":     { "type": "string", "description": "PR title — auto-generated if omitted" },
+              "prBody":      { "type": "string", "description": "PR description — auto-generated if omitted" },
+              "prReviewers": { "type": "array", "items": { "type": "string" }, "description": "GitHub usernames to request as reviewers" },
+              "skipMuleBranch": { "type": "boolean", "default": false, "description": "Skip GitHub branch creation (Step 6)" },
+              "skipMulePr":    { "type": "boolean", "default": false, "description": "Skip PR creation (Step 9)" }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+
+      "Initialize_stepResults": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "stepResults", "type": "array", "value": [] }] },
+        "runAfter": {}
+      },
+      "Initialize_muleFeatureBranch": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "muleFeatureBranch", "type": "string", "value": "" }] },
+        "runAfter": { "Initialize_stepResults": ["Succeeded"] }
+      },
+      "Initialize_runId": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "runId", "type": "string", "value": "" }] },
+        "runAfter": { "Initialize_muleFeatureBranch": ["Succeeded"] }
+      },
+      "Initialize_prUrl": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "prUrl", "type": "string", "value": "" }] },
+        "runAfter": { "Initialize_runId": ["Succeeded"] }
+      },
+      "Initialize_webAppBaseUrl": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{
+            "name": "webAppBaseUrl",
+            "type": "string",
+            "value": "@{coalesce(triggerBody()?['muleWebAppUrl'], parameters('muleWebAppUrl'))}"
+          }]
+        },
+        "runAfter": { "Initialize_prUrl": ["Succeeded"] }
+      },
+      "Set_BranchName": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{
+            "name": "resolvedBranchName",
+            "type": "string",
+            "value": "@{coalesce(triggerBody()?['branchName'], concat('feat/3pl-', triggerBody()?['onboardingInput']?['country_key'], '-', formatDateTime(utcNow(), 'yyyyMMdd')))}"
+          }]
+        },
+        "runAfter": { "Initialize_webAppBaseUrl": ["Succeeded"] }
+      },
+
+      "Scope_Step6_Mule_Branch": {
+        "type": "Scope",
+        "actions": {
+          "Check_Skip_MuleBranch": {
+            "type": "If",
+            "expression": {
+              "or": [
+                { "equals": ["@coalesce(triggerBody()?['skipMuleBranch'], false)", true] },
+                { "equals": ["@coalesce(triggerBody()?['githubCredentials']?['pat'], '')", ""] }
+              ]
+            },
+            "actions": {
+              "Append_Step6_Skipped": {
+                "type": "AppendToArrayVariable",
+                "inputs": {
+                  "name": "stepResults",
+                  "value": { "step": 6, "stepKey": "mule-branch", "status": "skipped", "detail": "Skipped — no GitHub PAT provided or skipMuleBranch flag set" }
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {
+                "Invoke_Mule_Branch": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('muleBranchManagementUrl')",
+                    "headers": { "Content-Type": "application/json" },
+                    "body": {
+                      "githubCredentials": "@triggerBody()?['githubCredentials']",
+                      "repoConfig":        "@triggerBody()?['repoConfig']",
+                      "action":            "create",
+                      "payload": {
+                        "branchName": "@variables('resolvedBranchName')",
+                        "baseBranch": "@{coalesce(triggerBody()?['repoConfig']?['baseBranch'], 'main')}"
+                      }
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Set_MuleFeatureBranch": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "muleFeatureBranch",
+                    "value": "@{variables('resolvedBranchName')}"
+                  },
+                  "runAfter": { "Invoke_Mule_Branch": ["Succeeded"] }
+                },
+                "Append_Step6_OK": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "stepResults",
+                    "value": {
+                      "step": 6,
+                      "stepKey": "mule-branch",
+                      "status": "ok",
+                      "branchName": "@{variables('resolvedBranchName')}",
+                      "detail": "@{body('Invoke_Mule_Branch')?['ref']}"
+                    }
+                  },
+                  "runAfter": { "Set_MuleFeatureBranch": ["Succeeded"] }
+                },
+                "Append_Step6_Error": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "stepResults",
+                    "value": {
+                      "step": 6,
+                      "stepKey": "mule-branch",
+                      "status": "error",
+                      "detail": "Failed to create GitHub branch",
+                      "githubStatus": "@{outputs('Invoke_Mule_Branch')?['statusCode']}"
+                    }
+                  },
+                  "runAfter": { "Invoke_Mule_Branch": ["Failed", "TimedOut"] }
+                }
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": { "Set_BranchName": ["Succeeded"] }
+      },
+
+      "Scope_Step7_YAML_Patch": {
+        "type": "Scope",
+        "actions": {
+          "Invoke_YAML_Patch": {
+            "type": "Http",
+            "inputs": {
+              "method": "POST",
+              "uri": "@parameters('yamlPatchManagementUrl')",
+              "headers": { "Content-Type": "application/json" },
+              "body": {
+                "onboardingInput": "@triggerBody()?['onboardingInput']",
+                "muleWebAppUrl":   "@variables('webAppBaseUrl')",
+                "githubConfig": {
+                  "pat":          "@{triggerBody()?['githubCredentials']?['pat']}",
+                  "owner":        "@{triggerBody()?['repoConfig']?['owner']}",
+                  "repo":         "@{triggerBody()?['repoConfig']?['repo']}",
+                  "branchName":   "@{variables('muleFeatureBranch')}",
+                  "appYamlPath":  "@{triggerBody()?['repoConfig']?['appYamlPath']}",
+                  "devYamlPath":  "@{triggerBody()?['repoConfig']?['devYamlPath']}",
+                  "tstYamlPath":  "@{triggerBody()?['repoConfig']?['tstYamlPath']}",
+                  "prodYamlPath": "@{triggerBody()?['repoConfig']?['prodYamlPath']}"
+                }
+              }
+            },
+            "runAfter": {}
+          },
+          "Set_RunId": {
+            "type": "SetVariable",
+            "inputs": {
+              "name": "runId",
+              "value": "@{body('Invoke_YAML_Patch')?['run_id']}"
+            },
+            "runAfter": { "Invoke_YAML_Patch": ["Succeeded"] }
+          },
+          "Append_Step7_OK": {
+            "type": "AppendToArrayVariable",
+            "inputs": {
+              "name": "stepResults",
+              "value": {
+                "step": 7,
+                "stepKey": "yaml-patch",
+                "status": "ok",
+                "run_id":          "@{body('Invoke_YAML_Patch')?['run_id']}",
+                "filesPatched":    "@{body('Invoke_YAML_Patch')?['filesPatched']}",
+                "githubCommitted": "@{body('Invoke_YAML_Patch')?['githubCommitted']}"
+              }
+            },
+            "runAfter": { "Set_RunId": ["Succeeded"] }
+          },
+          "Append_Step7_Error": {
+            "type": "AppendToArrayVariable",
+            "inputs": {
+              "name": "stepResults",
+              "value": {
+                "step": 7,
+                "stepKey": "yaml-patch",
+                "status": "error",
+                "detail": "YAML patch failed — check web app logs",
+                "webAppStatus": "@{outputs('Invoke_YAML_Patch')?['statusCode']}"
+              }
+            },
+            "runAfter": { "Invoke_YAML_Patch": ["Failed", "TimedOut"] }
+          }
+        },
+        "runAfter": { "Scope_Step6_Mule_Branch": ["Succeeded", "Failed", "Skipped", "TimedOut"] }
+      },
+
+      "Scope_Step8_Translation": {
+        "type": "Scope",
+        "actions": {
+          "Invoke_Translation": {
+            "type": "Http",
+            "inputs": {
+              "method": "POST",
+              "uri": "@parameters('translationManagementUrl')",
+              "headers": { "Content-Type": "application/json" },
+              "body": {
+                "onboardingInput": "@triggerBody()?['onboardingInput']",
+                "muleWebAppUrl":   "@variables('webAppBaseUrl')"
+              }
+            },
+            "runAfter": {}
+          },
+          "Append_Step8_OK": {
+            "type": "AppendToArrayVariable",
+            "inputs": {
+              "name": "stepResults",
+              "value": {
+                "step": 8,
+                "stepKey": "translation",
+                "status": "ok",
+                "run_id":        "@{body('Invoke_Translation')?['run_id']}",
+                "rowCount":      "@{body('Invoke_Translation')?['rowCount']}",
+                "downloadUrls":  "@{body('Invoke_Translation')?['downloadUrls']}"
+              }
+            },
+            "runAfter": { "Invoke_Translation": ["Succeeded"] }
+          },
+          "Append_Step8_Error": {
+            "type": "AppendToArrayVariable",
+            "inputs": {
+              "name": "stepResults",
+              "value": {
+                "step": 8,
+                "stepKey": "translation",
+                "status": "error",
+                "detail": "Translation generation failed — check web app logs",
+                "webAppStatus": "@{outputs('Invoke_Translation')?['statusCode']}"
+              }
+            },
+            "runAfter": { "Invoke_Translation": ["Failed", "TimedOut"] }
+          }
+        },
+        "runAfter": { "Scope_Step7_YAML_Patch": ["Succeeded", "Failed", "Skipped", "TimedOut"] }
+      },
+
+      "Scope_Step9_Mule_PR": {
+        "type": "Scope",
+        "actions": {
+          "Check_Skip_MulePR": {
+            "type": "If",
+            "expression": {
+              "or": [
+                { "equals": ["@coalesce(triggerBody()?['skipMulePr'], false)", true] },
+                { "equals": ["@variables('muleFeatureBranch')", ""] },
+                { "equals": ["@coalesce(triggerBody()?['githubCredentials']?['pat'], '')", ""] }
+              ]
+            },
+            "actions": {
+              "Append_Step9_Skipped": {
+                "type": "AppendToArrayVariable",
+                "inputs": {
+                  "name": "stepResults",
+                  "value": { "step": 9, "stepKey": "mule-pr", "status": "skipped", "detail": "Skipped — no feature branch available or GitHub PAT not provided" }
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {
+                "Invoke_Mule_PR": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('mulePrManagementUrl')",
+                    "headers": { "Content-Type": "application/json" },
+                    "body": {
+                      "githubCredentials": "@triggerBody()?['githubCredentials']",
+                      "repoConfig":        "@triggerBody()?['repoConfig']",
+                      "action":            "create",
+                      "payload": {
+                        "title":      "@{coalesce(triggerBody()?['prTitle'], concat('[3PL] Add ', triggerBody()?['onboardingInput']?['country_key'], ' nav config — automated onboarding'))}",
+                        "body":       "@{coalesce(triggerBody()?['prBody'], concat('## Automated 3PL Onboarding\n\n**Country key:** `', triggerBody()?['onboardingInput']?['country_key'], '`\n**Country code:** `', triggerBody()?['onboardingInput']?['country_code'], '`\n**Run ID:** `', variables('runId'), '`\n\n### Files changed\n- `app.yaml` — validCountriesList + navision.instance + nav block\n- `dev.yaml` — DEV nav block\n- `tst.yaml` — TST nav block (if nav_tst provided)\n- `prod.yaml` — PROD nav block (if nav_prod provided)\n\n---\n*Generated by Mars 3PL Onboarding Automation Logic App*'))}",
+                        "headBranch": "@variables('muleFeatureBranch')",
+                        "baseBranch": "@{coalesce(triggerBody()?['repoConfig']?['baseBranch'], 'main')}",
+                        "reviewers":  "@triggerBody()?['prReviewers']"
+                      },
+                      "notificationConfig": "@triggerBody()?['notificationConfig']"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Set_PrUrl": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "prUrl",
+                    "value": "@{body('Invoke_Mule_PR')?['prUrl']}"
+                  },
+                  "runAfter": { "Invoke_Mule_PR": ["Succeeded"] }
+                },
+                "Append_Step9_OK": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "stepResults",
+                    "value": {
+                      "step": 9,
+                      "stepKey": "mule-pr",
+                      "status": "ok",
+                      "pullNumber":       "@{body('Invoke_Mule_PR')?['pullNumber']}",
+                      "prUrl":            "@{body('Invoke_Mule_PR')?['prUrl']}",
+                      "notificationSent": "@{body('Invoke_Mule_PR')?['notificationSent']}"
+                    }
+                  },
+                  "runAfter": { "Set_PrUrl": ["Succeeded"] }
+                },
+                "Append_Step9_Error": {
+                  "type": "AppendToArrayVariable",
+                  "inputs": {
+                    "name": "stepResults",
+                    "value": {
+                      "step": 9,
+                      "stepKey": "mule-pr",
+                      "status": "error",
+                      "detail": "Failed to create GitHub PR",
+                      "githubStatus": "@{outputs('Invoke_Mule_PR')?['statusCode']}"
+                    }
+                  },
+                  "runAfter": { "Invoke_Mule_PR": ["Failed", "TimedOut"] }
+                }
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": { "Scope_Step8_Translation": ["Succeeded", "Failed", "Skipped", "TimedOut"] }
+      },
+
+      "Append_Step10_Manual": {
+        "type": "AppendToArrayVariable",
+        "inputs": {
+          "name": "stepResults",
+          "value": {
+            "step": 10,
+            "stepKey": "sharepoint-review",
+            "status": "manual",
+            "detail": "Manual: Import translations.xlsx into SharePoint TranslationData_TST list. Sravani Kare reviews and merges PR."
+          }
+        },
+        "runAfter": { "Scope_Step9_Mule_PR": ["Succeeded", "Failed", "Skipped", "TimedOut"] }
+      },
+
+      "Response_Orchestration_Complete": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200,
+          "headers": { "Content-Type": "application/json" },
+          "body": {
+            "status": "completed",
+            "country_key":       "@{triggerBody()?['onboardingInput']?['country_key']}",
+            "country_code":      "@{triggerBody()?['onboardingInput']?['country_code']}",
+            "runId":             "@{variables('runId')}",
+            "muleFeatureBranch": "@{variables('muleFeatureBranch')}",
+            "prUrl":             "@{variables('prUrl')}",
+            "steps":             "@variables('stepResults')",
+            "downloadUrls": {
+              "appYaml":  "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/app-yaml')}",
+              "devYaml":  "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/yaml')}",
+              "tstYaml":  "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/tst-yaml')}",
+              "prodYaml": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/prod-yaml')}",
+              "xlsx":     "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/xlsx')}",
+              "csv":      "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/csv')}"
+            },
+            "completedAt": "@{utcNow()}"
+          }
+        },
+        "runAfter": { "Append_Step10_Manual": ["Succeeded"] }
+      }
+
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

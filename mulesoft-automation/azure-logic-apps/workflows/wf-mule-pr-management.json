@@ -1,0 +1,336 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "githubApiBaseUrl": {
+        "type": "String",
+        "defaultValue": "https://api.github.com"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "required": ["githubCredentials", "repoConfig", "action"],
+            "properties": {
+              "githubCredentials": {
+                "type": "object",
+                "required": ["pat"],
+                "properties": {
+                  "pat": { "type": "string", "description": "GitHub Personal Access Token with repo scope" }
+                }
+              },
+              "repoConfig": {
+                "type": "object",
+                "required": ["owner", "repo"],
+                "properties": {
+                  "owner": { "type": "string" },
+                  "repo":  { "type": "string" }
+                }
+              },
+              "action": {
+                "type": "string",
+                "description": "create | get | list | merge"
+              },
+              "payload": {
+                "type": "object",
+                "properties": {
+                  "title":       { "type": "string", "description": "PR title" },
+                  "body":        { "type": "string", "description": "PR description body (Markdown)" },
+                  "headBranch":  { "type": "string", "description": "Source branch (feature branch)" },
+                  "baseBranch":  { "type": "string", "description": "Target branch — defaults to main" },
+                  "reviewers":   { "type": "array",  "items": { "type": "string" }, "description": "GitHub usernames to request as reviewers" },
+                  "pullNumber":  { "type": "integer", "description": "PR number — required for get/merge" },
+                  "mergeMethod": { "type": "string",  "description": "merge | squash | rebase — for merge action" }
+                }
+              },
+              "notificationConfig": {
+                "type": "object",
+                "description": "Optional Teams/email notification after PR creation",
+                "properties": {
+                  "channel":          { "type": "string", "description": "teams | none" },
+                  "teamsWebhookUrl":  { "type": "string", "description": "Teams incoming webhook URL" },
+                  "reviewerDisplayName": { "type": "string", "description": "Human-readable reviewer name for notification" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+
+      "Switch_By_Action": {
+        "type": "Switch",
+        "expression": "@triggerBody()?['action']",
+        "runAfter": {},
+
+        "cases": {
+
+          "Case_Create": {
+            "case": "create",
+            "actions": {
+              "Create_Pull_Request": {
+                "type": "Http",
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@{concat(parameters('githubApiBaseUrl'), '/repos/', triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'], '/pulls')}",
+                  "headers": {
+                    "Authorization": "@{concat('Bearer ', triggerBody()?['githubCredentials']?['pat'])}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Content-Type": "application/json",
+                    "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "body": {
+                    "title": "@{triggerBody()?['payload']?['title']}",
+                    "body":  "@{coalesce(triggerBody()?['payload']?['body'], '')}",
+                    "head":  "@{triggerBody()?['payload']?['headBranch']}",
+                    "base":  "@{coalesce(triggerBody()?['payload']?['baseBranch'], 'main')}"
+                  }
+                },
+                "runAfter": {}
+              },
+
+              "Check_Reviewers_Present": {
+                "type": "If",
+                "expression": {
+                  "and": [{
+                    "greater": ["@length(coalesce(triggerBody()?['payload']?['reviewers'], json('[]')))", 0]
+                  }]
+                },
+                "actions": {
+                  "Request_Reviewers": {
+                    "type": "Http",
+                    "inputs": {
+                      "method": "POST",
+                      "uri": "@{concat(parameters('githubApiBaseUrl'), '/repos/', triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'], '/pulls/', body('Create_Pull_Request')?['number'], '/requested_reviewers')}",
+                      "headers": {
+                        "Authorization": "@{concat('Bearer ', triggerBody()?['githubCredentials']?['pat'])}",
+                        "Accept": "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                        "Content-Type": "application/json",
+                        "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                      },
+                      "body": {
+                        "reviewers": "@triggerBody()?['payload']?['reviewers']"
+                      }
+                    },
+                    "runAfter": {}
+                  }
+                },
+                "runAfter": { "Create_Pull_Request": ["Succeeded"] }
+              },
+
+              "Check_Teams_Notification": {
+                "type": "If",
+                "expression": {
+                  "and": [
+                    { "equals": ["@coalesce(triggerBody()?['notificationConfig']?['channel'], 'none')", "teams"] },
+                    { "not": { "equals": ["@coalesce(triggerBody()?['notificationConfig']?['teamsWebhookUrl'], '')", ""] } }
+                  ]
+                },
+                "actions": {
+                  "Send_Teams_Notification": {
+                    "type": "Http",
+                    "inputs": {
+                      "method": "POST",
+                      "uri": "@{triggerBody()?['notificationConfig']?['teamsWebhookUrl']}",
+                      "headers": { "Content-Type": "application/json" },
+                      "body": {
+                        "@@type": "MessageCard",
+                        "@@context": "https://schema.org/extensions",
+                        "summary": "@{concat('New 3PL Onboarding PR: ', triggerBody()?['payload']?['title'])}",
+                        "themeColor": "0076D7",
+                        "title": "New MuleSoft YAML Patch PR",
+                        "sections": [
+                          {
+                            "facts": [
+                              { "name": "Repository", "value": "@{concat(triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'])}" },
+                              { "name": "PR Title",   "value": "@{triggerBody()?['payload']?['title']}" },
+                              { "name": "Branch",     "value": "@{concat(triggerBody()?['payload']?['headBranch'], ' -> ', coalesce(triggerBody()?['payload']?['baseBranch'], 'main'))}" },
+                              { "name": "PR Number",  "value": "@{body('Create_Pull_Request')?['number']}" },
+                              { "name": "Reviewer",   "value": "@{coalesce(triggerBody()?['notificationConfig']?['reviewerDisplayName'], 'Sravani Kare')}" }
+                            ]
+                          }
+                        ],
+                        "potentialAction": [
+                          {
+                            "@@type": "OpenUri",
+                            "name": "View Pull Request",
+                            "targets": [{ "os": "default", "uri": "@{body('Create_Pull_Request')?['html_url']}" }]
+                          }
+                        ]
+                      }
+                    },
+                    "runAfter": {}
+                  }
+                },
+                "runAfter": { "Check_Reviewers_Present": ["Succeeded", "Failed", "Skipped"] }
+              },
+
+              "Response_Create_Success": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 200,
+                  "headers": { "Content-Type": "application/json" },
+                  "body": {
+                    "step": 9,
+                    "stepKey": "mule-pr",
+                    "status": "ok",
+                    "action": "create",
+                    "pullNumber": "@{body('Create_Pull_Request')?['number']}",
+                    "prUrl":      "@{body('Create_Pull_Request')?['html_url']}",
+                    "title":      "@{body('Create_Pull_Request')?['title']}",
+                    "headBranch": "@{body('Create_Pull_Request')?['head']?['ref']}",
+                    "baseBranch": "@{body('Create_Pull_Request')?['base']?['ref']}",
+                    "state":      "@{body('Create_Pull_Request')?['state']}",
+                    "notificationSent": "@{equals(coalesce(triggerBody()?['notificationConfig']?['channel'], 'none'), 'teams')}"
+                  }
+                },
+                "runAfter": { "Check_Teams_Notification": ["Succeeded", "Failed"] }
+              },
+
+              "Response_PR_Error": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": "@{outputs('Create_Pull_Request')['statusCode']}",
+                  "headers": { "Content-Type": "application/json" },
+                  "body": {
+                    "step": 9,
+                    "stepKey": "mule-pr",
+                    "status": "error",
+                    "action": "create",
+                    "detail": "GitHub API returned an error creating the pull request",
+                    "githubStatus": "@{outputs('Create_Pull_Request')['statusCode']}",
+                    "githubError":  "@{body('Create_Pull_Request')}"
+                  }
+                },
+                "runAfter": { "Create_Pull_Request": ["Failed", "TimedOut"] }
+              }
+            }
+          },
+
+          "Case_Get": {
+            "case": "get",
+            "actions": {
+              "Get_Pull_Request": {
+                "type": "Http",
+                "inputs": {
+                  "method": "GET",
+                  "uri": "@{concat(parameters('githubApiBaseUrl'), '/repos/', triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'], '/pulls/', triggerBody()?['payload']?['pullNumber'])}",
+                  "headers": {
+                    "Authorization": "@{concat('Bearer ', triggerBody()?['githubCredentials']?['pat'])}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Response_Get": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": "@{outputs('Get_Pull_Request')['statusCode']}",
+                  "body": "@body('Get_Pull_Request')"
+                },
+                "runAfter": { "Get_Pull_Request": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_List": {
+            "case": "list",
+            "actions": {
+              "List_Pull_Requests": {
+                "type": "Http",
+                "inputs": {
+                  "method": "GET",
+                  "uri": "@{concat(parameters('githubApiBaseUrl'), '/repos/', triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'], '/pulls?state=open&per_page=50')}",
+                  "headers": {
+                    "Authorization": "@{concat('Bearer ', triggerBody()?['githubCredentials']?['pat'])}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Response_List": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": "@{outputs('List_Pull_Requests')['statusCode']}",
+                  "body": "@body('List_Pull_Requests')"
+                },
+                "runAfter": { "List_Pull_Requests": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Merge": {
+            "case": "merge",
+            "actions": {
+              "Merge_Pull_Request": {
+                "type": "Http",
+                "inputs": {
+                  "method": "PUT",
+                  "uri": "@{concat(parameters('githubApiBaseUrl'), '/repos/', triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'], '/pulls/', triggerBody()?['payload']?['pullNumber'], '/merge')}",
+                  "headers": {
+                    "Authorization": "@{concat('Bearer ', triggerBody()?['githubCredentials']?['pat'])}",
+                    "Accept": "application/vnd.github+json",
+                    "X-GitHub-Api-Version": "2022-11-28",
+                    "Content-Type": "application/json",
+                    "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "body": {
+                    "merge_method": "@{coalesce(triggerBody()?['payload']?['mergeMethod'], 'squash')}"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Response_Merge": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": "@{outputs('Merge_Pull_Request')['statusCode']}",
+                  "body": "@body('Merge_Pull_Request')"
+                },
+                "runAfter": { "Merge_Pull_Request": ["Succeeded", "Failed"] }
+              }
+            }
+          }
+
+        },
+
+        "default": {
+          "actions": {
+            "Response_Invalid_Action": {
+              "type": "Response",
+              "kind": "Http",
+              "runAfter": {},
+              "inputs": {
+                "statusCode": 400,
+                "headers": { "Content-Type": "application/json" },
+                "body": {
+                  "error": "Invalid action. Valid values: create | get | list | merge",
+                  "received": "@{triggerBody()?['action']}"
+                }
+              }
+            }
+          }
+        }
+      }
+
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}
