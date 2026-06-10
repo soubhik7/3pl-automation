@@ -1,0 +1,89 @@
+{
+  "_comment": "PROD environment — clone from test or fill manually. Requires environment approval in GitHub Actions.",
+  "_usage": "python3 solace.py provision run --config config/prod/service.json",
+
+  "sourceCountry": "PROD",
+  "environment":   "prod",
+
+  "service": {
+    "serviceId":     "",
+    "name":          "automation-prod",
+    "datacenterId":  "",
+    "serviceTypeId": "enterprise",
+    "serviceClassId":"enterprise-kilo"
+  },
+
+  "eventPortal": {
+    "domainName":        "AutomationProd",
+    "domainDescription": "Automation domain — PRODUCTION environment",
+
+    "schemas": [
+      {
+        "name":    "OrderPayloadSchema",
+        "type":    "jsonSchema",
+        "version": "1.0.0",
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["orderId", "eventType", "timestamp"],
+          "properties": {
+            "orderId":   { "type": "string" },
+            "eventType": { "type": "string", "enum": ["CREATED","UPDATED","SHIPPED"] },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    ],
+
+    "events": [
+      {
+        "name":      "OrderCreated",
+        "version":   "1.0.0",
+        "topic":     "acme/prod/orders/{orderId}/created",
+        "schemaRef": "OrderPayloadSchema"
+      }
+    ],
+
+    "applications": [
+      {
+        "name": "SourceSystem-PROD", "type": "standard", "version": "1.0.0",
+        "produces": ["OrderCreated"], "consumes": []
+      },
+      {
+        "name": "TargetSystem-PROD", "type": "standard", "version": "1.0.0",
+        "produces": [], "consumes": ["OrderCreated"]
+      }
+    ]
+  },
+
+  "clusterManagement": {
+    "vpnName": "",
+
+    "clientProfiles": [ { "name": "acme-prod-profile" } ],
+
+    "aclProfiles": [
+      {
+        "name": "acme-prod-acl",
+        "publishDefault": "disallow", "subscribeDefault": "disallow",
+        "publishExceptions":  ["acme/prod/>"],
+        "subscribeExceptions":["acme/prod/>"]
+      }
+    ],
+
+    "clientUsernames": [
+      {
+        "name": "acme-prod-user", "password": "",
+        "clientProfile": "acme-prod-profile", "aclProfile": "acme-prod-acl", "enabled": true
+      }
+    ],
+
+    "queues": [
+      {
+        "name": "acme-prod-orders-q", "accessType": "non-exclusive",
+        "subscriptions": ["acme/prod/orders/>", "acme/prod/orders/*/created"]
+      }
+    ],
+
+    "restDeliveryPoints": []
+  }
+}

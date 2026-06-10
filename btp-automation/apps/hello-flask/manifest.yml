@@ -1,0 +1,13 @@
+applications:
+- name: hello-flask
+  memory: 256M
+  instances: 1
+  buildpacks:
+  - python_buildpack
+  command: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
+  metadata:
+    annotations:
+      description: "Hello world Flask app on BTP"
+  env:
+    APP_NAME: hello-flask
+    APP_ENV: production

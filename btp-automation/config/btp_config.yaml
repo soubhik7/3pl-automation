@@ -1,0 +1,59 @@
+# SAP BTP Automation - Central Configuration
+# Sensitive values (client secrets) should be in .env file
+
+global_account:
+  subdomain: "a6ff9d4dtrial"
+  guid: "72c60019-fb49-4ce3-a0ed-3a6ef08ebe6a"
+  display_name: "trial"
+
+subaccount:
+  guid: "d1b70d75-bb7c-4b84-9111-d994ae255b63"
+  subdomain: "a6ff9d4dtrial"
+  region: "us10"
+  display_name: "trial"
+
+cloud_foundry:
+  api_endpoint: "https://api.cf.us10-001.hana.ondemand.com"
+  org_name: "a6ff9d4dtrial"
+  org_guid: "c728621a-84c8-408a-8f37-98b3dfdcf0e9"
+  default_space: "dev"
+  region: "us10-001"
+
+# BTP Core Services endpoints
+endpoints:
+  accounts_service: "https://accounts-service.cfapps.eu10.hana.ondemand.com"
+  entitlements_service: "https://entitlements-service.cfapps.eu10.hana.ondemand.com"
+  provisioning_service: "https://provisioning-service.cfapps.eu10.hana.ondemand.com"
+  xsuaa_api: "https://a6ff9d4dtrial.authentication.us10.hana.ondemand.com"
+  xsuaa_subaccount_api: "https://a6ff9d4dtrial.authentication.us10.hana.ondemand.com"
+
+# OAuth credentials - use env vars for secrets (see .env.example)
+auth:
+  # CIS Central (for accounts/entitlements/provisioning APIs)
+  cis_central:
+    client_id_env: "BTP_CIS_CLIENT_ID"
+    client_secret_env: "BTP_CIS_CLIENT_SECRET"
+    token_url: "https://a6ff9d4dtrial-ga.authentication.eu10.hana.ondemand.com/oauth/token"
+    grant_type: "client_credentials"
+
+  # XSUAA (for authorization APIs - roles, role collections)
+  xsuaa:
+    client_id_env: "BTP_XSUAA_CLIENT_ID"
+    client_secret_env: "BTP_XSUAA_CLIENT_SECRET"
+    token_url: "https://a6ff9d4dtrial.authentication.us10.hana.ondemand.com/oauth/token"
+    grant_type: "client_credentials"
+
+# API path prefixes
+api_paths:
+  accounts: "/accounts/v1"
+  entitlements: "/entitlements/v1"
+  provisioning: "/provisioning/v1"
+  authorization: "/sap/rest/authorization/v2"
+
+# Default behavior settings
+defaults:
+  timeout_seconds: 30
+  retry_attempts: 3
+  retry_delay_seconds: 2
+  output_format: "table"  # table, json, yaml
+  page_size: 100

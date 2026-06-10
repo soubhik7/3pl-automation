@@ -1,0 +1,10 @@
+applications:
+- name: hello-node
+  memory: 256M
+  instances: 1
+  buildpacks:
+  - nodejs_buildpack
+  command: npm start
+  env:
+    APP_NAME: hello-node
+    APP_ENV: production

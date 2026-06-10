@@ -1,0 +1,18 @@
+# ── Runtime (required) ───────────────────────────────────────────────────────
+# Install with:  pip install -e .          (preferred — reads pyproject.toml)
+#            or  pip install -r requirements.txt   (flat install)
+requests>=2.31.0
+pyyaml>=6.0
+python-dotenv>=1.0.0
+click>=8.1.0
+rich>=13.0.0
+
+# ── Development extras ────────────────────────────────────────────────────────
+# Install with:  pip install -e ".[dev]"
+# pytest>=7.4
+# pytest-cov>=4.1
+# ruff>=0.4.0
+# black>=24.0
+# mypy>=1.8
+# types-requests>=2.31
+# types-pyyaml>=6.0

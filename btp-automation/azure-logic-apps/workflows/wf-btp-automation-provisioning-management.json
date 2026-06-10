@@ -1,0 +1,351 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "defaultProvisioningServiceUrl": {
+        "type": "String",
+        "defaultValue": "https://provisioning-service.cfapps.eu10.hana.ondemand.com"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "required": ["cisCredentials", "action"],
+            "properties": {
+              "cisCredentials": {
+                "type": "object",
+                "properties": {
+                  "tokenUrl":     { "type": "string" },
+                  "clientId":     { "type": "string" },
+                  "clientSecret": { "type": "string" }
+                }
+              },
+              "btpConfig": {
+                "type": "object",
+                "properties": {
+                  "subaccountGuid":        { "type": "string" },
+                  "provisioningServiceUrl": { "type": "string" }
+                }
+              },
+              "action": {
+                "type": "string",
+                "description": "list | get | create | delete"
+              },
+              "payload": {
+                "type": "object",
+                "description": "list: {} | get/delete: {environmentId} | create: {environmentType, name, planName, serviceName, parameters?}"
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+
+      "Get_CIS_Token": {
+        "type": "Http",
+        "inputs": {
+          "method": "POST",
+          "uri": "@{triggerBody()?['cisCredentials']?['tokenUrl']}",
+          "headers": { "Content-Type": "application/x-www-form-urlencoded" },
+          "authentication": {
+            "type": "Basic",
+            "username": "@{triggerBody()?['cisCredentials']?['clientId']}",
+            "password": "@{triggerBody()?['cisCredentials']?['clientSecret']}"
+          },
+          "body": "grant_type=client_credentials"
+        },
+        "runAfter": {}
+      },
+
+      "Set_ProvisioningBaseUrl": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{
+            "name": "provisioningBaseUrl",
+            "type": "string",
+            "value": "@{coalesce(triggerBody()?['btpConfig']?['provisioningServiceUrl'], parameters('defaultProvisioningServiceUrl'))}"
+          }]
+        },
+        "runAfter": { "Get_CIS_Token": ["Succeeded"] }
+      },
+
+      "Initialize_environmentId": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "environmentId", "type": "string", "value": "" }] },
+        "runAfter": { "Set_ProvisioningBaseUrl": ["Succeeded"] }
+      },
+      "Initialize_envState": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "envState", "type": "string", "value": "CREATING" }] },
+        "runAfter": { "Initialize_environmentId": ["Succeeded"] }
+      },
+      "Initialize_pollCount": {
+        "type": "InitializeVariable",
+        "inputs": { "variables": [{ "name": "pollCount", "type": "integer", "value": 0 }] },
+        "runAfter": { "Initialize_envState": ["Succeeded"] }
+      },
+
+      "Switch_By_Action": {
+        "type": "Switch",
+        "expression": "@triggerBody()?['action']",
+        "runAfter": { "Initialize_pollCount": ["Succeeded"] },
+
+        "cases": {
+
+          "Case_List": {
+            "case": "list",
+            "actions": {
+              "HTTP_List_Environments": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "GET",
+                  "uri": "@{variables('provisioningBaseUrl')}/provisioning/v1/environments?subaccountGUID=@{triggerBody()?['btpConfig']?['subaccountGuid']}",
+                  "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                }
+              },
+              "Response_List": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_List_Environments')['statusCode']",
+                  "body": "@body('HTTP_List_Environments')"
+                },
+                "runAfter": { "HTTP_List_Environments": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Get": {
+            "case": "get",
+            "actions": {
+              "HTTP_Get_Environment": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "GET",
+                  "uri": "@{variables('provisioningBaseUrl')}/provisioning/v1/environments/@{triggerBody()?['payload']?['environmentId']}",
+                  "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                }
+              },
+              "Response_Get": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Get_Environment')['statusCode']",
+                  "body": "@body('HTTP_Get_Environment')"
+                },
+                "runAfter": { "HTTP_Get_Environment": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Create": {
+            "case": "create",
+            "actions": {
+              "HTTP_Create_Environment": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@{variables('provisioningBaseUrl')}/provisioning/v1/environments",
+                  "headers": {
+                    "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}",
+                    "Content-Type": "application/json"
+                  },
+                  "body": {
+                    "environmentType": "@{coalesce(triggerBody()?['payload']?['environmentType'], 'cloudfoundry')}",
+                    "name":            "@{triggerBody()?['payload']?['name']}",
+                    "planName":        "@{coalesce(triggerBody()?['payload']?['planName'], 'standard')}",
+                    "serviceName":     "@{coalesce(triggerBody()?['payload']?['serviceName'], 'cloudfoundry')}",
+                    "subaccountGUID":  "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
+                    "parameters":      "@coalesce(triggerBody()?['payload']?['parameters'], json('{}'))"
+                  }
+                }
+              },
+              "Parse_Create_Response": {
+                "type": "ParseJson",
+                "inputs": {
+                  "content": "@body('HTTP_Create_Environment')",
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id":    { "type": "string" },
+                      "state": { "type": "string" }
+                    }
+                  }
+                },
+                "runAfter": { "HTTP_Create_Environment": ["Succeeded"] }
+              },
+              "Set_EnvironmentId_From_Create": {
+                "type": "SetVariable",
+                "inputs": { "name": "environmentId", "value": "@body('Parse_Create_Response')?['id']" },
+                "runAfter": { "Parse_Create_Response": ["Succeeded"] }
+              },
+              "Set_Initial_EnvState": {
+                "type": "SetVariable",
+                "inputs": { "name": "envState", "value": "@coalesce(body('Parse_Create_Response')?['state'], 'CREATING')" },
+                "runAfter": { "Set_EnvironmentId_From_Create": ["Succeeded"] }
+              },
+
+              "Wait_For_Environment_Ready": {
+                "type": "Until",
+                "expression": "@or(equals(variables('envState'), 'OK'), equals(variables('envState'), 'ERROR'), greater(variables('pollCount'), 20))",
+                "limit": { "count": 25, "timeout": "PT15M" },
+                "actions": {
+                  "Increment_PollCount": {
+                    "type": "IncrementVariable",
+                    "inputs": { "name": "pollCount", "value": 1 },
+                    "runAfter": {}
+                  },
+                  "Delay_30_Seconds": {
+                    "type": "Wait",
+                    "inputs": { "interval": { "count": 30, "unit": "Second" } },
+                    "runAfter": { "Increment_PollCount": ["Succeeded"] }
+                  },
+                  "HTTP_Poll_Environment": {
+                    "type": "Http", "runAfter": { "Delay_30_Seconds": ["Succeeded"] },
+                    "inputs": {
+                      "method": "GET",
+                      "uri": "@{variables('provisioningBaseUrl')}/provisioning/v1/environments/@{variables('environmentId')}",
+                      "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                    }
+                  },
+                  "Parse_Poll_Response": {
+                    "type": "ParseJson",
+                    "inputs": {
+                      "content": "@body('HTTP_Poll_Environment')",
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "state":      { "type": "string" },
+                          "labels":     { "type": "string" }
+                        }
+                      }
+                    },
+                    "runAfter": { "HTTP_Poll_Environment": ["Succeeded"] }
+                  },
+                  "Update_EnvState": {
+                    "type": "SetVariable",
+                    "inputs": { "name": "envState", "value": "@body('Parse_Poll_Response')?['state']" },
+                    "runAfter": { "Parse_Poll_Response": ["Succeeded"] }
+                  }
+                },
+                "runAfter": { "Set_Initial_EnvState": ["Succeeded"] }
+              },
+
+              "Check_Environment_Ready": {
+                "type": "If",
+                "expression": { "and": [{ "equals": ["@variables('envState')", "OK"] }] },
+                "actions": {
+                  "HTTP_Get_Final_Environment": {
+                    "type": "Http", "runAfter": {},
+                    "inputs": {
+                      "method": "GET",
+                      "uri": "@{variables('provisioningBaseUrl')}/provisioning/v1/environments/@{variables('environmentId')}",
+                      "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                    }
+                  },
+                  "Parse_Final_Environment": {
+                    "type": "ParseJson",
+                    "inputs": {
+                      "content": "@body('HTTP_Get_Final_Environment')",
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "id":              { "type": "string" },
+                          "name":            { "type": "string" },
+                          "state":           { "type": "string" },
+                          "environmentType": { "type": "string" },
+                          "labels":          { "type": "string" }
+                        }
+                      }
+                    },
+                    "runAfter": { "HTTP_Get_Final_Environment": ["Succeeded"] }
+                  },
+                  "Compose_Environment_Details": {
+                    "type": "Compose",
+                    "inputs": {
+                      "environmentId":   "@body('Parse_Final_Environment')?['id']",
+                      "name":            "@body('Parse_Final_Environment')?['name']",
+                      "state":           "@body('Parse_Final_Environment')?['state']",
+                      "environmentType": "@body('Parse_Final_Environment')?['environmentType']",
+                      "cfApiUrl":        "@{json(body('Parse_Final_Environment')?['labels'])?['API Endpoint']}"
+                    },
+                    "runAfter": { "Parse_Final_Environment": ["Succeeded"] }
+                  },
+                  "Response_Create_Success": {
+                    "type": "Response", "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200,
+                      "body": "@outputs('Compose_Environment_Details')"
+                    },
+                    "runAfter": { "Compose_Environment_Details": ["Succeeded"] }
+                  }
+                },
+                "else": {
+                  "actions": {
+                    "Response_Create_Failed": {
+                      "type": "Response", "kind": "Http", "runAfter": {},
+                      "inputs": {
+                        "statusCode": 500,
+                        "body": {
+                          "error": "Environment provisioning failed or timed out",
+                          "environmentId": "@variables('environmentId')",
+                          "state": "@variables('envState')",
+                          "pollCount": "@variables('pollCount')"
+                        }
+                      }
+                    }
+                  }
+                },
+                "runAfter": { "Wait_For_Environment_Ready": ["Succeeded"] }
+              }
+            }
+          },
+
+          "Case_Delete": {
+            "case": "delete",
+            "actions": {
+              "HTTP_Delete_Environment": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "DELETE",
+                  "uri": "@{variables('provisioningBaseUrl')}/provisioning/v1/environments/@{triggerBody()?['payload']?['environmentId']}",
+                  "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                }
+              },
+              "Response_Delete": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Delete_Environment')['statusCode']",
+                  "body": { "status": "deleted", "environmentId": "@triggerBody()?['payload']?['environmentId']" }
+                },
+                "runAfter": { "HTTP_Delete_Environment": ["Succeeded", "Failed"] }
+              }
+            }
+          }
+
+        },
+        "default": {
+          "actions": {
+            "Response_Invalid_Action": {
+              "type": "Response", "kind": "Http", "runAfter": {},
+              "inputs": {
+                "statusCode": 400,
+                "body": {
+                  "error": "Invalid action. Use: list | get | create | delete",
+                  "received": "@triggerBody()?['action']"
+                }
+              }
+            }
+          }
+        }
+      }
+
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

@@ -1,0 +1,1033 @@
+{
+  "info": {
+    "_postman_id": "btp-automation-la-v1",
+    "name": "BTP Automation - Azure Logic Apps",
+    "description": "Postman collection for BTP Automation Azure Standard Logic App workflows.\n\nAll workflows are triggered via HTTP POST to the Logic App trigger URL.\nUpdate collection variables (logicAppBaseUrl, credentials) before testing.\n\nWorkflows covered:\n- main-dispatcher (routes to child workflows)\n- main-orchestrator (full E2E provision)\n- subaccount-management\n- entitlements-management\n- provisioning-management\n- authorization-management\n- destinations-management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "logicAppBaseUrl",
+      "value": "https://btp-automation-dev.azurewebsites.net",
+      "type": "string",
+      "description": "Base URL of your deployed Logic App Standard instance"
+    },
+    {
+      "key": "cisTokenUrl",
+      "value": "https://a6ff9d4dtrial-ga.authentication.eu10.hana.ondemand.com/oauth/token",
+      "type": "string",
+      "description": "CIS Central OAuth2 token endpoint (used for accounts/entitlements/provisioning)"
+    },
+    {
+      "key": "cisClientId",
+      "value": "",
+      "type": "string",
+      "description": "CIS Central OAuth2 client_id"
+    },
+    {
+      "key": "cisClientSecret",
+      "value": "",
+      "type": "string",
+      "description": "CIS Central OAuth2 client_secret"
+    },
+    {
+      "key": "xsuaaTokenUrl",
+      "value": "https://a6ff9d4dtrial.authentication.us10.hana.ondemand.com/oauth/token",
+      "type": "string",
+      "description": "XSUAA OAuth2 token endpoint (used for authorization)"
+    },
+    {
+      "key": "xsuaaClientId",
+      "value": "",
+      "type": "string",
+      "description": "XSUAA OAuth2 client_id"
+    },
+    {
+      "key": "xsuaaClientSecret",
+      "value": "",
+      "type": "string",
+      "description": "XSUAA OAuth2 client_secret"
+    },
+    {
+      "key": "xsuaaBaseUrl",
+      "value": "https://a6ff9d4dtrial.authentication.us10.hana.ondemand.com",
+      "type": "string",
+      "description": "XSUAA base URL (https://{subdomain}.authentication.{region}.hana.ondemand.com)"
+    },
+    {
+      "key": "destinationTokenUrl",
+      "value": "",
+      "type": "string",
+      "description": "Destination service OAuth2 token endpoint (from BTP service binding credentials)"
+    },
+    {
+      "key": "destinationClientId",
+      "value": "",
+      "type": "string",
+      "description": "Destination service client_id"
+    },
+    {
+      "key": "destinationClientSecret",
+      "value": "",
+      "type": "string",
+      "description": "Destination service client_secret"
+    },
+    {
+      "key": "destinationBaseUrl",
+      "value": "",
+      "type": "string",
+      "description": "Destination service base URL (uri field from BTP service binding)"
+    },
+    {
+      "key": "globalAccountGuid",
+      "value": "72c60019-fb49-4ce3-a0ed-3a6ef08ebe6a",
+      "type": "string",
+      "description": "BTP Global Account GUID"
+    },
+    {
+      "key": "globalAccountSubdomain",
+      "value": "a6ff9d4dtrial-ga",
+      "type": "string",
+      "description": "BTP Global Account subdomain"
+    },
+    {
+      "key": "subaccountGuid",
+      "value": "d1b70d75-bb7c-4b84-9111-d994ae255b63",
+      "type": "string",
+      "description": "BTP Subaccount GUID"
+    }
+  ],
+  "item": [
+    {
+      "name": "Main Dispatcher",
+      "description": "Routes requests to child workflows based on the 'resource' field. Entry point for all operations via the dispatcher pattern.",
+      "item": [
+        {
+          "name": "Route - Accounts (List Subaccounts)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"accounts\",\n  \"subResource\": \"subaccount\",\n  \"action\": \"list\",\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"payload\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Route - Accounts (Create Subaccount)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"accounts\",\n  \"subResource\": \"subaccount\",\n  \"action\": \"create\",\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"payload\": {\n    \"displayName\": \"my-new-subaccount\",\n    \"subdomain\": \"my-new-subaccount\",\n    \"region\": \"us10\",\n    \"description\": \"Created via Logic App\",\n    \"betaEnabled\": false\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Route - Entitlements (Assign Service Plan)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"entitlements\",\n  \"action\": \"assign\",\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"payload\": {\n    \"serviceName\": \"destination\",\n    \"planName\": \"lite\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Route - Provisioning (Create CF Environment)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"provisioning\",\n  \"action\": \"create\",\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"payload\": {\n    \"environmentType\": \"cloudfoundry\",\n    \"name\": \"my-cf-env\",\n    \"planName\": \"standard\",\n    \"serviceName\": \"cloudfoundry\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Route - Authorization (Create Role Collection)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"authorization\",\n  \"subResource\": \"roleCollection\",\n  \"action\": \"create\",\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"payload\": {\n    \"name\": \"BTP-Developers\",\n    \"description\": \"Developer access role collection\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Route - Destinations (List)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"destinations\",\n  \"action\": \"list\",\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"payload\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Route - Full Provision (E2E)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-dispatcher/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-dispatcher", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"resource\": \"fullProvision\",\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\",\n    \"globalAccountSubdomain\": \"{{globalAccountSubdomain}}\",\n    \"accountsServiceUrl\": \"https://accounts-service.cfapps.eu10.hana.ondemand.com\",\n    \"entitlementsServiceUrl\": \"https://entitlements-service.cfapps.eu10.hana.ondemand.com\",\n    \"provisioningServiceUrl\": \"https://provisioning-service.cfapps.eu10.hana.ondemand.com\"\n  },\n  \"config\": {\n    \"subaccount\": {\n      \"guid\": \"\",\n      \"displayName\": \"my-subaccount\",\n      \"subdomain\": \"my-subaccount\",\n      \"region\": \"us10\",\n      \"description\": \"Provisioned via Azure Logic App\"\n    },\n    \"entitlements\": [\n      { \"serviceName\": \"destination\", \"planName\": \"lite\" },\n      { \"serviceName\": \"connectivity\", \"planName\": \"lite\" }\n    ],\n    \"environment\": {\n      \"type\": \"cloudfoundry\",\n      \"name\": \"my-cf-env\",\n      \"planName\": \"standard\",\n      \"serviceName\": \"cloudfoundry\"\n    },\n    \"roleCollections\": [\n      {\n        \"name\": \"BTP-Developers\",\n        \"description\": \"Developer access\",\n        \"roles\": [],\n        \"users\": [\"developer@example.com\"]\n      }\n    ]\n  },\n  \"skipEntitlements\": false,\n  \"skipProvisioning\": false,\n  \"skipAuthorization\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Main Orchestrator",
+      "description": "Full end-to-end BTP provisioning: create subaccount → assign entitlements → provision CF environment → create role collections. Call this directly without going through the dispatcher.",
+      "item": [
+        {
+          "name": "Full E2E Provision",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-orchestrator/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-orchestrator", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\",\n    \"globalAccountSubdomain\": \"{{globalAccountSubdomain}}\",\n    \"accountsServiceUrl\": \"https://accounts-service.cfapps.eu10.hana.ondemand.com\",\n    \"entitlementsServiceUrl\": \"https://entitlements-service.cfapps.eu10.hana.ondemand.com\",\n    \"provisioningServiceUrl\": \"https://provisioning-service.cfapps.eu10.hana.ondemand.com\"\n  },\n  \"config\": {\n    \"subaccount\": {\n      \"guid\": \"\",\n      \"displayName\": \"my-subaccount\",\n      \"subdomain\": \"my-subaccount\",\n      \"region\": \"us10\",\n      \"description\": \"Provisioned via Azure Logic App\"\n    },\n    \"entitlements\": [\n      { \"serviceName\": \"destination\", \"planName\": \"lite\" },\n      { \"serviceName\": \"connectivity\", \"planName\": \"lite\" },\n      { \"serviceName\": \"xsuaa\", \"planName\": \"application\" }\n    ],\n    \"environment\": {\n      \"type\": \"cloudfoundry\",\n      \"name\": \"my-cf-env\",\n      \"planName\": \"standard\",\n      \"serviceName\": \"cloudfoundry\"\n    },\n    \"roleCollections\": [\n      {\n        \"name\": \"BTP-Developers\",\n        \"description\": \"Developer access\",\n        \"roles\": [],\n        \"users\": [\"developer@example.com\"]\n      }\n    ]\n  },\n  \"skipEntitlements\": false,\n  \"skipProvisioning\": false,\n  \"skipAuthorization\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Skip Provisioning (Entitlements + Auth only)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/main-orchestrator/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "main-orchestrator", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\",\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"config\": {\n    \"subaccount\": {\n      \"guid\": \"{{subaccountGuid}}\"\n    },\n    \"entitlements\": [\n      { \"serviceName\": \"destination\", \"planName\": \"lite\" }\n    ],\n    \"roleCollections\": [\n      {\n        \"name\": \"BTP-Viewers\",\n        \"description\": \"Read-only access\",\n        \"roles\": [],\n        \"users\": []\n      }\n    ]\n  },\n  \"skipEntitlements\": false,\n  \"skipProvisioning\": true,\n  \"skipAuthorization\": false\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subaccount Management",
+      "description": "CRUD operations for BTP subaccounts and directories via the Accounts Service API.",
+      "item": [
+        {
+          "name": "Subaccounts",
+          "item": [
+            {
+              "name": "List Subaccounts",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"subaccount\",\n  \"action\": \"list\",\n  \"payload\": {}\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Get Subaccount",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"subaccount\",\n  \"action\": \"get\",\n  \"payload\": {\n    \"guid\": \"{{subaccountGuid}}\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Create Subaccount",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"subaccount\",\n  \"action\": \"create\",\n  \"payload\": {\n    \"displayName\": \"my-new-subaccount\",\n    \"subdomain\": \"my-new-subaccount\",\n    \"region\": \"us10\",\n    \"description\": \"Created via Logic App\",\n    \"betaEnabled\": false\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Update Subaccount",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"subaccount\",\n  \"action\": \"update\",\n  \"payload\": {\n    \"guid\": \"{{subaccountGuid}}\",\n    \"fields\": {\n      \"displayName\": \"my-updated-subaccount\",\n      \"description\": \"Updated via Logic App\"\n    }\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Delete Subaccount",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"subaccount\",\n  \"action\": \"delete\",\n  \"payload\": {\n    \"guid\": \"{{subaccountGuid}}\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Directories",
+          "item": [
+            {
+              "name": "List Directories",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"directory\",\n  \"action\": \"list\",\n  \"payload\": {}\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Get Directory",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"directory\",\n  \"action\": \"get\",\n  \"payload\": {\n    \"guid\": \"<DIRECTORY_GUID>\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Create Directory",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"directory\",\n  \"action\": \"create\",\n  \"payload\": {\n    \"displayName\": \"my-directory\",\n    \"description\": \"Created via Logic App\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Update Directory",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"directory\",\n  \"action\": \"update\",\n  \"payload\": {\n    \"guid\": \"<DIRECTORY_GUID>\",\n    \"fields\": {\n      \"displayName\": \"my-updated-directory\",\n      \"description\": \"Updated via Logic App\"\n    }\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Delete Directory",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/subaccount-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "subaccount-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"globalAccountGuid\": \"{{globalAccountGuid}}\"\n  },\n  \"subResource\": \"directory\",\n  \"action\": \"delete\",\n  \"payload\": {\n    \"guid\": \"<DIRECTORY_GUID>\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Entitlements Management",
+      "description": "Service plan entitlement operations for BTP subaccounts via the Entitlements Service API.",
+      "item": [
+        {
+          "name": "List Entitlements",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/entitlements-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "entitlements-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"list\",\n  \"payload\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Assign Service Plan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/entitlements-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "entitlements-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"assign\",\n  \"payload\": {\n    \"serviceName\": \"destination\",\n    \"planName\": \"lite\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Unassign Service Plan",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/entitlements-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "entitlements-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"unassign\",\n  \"payload\": {\n    \"serviceName\": \"destination\",\n    \"planName\": \"lite\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Bulk Assign Service Plans",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/entitlements-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "entitlements-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"bulkAssign\",\n  \"payload\": {\n    \"assignments\": [\n      { \"serviceName\": \"destination\", \"planName\": \"lite\" },\n      { \"serviceName\": \"connectivity\", \"planName\": \"lite\" },\n      { \"serviceName\": \"xsuaa\", \"planName\": \"application\" },\n      { \"serviceName\": \"html5-apps-repo\", \"planName\": \"app-host\" }\n    ]\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Provisioning Management",
+      "description": "CF/Kyma environment lifecycle management. Create includes an Until polling loop (30s interval, 20 polls max, 15min timeout) waiting for state=OK.",
+      "item": [
+        {
+          "name": "List Environments",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/provisioning-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "provisioning-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"list\",\n  \"payload\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Get Environment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/provisioning-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "provisioning-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"get\",\n  \"payload\": {\n    \"environmentId\": \"<ENVIRONMENT_ID>\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Create CF Environment (with polling)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/provisioning-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "provisioning-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"create\",\n  \"payload\": {\n    \"environmentType\": \"cloudfoundry\",\n    \"name\": \"my-cf-env\",\n    \"planName\": \"standard\",\n    \"serviceName\": \"cloudfoundry\",\n    \"parameters\": {}\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Delete Environment",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/provisioning-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "provisioning-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cisCredentials\": {\n    \"tokenUrl\": \"{{cisTokenUrl}}\",\n    \"clientId\": \"{{cisClientId}}\",\n    \"clientSecret\": \"{{cisClientSecret}}\"\n  },\n  \"btpConfig\": {\n    \"subaccountGuid\": \"{{subaccountGuid}}\"\n  },\n  \"action\": \"delete\",\n  \"payload\": {\n    \"environmentId\": \"<ENVIRONMENT_ID>\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authorization Management",
+      "description": "XSUAA role collections, roles, and user assignments via the XSUAA Authorization API.",
+      "item": [
+        {
+          "name": "Role Collections",
+          "item": [
+            {
+              "name": "List Role Collections",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"list\",\n  \"payload\": {}\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Get Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"get\",\n  \"payload\": {\n    \"name\": \"BTP-Developers\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Create Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"create\",\n  \"payload\": {\n    \"name\": \"BTP-Developers\",\n    \"description\": \"Developer access role collection\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Update Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"update\",\n  \"payload\": {\n    \"name\": \"BTP-Developers\",\n    \"description\": \"Updated developer access role collection\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Delete Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"delete\",\n  \"payload\": {\n    \"name\": \"BTP-Developers\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Add Role to Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"addRole\",\n  \"payload\": {\n    \"collectionName\": \"BTP-Developers\",\n    \"roleName\": \"Subaccount Developer\",\n    \"roleTemplateName\": \"Subaccount_Developer\",\n    \"appId\": \"cis-local!b2\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Remove Role from Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"removeRole\",\n  \"payload\": {\n    \"collectionName\": \"BTP-Developers\",\n    \"roleName\": \"Subaccount Developer\",\n    \"roleTemplateName\": \"Subaccount_Developer\",\n    \"appId\": \"cis-local!b2\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "List Users in Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"roleCollection\",\n  \"action\": \"listUsers\",\n  \"payload\": {\n    \"collectionName\": \"BTP-Developers\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Roles",
+          "item": [
+            {
+              "name": "List Roles by App",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"role\",\n  \"action\": \"list\",\n  \"payload\": {\n    \"appId\": \"cis-local!b2\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Create Role",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"role\",\n  \"action\": \"create\",\n  \"payload\": {\n    \"appId\": \"cis-local!b2\",\n    \"roleName\": \"Custom Developer\",\n    \"roleTemplateName\": \"Custom_Developer\",\n    \"description\": \"Custom developer role\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Delete Role",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"role\",\n  \"action\": \"delete\",\n  \"payload\": {\n    \"appId\": \"cis-local!b2\",\n    \"roleTemplateName\": \"Custom_Developer\",\n    \"roleName\": \"Custom Developer\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "Users",
+          "item": [
+            {
+              "name": "Assign User to Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"user\",\n  \"action\": \"assignUser\",\n  \"payload\": {\n    \"collectionName\": \"BTP-Developers\",\n    \"userName\": \"developer@example.com\",\n    \"origin\": \"sap.default\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "Remove User from Role Collection",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"user\",\n  \"action\": \"removeUser\",\n  \"payload\": {\n    \"collectionName\": \"BTP-Developers\",\n    \"userName\": \"developer@example.com\",\n    \"origin\": \"sap.default\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            },
+            {
+              "name": "List Users in Collection (via user subResource)",
+              "request": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": {
+                  "raw": "{{logicAppBaseUrl}}/api/authorization-management/triggers/manual/invoke?api-version=2022-05-01",
+                  "host": ["{{logicAppBaseUrl}}"],
+                  "path": ["api", "authorization-management", "triggers", "manual", "invoke"],
+                  "query": [{ "key": "api-version", "value": "2022-05-01" }]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"xsuaaCredentials\": {\n    \"tokenUrl\": \"{{xsuaaTokenUrl}}\",\n    \"clientId\": \"{{xsuaaClientId}}\",\n    \"clientSecret\": \"{{xsuaaClientSecret}}\",\n    \"baseUrl\": \"{{xsuaaBaseUrl}}\"\n  },\n  \"subResource\": \"user\",\n  \"action\": \"list\",\n  \"payload\": {\n    \"collectionName\": \"BTP-Developers\"\n  }\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Destinations Management",
+      "description": "BTP Destination service CRUD operations. Credentials come from a BTP Destination service binding (clientId, clientSecret, tokenUrl, baseUrl).",
+      "item": [
+        {
+          "name": "List Destinations",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"list\",\n  \"payload\": {}\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Get Destination",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"get\",\n  \"payload\": {\n    \"name\": \"MY-DESTINATION\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Create Destination (generic payload)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"create\",\n  \"payload\": {\n    \"Name\": \"MY-DESTINATION\",\n    \"Type\": \"HTTP\",\n    \"URL\": \"https://my-backend-service.example.com\",\n    \"Authentication\": \"NoAuthentication\",\n    \"ProxyType\": \"Internet\",\n    \"Description\": \"Backend service destination\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Update Destination",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"update\",\n  \"payload\": {\n    \"Name\": \"MY-DESTINATION\",\n    \"Type\": \"HTTP\",\n    \"URL\": \"https://my-backend-service-v2.example.com\",\n    \"Authentication\": \"NoAuthentication\",\n    \"ProxyType\": \"Internet\",\n    \"Description\": \"Updated backend service destination\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Delete Destination",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"delete\",\n  \"payload\": {\n    \"name\": \"MY-DESTINATION\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Create HTTP Destination (structured)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"createHTTP\",\n  \"payload\": {\n    \"name\": \"MY-HTTP-DEST\",\n    \"url\": \"https://api.example.com\",\n    \"authentication\": \"BasicAuthentication\",\n    \"proxyType\": \"Internet\",\n    \"description\": \"HTTP destination with basic auth\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        },
+        {
+          "name": "Create OAuth Destination",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{logicAppBaseUrl}}/api/destinations-management/triggers/manual/invoke?api-version=2022-05-01",
+              "host": ["{{logicAppBaseUrl}}"],
+              "path": ["api", "destinations-management", "triggers", "manual", "invoke"],
+              "query": [{ "key": "api-version", "value": "2022-05-01" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destinationCredentials\": {\n    \"tokenUrl\": \"{{destinationTokenUrl}}\",\n    \"clientId\": \"{{destinationClientId}}\",\n    \"clientSecret\": \"{{destinationClientSecret}}\",\n    \"baseUrl\": \"{{destinationBaseUrl}}\"\n  },\n  \"action\": \"createOAuth\",\n  \"payload\": {\n    \"name\": \"MY-OAUTH-DEST\",\n    \"url\": \"https://secured-api.example.com\",\n    \"clientId\": \"<OAUTH_CLIENT_ID>\",\n    \"clientSecret\": \"<OAUTH_CLIENT_SECRET>\",\n    \"tokenServiceUrl\": \"https://auth.example.com/oauth/token\",\n    \"proxyType\": \"Internet\",\n    \"description\": \"OAuth2 client credentials destination\"\n  }\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
