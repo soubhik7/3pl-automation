@@ -1,0 +1,11 @@
+{
+  "wf-solace-automation-service-provisioning": "https://prod-21.eastus.logic.azure.com:443/workflows/76fcb9cb664b4f528d46b47f262b2d6d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NFu6u1aBzcv8xbN0q7dcz6o4-h9eFTNpzPDSXRSwO_8",
+  "wf-solace-automation-service-management": "https://prod-25.eastus.logic.azure.com:443/workflows/44cf1d9b52bb46cd99ade30883c1765c/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-zJnWUYfq54n3kvUL-FO7BBxDoOt7VYD0JqoPKGptlM",
+  "wf-solace-automation-event-portal-provisioning": "https://prod-75.eastus.logic.azure.com:443/workflows/163de5535df14afba8de31726b641cbf/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=NtP2xpkEYjQzuZ0ghLxUYj7m5uElF2EVmM34JmbbjtA",
+  "wf-solace-automation-event-portal-management": "https://prod-89.eastus.logic.azure.com:443/workflows/0015e98e556946e0a48b54c4cc42ab73/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=4TUOX6qE3tvhlBiQmNr0oF66ERiEagv1_sMuRoEdd_c",
+  "wf-solace-automation-cluster-management": "https://prod-41.eastus.logic.azure.com:443/workflows/ad95726bda794a3eab47f855115e3983/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SVex-eP0s4taPi4EF3xQYg-uOQn-McMpXzsvLAK_O20",
+  "wf-solace-automation-export-clone": "https://prod-32.eastus.logic.azure.com:443/workflows/073f986f7466444c95e36461eebe596f/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lFxEa2VKKgOJp5RfSkOKhXmSid9ZZlD0VVkfRja7mUE",
+  "wf-solace-automation-credentials-init": "https://prod-77.eastus.logic.azure.com:443/workflows/13b3e713a53e4e9a8fb9d5a694dd7b9d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED09",
+  "wf-solace-automation-main-orchestrator": "https://prod-93.eastus.logic.azure.com:443/workflows/a3aa7415cd0b4fc8afc868d94da85829/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED06",
+  "wf-solace-automation-main-dispatcher": "https://prod-37.eastus.logic.azure.com:443/workflows/2e7e7ad2e9714e358a404c407f7d10c1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED11"
+}

@@ -1272,8 +1272,8 @@
                             "accessType": "@{coalesce(triggerBody()?['payload']?['accessType'], 'exclusive')}",
                             "egressEnabled": true,
                             "ingressEnabled": true,
-                            "maxMsgSize": "@{coalesce(triggerBody()?['payload']?['maxMsgSize'], 10000000)}",
-                            "maxMsgSpoolUsage": "@{coalesce(triggerBody()?['payload']?['maxSpoolMb'], 1500)}",
+                            "maxMsgSize": "@int(string(coalesce(triggerBody()?['payload']?['maxMsgSize'], 10000000)))",
+                            "maxMsgSpoolUsage": "@int(string(coalesce(triggerBody()?['payload']?['maxSpoolMb'], 1500)))",
                             "permission": "consume",
                             "owner": "@{triggerBody()?['payload']?['owner']}"
                           }

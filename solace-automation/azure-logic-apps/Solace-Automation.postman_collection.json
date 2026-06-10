@@ -2,18 +2,18 @@
   "info": {
     "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
     "name": "Solace Automation - Full API",
-    "description": "Complete collection for all Solace automation workflows.\n\nSETUP:\n1. Set 'dispatcherUrl' = trigger URL of main-dispatcher Logic App workflow\n2. Set 'credentialsInitUrl' = trigger URL of credentials-init Logic App workflow\n3. Configure SOLACE_API_TOKEN in Logic App app settings (not in Postman)\n4. Run '0. Credentials Init / Init Credentials' once — stores SEMP creds in app settings\n5. Run '1. Service Management / Create Service' — auto-fills serviceId\n6. Run remaining requests in order\n\nNOTE: No credentials (apiToken, sempCredentials) are passed in request payloads.\nAll credentials are stored in Azure Logic App app settings and read via @appsetting().",
+    "description": "Complete collection for all Solace automation workflows.\n\nSETUP:\n1. Set 'dispatcherUrl' = trigger URL of main-dispatcher Logic App workflow\n2. Set 'credentialsInitUrl' = trigger URL of credentials-init Logic App workflow\n3. Configure SOLACE_API_TOKEN in Logic App app settings (not in Postman)\n4. Run '0. Credentials Init / Init Credentials' once \u2014 stores SEMP creds in app settings\n5. Run '1. Service Management / Create Service' \u2014 auto-fills serviceId\n6. Run remaining requests in order\n\nNOTE: No credentials (apiToken, sempCredentials) are passed in request payloads.\nAll credentials are stored in Azure Logic App app settings and read via @appsetting().",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "dispatcherUrl",
-      "value": "",
+      "value": "https://prod-37.eastus.logic.azure.com:443/workflows/2e7e7ad2e9714e358a404c407f7d10c1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED11",
       "description": "Trigger URL of main-dispatcher Logic App workflow"
     },
     {
       "key": "credentialsInitUrl",
-      "value": "",
+      "value": "https://prod-77.eastus.logic.azure.com:443/workflows/13b3e713a53e4e9a8fb9d5a694dd7b9d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED09",
       "description": "Trigger URL of credentials-init Logic App workflow"
     },
     {
