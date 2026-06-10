@@ -10,10 +10,14 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["action", "apiToken"],
+            "required": [
+              "action"
+            ],
             "properties": {
-              "action": { "type": "string", "description": "list | get | create | update | delete" },
-              "apiToken": { "type": "string" },
+              "action": {
+                "type": "string",
+                "description": "list | get | create | update | delete"
+              },
               "payload": {
                 "type": "object",
                 "description": "list: {} | get/delete: {serviceId} | create: {serviceName, datacenterId, serviceTypeId, serviceClassId} | update: {serviceId, fields:{adminState?}}"
@@ -26,25 +30,60 @@
     "actions": {
       "Initialize_serviceId": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "serviceId", "type": "string", "value": "" }] },
+        "inputs": {
+          "variables": [
+            {
+              "name": "serviceId",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
         "runAfter": {}
       },
       "Initialize_creationState": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "creationState", "type": "string", "value": "pending" }] },
-        "runAfter": { "Initialize_serviceId": ["Succeeded"] }
+        "inputs": {
+          "variables": [
+            {
+              "name": "creationState",
+              "type": "string",
+              "value": "pending"
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_serviceId": [
+            "Succeeded"
+          ]
+        }
       },
       "Initialize_pollCount": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "pollCount", "type": "integer", "value": 0 }] },
-        "runAfter": { "Initialize_creationState": ["Succeeded"] }
+        "inputs": {
+          "variables": [
+            {
+              "name": "pollCount",
+              "type": "integer",
+              "value": 0
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_creationState": [
+            "Succeeded"
+          ]
+        }
       },
       "Switch_By_Action": {
         "type": "Switch",
         "expression": "@triggerBody()?['action']",
-        "runAfter": { "Initialize_pollCount": ["Succeeded"] },
+        "runAfter": {
+          "Initialize_pollCount": [
+            "Succeeded"
+          ]
+        },
         "cases": {
-
           "Case_List": {
             "case": "list",
             "actions": {
@@ -53,21 +92,28 @@
                 "inputs": {
                   "method": "GET",
                   "uri": "https://api.solace.cloud/api/v0/services",
-                  "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}" }
+                  "headers": {
+                    "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_List": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_List_Services')['statusCode']",
                   "body": "@body('HTTP_List_Services')"
                 },
-                "runAfter": { "HTTP_List_Services": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_List_Services": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Get": {
             "case": "get",
             "actions": {
@@ -76,21 +122,28 @@
                 "inputs": {
                   "method": "GET",
                   "uri": "https://api.solace.cloud/api/v0/services/@{triggerBody()?['payload']?['serviceId']}",
-                  "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}" }
+                  "headers": {
+                    "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Get": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_Get_Service')['statusCode']",
                   "body": "@body('HTTP_Get_Service')"
                 },
-                "runAfter": { "HTTP_Get_Service": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_Get_Service": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Create": {
             "case": "create",
             "actions": {
@@ -99,14 +152,17 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "https://api.solace.cloud/api/v0/services",
-                  "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}", "Content-Type": "application/json" },
+                  "headers": {
+                    "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
+                    "Content-Type": "application/json"
+                  },
                   "body": {
-                    "name":           "@{triggerBody()?['payload']?['serviceName']}",
-                    "serviceTypeId":  "@{triggerBody()?['payload']?['serviceTypeId']}",
+                    "name": "@{triggerBody()?['payload']?['serviceName']}",
+                    "serviceTypeId": "@{triggerBody()?['payload']?['serviceTypeId']}",
                     "serviceClassId": "@{triggerBody()?['payload']?['serviceClassId']}",
-                    "datacenterId":   "@{triggerBody()?['payload']?['datacenterId']}",
-                    "adminState":     "@{coalesce(triggerBody()?['payload']?['adminState'], 'start')}",
-                    "partitionId":    "default"
+                    "datacenterId": "@{triggerBody()?['payload']?['datacenterId']}",
+                    "adminState": "@{coalesce(triggerBody()?['payload']?['adminState'], 'start')}",
+                    "partitionId": "default"
                   }
                 },
                 "runAfter": {}
@@ -118,67 +174,147 @@
                   "schema": {
                     "type": "object",
                     "properties": {
-                      "data": { "type": "object", "properties": { "serviceId": { "type": "string" }, "creationState": { "type": "string" } } }
+                      "data": {
+                        "type": "object",
+                        "properties": {
+                          "serviceId": {
+                            "type": "string"
+                          },
+                          "creationState": {
+                            "type": "string"
+                          }
+                        }
+                      }
                     }
                   }
                 },
-                "runAfter": { "HTTP_Create_Service": ["Succeeded"] }
+                "runAfter": {
+                  "HTTP_Create_Service": [
+                    "Succeeded"
+                  ]
+                }
               },
               "Set_ServiceId": {
                 "type": "SetVariable",
-                "inputs": { "name": "serviceId", "value": "@body('Parse_Create_Response')?['data']?['serviceId']" },
-                "runAfter": { "Parse_Create_Response": ["Succeeded"] }
+                "inputs": {
+                  "name": "serviceId",
+                  "value": "@body('Parse_Create_Response')?['data']?['serviceId']"
+                },
+                "runAfter": {
+                  "Parse_Create_Response": [
+                    "Succeeded"
+                  ]
+                }
               },
               "Wait_Until_Ready": {
                 "type": "Until",
                 "expression": "@or(equals(variables('creationState'), 'completed'), equals(variables('creationState'), 'failed'), greater(variables('pollCount'), 40))",
-                "limit": { "count": 60, "timeout": "PT1H" },
+                "limit": {
+                  "count": 60,
+                  "timeout": "PT1H"
+                },
                 "actions": {
                   "Increment_PollCount": {
                     "type": "IncrementVariable",
-                    "inputs": { "name": "pollCount", "value": 1 },
+                    "inputs": {
+                      "name": "pollCount",
+                      "value": 1
+                    },
                     "runAfter": {}
                   },
                   "Delay_15s": {
                     "type": "Wait",
-                    "inputs": { "interval": { "count": 15, "unit": "Second" } },
-                    "runAfter": { "Increment_PollCount": ["Succeeded"] }
+                    "inputs": {
+                      "interval": {
+                        "count": 15,
+                        "unit": "Second"
+                      }
+                    },
+                    "runAfter": {
+                      "Increment_PollCount": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "HTTP_Poll_Status": {
                     "type": "Http",
                     "inputs": {
                       "method": "GET",
                       "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
-                      "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}" }
+                      "headers": {
+                        "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                      }
                     },
-                    "runAfter": { "Delay_15s": ["Succeeded"] }
+                    "runAfter": {
+                      "Delay_15s": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "Parse_Poll_Response": {
                     "type": "ParseJson",
                     "inputs": {
                       "content": "@body('HTTP_Poll_Status')",
-                      "schema": { "type": "object", "properties": { "data": { "type": "object", "properties": { "creationState": { "type": "string" } } } } }
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "creationState": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      }
                     },
-                    "runAfter": { "HTTP_Poll_Status": ["Succeeded"] }
+                    "runAfter": {
+                      "HTTP_Poll_Status": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "Set_CreationState": {
                     "type": "SetVariable",
-                    "inputs": { "name": "creationState", "value": "@body('Parse_Poll_Response')?['data']?['creationState']" },
-                    "runAfter": { "Parse_Poll_Response": ["Succeeded"] }
+                    "inputs": {
+                      "name": "creationState",
+                      "value": "@body('Parse_Poll_Response')?['data']?['creationState']"
+                    },
+                    "runAfter": {
+                      "Parse_Poll_Response": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 },
-                "runAfter": { "Set_ServiceId": ["Succeeded"] }
+                "runAfter": {
+                  "Set_ServiceId": [
+                    "Succeeded"
+                  ]
+                }
               },
               "Check_Service_Completed": {
                 "type": "If",
-                "expression": { "and": [{ "equals": ["@variables('creationState')", "completed"] }] },
+                "expression": {
+                  "and": [
+                    {
+                      "equals": [
+                        "@variables('creationState')",
+                        "completed"
+                      ]
+                    }
+                  ]
+                },
                 "actions": {
                   "HTTP_Get_Final_Service": {
                     "type": "Http",
                     "inputs": {
                       "method": "GET",
                       "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
-                      "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}" }
+                      "headers": {
+                        "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                      }
                     },
                     "runAfter": {}
                   },
@@ -192,52 +328,84 @@
                           "data": {
                             "type": "object",
                             "properties": {
-                              "serviceId": { "type": "string" },
-                              "msgVpnName": { "type": "string" },
-                              "serviceConnectionEndpoints": { "type": "array" },
-                              "managementProtocols": { "type": "array" }
+                              "serviceId": {
+                                "type": "string"
+                              },
+                              "msgVpnName": {
+                                "type": "string"
+                              },
+                              "serviceConnectionEndpoints": {
+                                "type": "array"
+                              },
+                              "managementProtocols": {
+                                "type": "array"
+                              }
                             }
                           }
                         }
                       }
                     },
-                    "runAfter": { "HTTP_Get_Final_Service": ["Succeeded"] }
+                    "runAfter": {
+                      "HTTP_Get_Final_Service": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "Compose_Credentials": {
                     "type": "Compose",
                     "inputs": {
-                      "serviceId":   "@body('Parse_Final_Service')?['data']?['serviceId']",
-                      "vpnName":     "@body('Parse_Final_Service')?['data']?['msgVpnName']",
-                      "brokerHost":  "@first(body('Parse_Final_Service')?['data']?['serviceConnectionEndpoints'])?['hostNames']?[0]",
+                      "serviceId": "@body('Parse_Final_Service')?['data']?['serviceId']",
+                      "vpnName": "@body('Parse_Final_Service')?['data']?['msgVpnName']",
+                      "brokerHost": "@first(body('Parse_Final_Service')?['data']?['serviceConnectionEndpoints'])?['hostNames']?[0]",
                       "sempBaseUrl": "@concat('https://', first(body('Parse_Final_Service')?['data']?['serviceConnectionEndpoints'])?['hostNames']?[0], ':', coalesce(first(body('Parse_Final_Service')?['data']?['serviceConnectionEndpoints'])?['ports']?['serviceManagementTlsListenPort'], 943), '/SEMP/v2/config')",
                       "sempUsername": "@body('Parse_Final_Service')?['data']?['managementProtocols']?[0]?['username']",
                       "sempPassword": "@body('Parse_Final_Service')?['data']?['managementProtocols']?[0]?['password']"
                     },
-                    "runAfter": { "Parse_Final_Service": ["Succeeded"] }
+                    "runAfter": {
+                      "Parse_Final_Service": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "Response_Create_Success": {
-                    "type": "Response", "kind": "Http",
-                    "inputs": { "statusCode": 200, "body": "@outputs('Compose_Credentials')" },
-                    "runAfter": { "Compose_Credentials": ["Succeeded"] }
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200,
+                      "body": "@outputs('Compose_Credentials')"
+                    },
+                    "runAfter": {
+                      "Compose_Credentials": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 },
                 "else": {
                   "actions": {
                     "Response_Create_Failed": {
-                      "type": "Response", "kind": "Http",
+                      "type": "Response",
+                      "kind": "Http",
                       "inputs": {
                         "statusCode": 500,
-                        "body": { "error": "Service creation failed or timed out", "serviceId": "@variables('serviceId')", "creationState": "@variables('creationState')" }
+                        "body": {
+                          "error": "Service creation failed or timed out",
+                          "serviceId": "@variables('serviceId')",
+                          "creationState": "@variables('creationState')"
+                        }
                       },
                       "runAfter": {}
                     }
                   }
                 },
-                "runAfter": { "Wait_Until_Ready": ["Succeeded"] }
+                "runAfter": {
+                  "Wait_Until_Ready": [
+                    "Succeeded"
+                  ]
+                }
               }
             }
           },
-
           "Case_Update": {
             "case": "update",
             "actions": {
@@ -246,22 +414,30 @@
                 "inputs": {
                   "method": "PATCH",
                   "uri": "https://api.solace.cloud/api/v0/services/@{triggerBody()?['payload']?['serviceId']}",
-                  "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}", "Content-Type": "application/json" },
+                  "headers": {
+                    "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
+                    "Content-Type": "application/json"
+                  },
                   "body": "@triggerBody()?['payload']?['fields']"
                 },
                 "runAfter": {}
               },
               "Response_Update": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_Update_Service')['statusCode']",
                   "body": "@body('HTTP_Update_Service')"
                 },
-                "runAfter": { "HTTP_Update_Service": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_Update_Service": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Delete": {
             "case": "delete",
             "actions": {
@@ -270,29 +446,43 @@
                 "inputs": {
                   "method": "DELETE",
                   "uri": "https://api.solace.cloud/api/v0/services/@{triggerBody()?['payload']?['serviceId']}",
-                  "headers": { "Authorization": "Bearer @{triggerBody()?['apiToken']}" }
+                  "headers": {
+                    "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Delete": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_Delete_Service')['statusCode']",
-                  "body": { "status": "deleted", "serviceId": "@triggerBody()?['payload']?['serviceId']" }
+                  "body": {
+                    "status": "deleted",
+                    "serviceId": "@triggerBody()?['payload']?['serviceId']"
+                  }
                 },
-                "runAfter": { "HTTP_Delete_Service": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_Delete_Service": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           }
         },
-
         "default": {
           "actions": {
             "Response_Invalid_Action": {
-              "type": "Response", "kind": "Http",
+              "type": "Response",
+              "kind": "Http",
               "inputs": {
                 "statusCode": 400,
-                "body": { "error": "Invalid action. Use: list | get | create | update | delete", "received": "@triggerBody()?['action']" }
+                "body": {
+                  "error": "Invalid action. Use: list | get | create | update | delete",
+                  "received": "@triggerBody()?['action']"
+                }
               },
               "runAfter": {}
             }

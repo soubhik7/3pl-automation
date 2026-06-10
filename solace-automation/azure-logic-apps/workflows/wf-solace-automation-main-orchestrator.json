@@ -8,6 +8,11 @@
         "defaultValue": "",
         "description": "HTTP trigger URL of the service-provisioning workflow"
       },
+      "credentialsInitUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of the credentials-init workflow — fetches SEMP creds and stores them in app settings"
+      },
       "eventPortalUrl": {
         "type": "String",
         "defaultValue": "",
@@ -26,11 +31,8 @@
         "inputs": {
           "schema": {
             "type": "object",
+            "required": ["config"],
             "properties": {
-              "apiToken": {
-                "type": "string",
-                "description": "Solace Cloud API token — passed by the calling workflow"
-              },
               "config": {
                 "type": "object",
                 "description": "Full Solace service configuration object",
@@ -38,46 +40,38 @@
                   "service": {
                     "type": "object",
                     "properties": {
-                      "serviceId": { "type": "string" },
-                      "name": { "type": "string" },
-                      "datacenterId": { "type": "string" },
+                      "serviceId":     { "type": "string" },
+                      "name":          { "type": "string" },
+                      "datacenterId":  { "type": "string" },
                       "serviceTypeId": { "type": "string" },
-                      "serviceClassId": { "type": "string" }
+                      "serviceClassId":{ "type": "string" }
                     }
                   },
                   "eventPortal": {
                     "type": "object",
                     "properties": {
-                      "domainName": { "type": "string" },
+                      "domainName":        { "type": "string" },
                       "domainDescription": { "type": "string" },
-                      "schemas": { "type": "array" },
-                      "events": { "type": "array" },
+                      "schemas":      { "type": "array" },
+                      "events":       { "type": "array" },
                       "applications": { "type": "array" }
                     }
                   },
                   "clusterManagement": {
                     "type": "object",
                     "properties": {
-                      "vpnName": { "type": "string" },
-                      "clientProfiles": { "type": "array" },
-                      "aclProfiles": { "type": "array" },
-                      "clientUsernames": { "type": "array" },
-                      "queues": { "type": "array" },
+                      "clientProfiles":     { "type": "array" },
+                      "aclProfiles":        { "type": "array" },
+                      "clientUsernames":    { "type": "array" },
+                      "queues":             { "type": "array" },
                       "restDeliveryPoints": { "type": "array" }
                     }
                   }
                 }
               },
-              "skipEventPortal": {
-                "type": "boolean",
-                "default": false
-              },
-              "skipCluster": {
-                "type": "boolean",
-                "default": false
-              }
-            },
-            "required": ["apiToken", "config"]
+              "skipEventPortal": { "type": "boolean", "default": false },
+              "skipCluster":     { "type": "boolean", "default": false }
+            }
           }
         }
       }
@@ -90,41 +84,14 @@
         },
         "runAfter": {}
       },
-      "Initialize_vpnName": {
-        "type": "InitializeVariable",
-        "inputs": {
-          "variables": [{ "name": "vpnName", "type": "string", "value": "" }]
-        },
-        "runAfter": { "Initialize_serviceId": ["Succeeded"] }
-      },
-      "Initialize_sempBaseUrl": {
-        "type": "InitializeVariable",
-        "inputs": {
-          "variables": [{ "name": "sempBaseUrl", "type": "string", "value": "" }]
-        },
-        "runAfter": { "Initialize_vpnName": ["Succeeded"] }
-      },
-      "Initialize_sempUsername": {
-        "type": "InitializeVariable",
-        "inputs": {
-          "variables": [{ "name": "sempUsername", "type": "string", "value": "" }]
-        },
-        "runAfter": { "Initialize_sempBaseUrl": ["Succeeded"] }
-      },
-      "Initialize_sempPassword": {
-        "type": "InitializeVariable",
-        "inputs": {
-          "variables": [{ "name": "sempPassword", "type": "string", "value": "" }]
-        },
-        "runAfter": { "Initialize_sempUsername": ["Succeeded"] }
-      },
       "Initialize_domainId": {
         "type": "InitializeVariable",
         "inputs": {
           "variables": [{ "name": "domainId", "type": "string", "value": "" }]
         },
-        "runAfter": { "Initialize_sempPassword": ["Succeeded"] }
+        "runAfter": { "Initialize_serviceId": ["Succeeded"] }
       },
+
       "Scope_Service_Provisioning": {
         "type": "Scope",
         "actions": {
@@ -133,10 +100,7 @@
             "expression": {
               "and": [{
                 "not": {
-                  "equals": [
-                    "@triggerBody()?['config']?['service']?['serviceId']",
-                    ""
-                  ]
+                  "equals": ["@triggerBody()?['config']?['service']?['serviceId']", ""]
                 }
               }]
             },
@@ -146,7 +110,20 @@
                 "inputs": {
                   "name": "serviceId",
                   "value": "@triggerBody()?['config']?['service']?['serviceId']"
-                }
+                },
+                "runAfter": {}
+              },
+              "Init_Creds_Existing": {
+                "type": "Http",
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@parameters('credentialsInitUrl')",
+                  "headers": { "Content-Type": "application/json" },
+                  "body": {
+                    "serviceId": "@triggerBody()?['config']?['service']?['serviceId']"
+                  }
+                },
+                "runAfter": { "Set_Existing_ServiceId": ["Succeeded"] }
               }
             },
             "else": {
@@ -158,15 +135,15 @@
                     "uri": "@parameters('serviceProvisioningUrl')",
                     "headers": { "Content-Type": "application/json" },
                     "body": {
-                      "serviceName": "@triggerBody()?['config']?['service']?['name']",
-                      "datacenterId": "@triggerBody()?['config']?['service']?['datacenterId']",
+                      "serviceName":   "@triggerBody()?['config']?['service']?['name']",
+                      "datacenterId":  "@triggerBody()?['config']?['service']?['datacenterId']",
                       "serviceTypeId": "@triggerBody()?['config']?['service']?['serviceTypeId']",
-                      "serviceClassId": "@triggerBody()?['config']?['service']?['serviceClassId']",
-                      "apiToken": "@triggerBody()?['apiToken']"
+                      "serviceClassId":"@triggerBody()?['config']?['service']?['serviceClassId']"
                     }
-                  }
+                  },
+                  "runAfter": {}
                 },
-                "Set_ServiceId_From_Response": {
+                "Set_New_ServiceId": {
                   "type": "SetVariable",
                   "inputs": {
                     "name": "serviceId",
@@ -174,37 +151,17 @@
                   },
                   "runAfter": { "Invoke_Service_Provisioning": ["Succeeded"] }
                 },
-                "Set_VPN_Name": {
-                  "type": "SetVariable",
+                "Init_Creds_New": {
+                  "type": "Http",
                   "inputs": {
-                    "name": "vpnName",
-                    "value": "@body('Invoke_Service_Provisioning')?['vpnName']"
+                    "method": "POST",
+                    "uri": "@parameters('credentialsInitUrl')",
+                    "headers": { "Content-Type": "application/json" },
+                    "body": {
+                      "serviceId": "@body('Invoke_Service_Provisioning')?['serviceId']"
+                    }
                   },
-                  "runAfter": { "Set_ServiceId_From_Response": ["Succeeded"] }
-                },
-                "Set_SEMP_BaseUrl": {
-                  "type": "SetVariable",
-                  "inputs": {
-                    "name": "sempBaseUrl",
-                    "value": "@body('Invoke_Service_Provisioning')?['sempBaseUrl']"
-                  },
-                  "runAfter": { "Set_VPN_Name": ["Succeeded"] }
-                },
-                "Set_SEMP_Username": {
-                  "type": "SetVariable",
-                  "inputs": {
-                    "name": "sempUsername",
-                    "value": "@body('Invoke_Service_Provisioning')?['sempUsername']"
-                  },
-                  "runAfter": { "Set_SEMP_BaseUrl": ["Succeeded"] }
-                },
-                "Set_SEMP_Password": {
-                  "type": "SetVariable",
-                  "inputs": {
-                    "name": "sempPassword",
-                    "value": "@body('Invoke_Service_Provisioning')?['sempPassword']"
-                  },
-                  "runAfter": { "Set_SEMP_Username": ["Succeeded"] }
+                  "runAfter": { "Set_New_ServiceId": ["Succeeded"] }
                 }
               }
             }
@@ -212,6 +169,7 @@
         },
         "runAfter": { "Initialize_domainId": ["Succeeded"] }
       },
+
       "Scope_Event_Portal_Provisioning": {
         "type": "Scope",
         "actions": {
@@ -219,10 +177,7 @@
             "type": "If",
             "expression": {
               "and": [{
-                "equals": [
-                  "@coalesce(triggerBody()?['skipEventPortal'], false)",
-                  false
-                ]
+                "equals": ["@coalesce(triggerBody()?['skipEventPortal'], false)", false]
               }]
             },
             "actions": {
@@ -233,8 +188,7 @@
                   "uri": "@parameters('eventPortalUrl')",
                   "headers": { "Content-Type": "application/json" },
                   "body": {
-                    "eventPortalConfig": "@triggerBody()?['config']?['eventPortal']",
-                    "apiToken": "@triggerBody()?['apiToken']"
+                    "eventPortalConfig": "@triggerBody()?['config']?['eventPortal']"
                   }
                 }
               },
@@ -251,6 +205,7 @@
         },
         "runAfter": { "Scope_Service_Provisioning": ["Succeeded"] }
       },
+
       "Scope_Cluster_Provisioning": {
         "type": "Scope",
         "actions": {
@@ -258,10 +213,7 @@
             "type": "If",
             "expression": {
               "and": [{
-                "equals": [
-                  "@coalesce(triggerBody()?['skipCluster'], false)",
-                  false
-                ]
+                "equals": ["@coalesce(triggerBody()?['skipCluster'], false)", false]
               }]
             },
             "actions": {
@@ -273,12 +225,6 @@
                   "headers": { "Content-Type": "application/json" },
                   "body": {
                     "action": "provision",
-                    "sempCredentials": {
-                      "sempBaseUrl":  "@variables('sempBaseUrl')",
-                      "sempUsername": "@variables('sempUsername')",
-                      "sempPassword": "@variables('sempPassword')",
-                      "vpnName":      "@variables('vpnName')"
-                    },
                     "payload": {
                       "clusterConfig": "@triggerBody()?['config']?['clusterManagement']"
                     }
@@ -290,17 +236,17 @@
         },
         "runAfter": { "Scope_Event_Portal_Provisioning": ["Succeeded"] }
       },
+
       "Response_Success": {
         "type": "Response",
         "kind": "Http",
         "inputs": {
           "statusCode": 200,
           "body": {
-            "status": "success",
-            "message": "Provisioning completed successfully",
+            "status":    "success",
+            "message":   "Provisioning completed successfully",
             "serviceId": "@variables('serviceId')",
-            "vpnName": "@variables('vpnName')",
-            "domainId": "@variables('domainId')"
+            "domainId":  "@variables('domainId')"
           }
         },
         "runAfter": { "Scope_Cluster_Provisioning": ["Succeeded"] }
