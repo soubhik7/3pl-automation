@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "sap-btp": {
+      "type": "stdio",
+      "command": "/Users/soubhik/btp-mcp-server/node_modules/.bin/odata-mcp-proxy",
+      "args": ["--config", "btp-admin-api-config.json"],
+      "cwd": "/Users/soubhik/btp-mcp-server"
+    },
+    "btp-automation": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["btp_mcp_server.py"],
+      "cwd": "/Users/soubhik/btp-automation/btp-automation"
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "_comment": "DEV environment — fill serviceId + vpnName after: python3 solace.py service use <id>",
+  "_usage": "python3 solace.py provision run --config config/dev/service.json",
+
+  "sourceCountry": "DEV",
+  "environment":   "dev",
+
+  "service": {
+    "serviceId":     "",
+    "name":          "automation-dev",
+    "datacenterId":  "",
+    "serviceTypeId": "developer",
+    "serviceClassId":"developer"
+  },
+
+  "eventPortal": {
+    "domainName":        "AutomationDev",
+    "domainDescription": "Automation domain — DEV environment",
+
+    "schemas": [
+      {
+        "name":    "OrderPayloadSchema",
+        "type":    "jsonSchema",
+        "version": "1.0.0",
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["orderId", "eventType", "timestamp"],
+          "properties": {
+            "orderId":   { "type": "string" },
+            "eventType": { "type": "string", "enum": ["CREATED","UPDATED","SHIPPED"] },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    ],
+
+    "events": [
+      {
+        "name":      "OrderCreated",
+        "version":   "1.0.0",
+        "topic":     "acme/dev/orders/{orderId}/created",
+        "schemaRef": "OrderPayloadSchema"
+      }
+    ],
+
+    "applications": [
+      {
+        "name": "SourceSystem-DEV", "type": "standard", "version": "1.0.0",
+        "produces": ["OrderCreated"], "consumes": []
+      },
+      {
+        "name": "TargetSystem-DEV", "type": "standard", "version": "1.0.0",
+        "produces": [], "consumes": ["OrderCreated"]
+      }
+    ]
+  },
+
+  "clusterManagement": {
+    "vpnName": "",
+
+    "clientProfiles": [ { "name": "acme-dev-profile" } ],
+
+    "aclProfiles": [
+      {
+        "name": "acme-dev-acl",
+        "publishDefault": "disallow", "subscribeDefault": "disallow",
+        "publishExceptions":  ["acme/dev/>"],
+        "subscribeExceptions":["acme/dev/>"]
+      }
+    ],
+
+    "clientUsernames": [
+      {
+        "name": "acme-dev-user", "password": "",
+        "clientProfile": "acme-dev-profile", "aclProfile": "acme-dev-acl", "enabled": true
+      }
+    ],
+
+    "queues": [
+      {
+        "name": "acme-dev-orders-q", "accessType": "non-exclusive",
+        "subscriptions": ["acme/dev/orders/>", "acme/dev/orders/*/created"]
+      }
+    ],
+
+    "restDeliveryPoints": []
+  }
+}

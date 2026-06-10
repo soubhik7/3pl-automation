@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BTP Automation Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --sap-blue:    #0070f2;
+      --sap-dark:    #354a5e;
+      --sap-green:   #107e3e;
+      --sap-red:     #bb0000;
+      --sap-orange:  #e9730c;
+      --sap-gray:    #f5f5f5;
+      --sap-border:  #d9d9d9;
+    }
+    body { font-family: '72', 'SAP72', Arial, sans-serif; background: var(--sap-gray); }
+    .sap-shell { background: var(--sap-dark); }
+    .sap-card  { background: white; border: 1px solid var(--sap-border); border-radius: 6px; }
+    .sap-btn   { background: var(--sap-blue); color: white; border: none; border-radius: 4px;
+                 padding: 6px 16px; cursor: pointer; font-size: 14px; }
+    .sap-btn:hover  { background: #0060d6; }
+    .sap-btn-ghost  { background: transparent; color: var(--sap-blue); border: 1px solid var(--sap-blue);
+                      border-radius: 4px; padding: 5px 15px; cursor: pointer; font-size: 14px; }
+    .sap-btn-danger { background: var(--sap-red); }
+    .sap-btn-danger:hover { background: #990000; }
+    .badge-ok      { background: #dff0e0; color: var(--sap-green); }
+    .badge-err     { background: #fce8e8; color: var(--sap-red); }
+    .badge-warn    { background: #fef3e0; color: var(--sap-orange); }
+    .badge-blue    { background: #e0f0ff; color: var(--sap-blue); }
+    .status-dot    { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+    .dot-green { background: var(--sap-green); }
+    .dot-red   { background: var(--sap-red); }
+    .dot-gray  { background: #6a6d70; }
+    .tab-active { border-bottom: 2px solid var(--sap-blue); color: var(--sap-blue); font-weight: 600; }
+    .tab { padding: 10px 20px; cursor: pointer; color: #6a6d70; border-bottom: 2px solid transparent; }
+    .tab:hover { color: var(--sap-blue); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: #f5f5f5; text-align: left; padding: 10px 12px; font-weight: 600;
+         border-bottom: 2px solid var(--sap-border); color: var(--sap-dark); }
+    td { padding: 9px 12px; border-bottom: 1px solid #eee; vertical-align: top; }
+    tr:hover td { background: #f9f9f9; }
+    .mono { font-family: 'Courier New', monospace; font-size: 12px; color: #6a6d70; }
+    input, select { border: 1px solid var(--sap-border); border-radius: 4px; padding: 6px 10px;
+                    font-size: 14px; width: 100%; outline: none; }
+    input:focus, select:focus { border-color: var(--sap-blue); }
+    label { font-size: 13px; font-weight: 500; color: var(--sap-dark); margin-bottom: 3px;
+            display: block; }
+    .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #d9d9d9;
+               border-top-color: var(--sap-blue); border-radius: 50%;
+               animation: spin .7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 6px;
+             color: white; font-size: 14px; z-index: 999; transition: opacity .3s; }
+    .toast-ok  { background: var(--sap-green); }
+    .toast-err { background: var(--sap-red); }
+  </style>
+</head>
+<body>
+
+<!-- Shell Bar -->
+<header class="sap-shell text-white flex items-center px-6 py-3 shadow-md">
+  <div class="flex items-center gap-3">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+      <rect width="32" height="32" rx="4" fill="#0070f2"/>
+      <text x="5" y="23" font-family="Arial" font-size="18" font-weight="bold" fill="white">B</text>
+    </svg>
+    <div>
+      <div class="font-semibold text-base">BTP Automation</div>
+      <div class="text-xs opacity-70" id="ga-label">Loading...</div>
+    </div>
+  </div>
+  <div class="ml-auto flex items-center gap-4 text-sm">
+    <span id="subaccount-label" class="opacity-80"></span>
+    <button class="sap-btn text-xs" onclick="refreshAll()">⟳ Refresh</button>
+  </div>
+</header>
+
+<!-- Tab bar -->
+<div class="bg-white border-b border-gray-200 flex px-6" id="tabs">
+  <div class="tab tab-active" onclick="switchTab('services')" id="tab-services">Services</div>
+  <div class="tab" onclick="switchTab('cf')"           id="tab-cf">Cloud Foundry</div>
+  <div class="tab" onclick="switchTab('security')"     id="tab-security">Security</div>
+  <div class="tab" onclick="switchTab('destinations')" id="tab-destinations">Destinations</div>
+  <div class="tab" onclick="switchTab('create')"       id="tab-create">+ Create</div>
+</div>
+
+<main class="p-6 max-w-7xl mx-auto space-y-5">
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="kpi-row">
+    <div class="sap-card p-4">
+      <div class="text-xs text-gray-400 uppercase tracking-wide">Service Instances</div>
+      <div class="text-3xl font-bold text-blue-600 mt-1" id="kpi-instances">–</div>
+    </div>
+    <div class="sap-card p-4">
+      <div class="text-xs text-gray-400 uppercase tracking-wide">Bindings</div>
+      <div class="text-3xl font-bold text-blue-600 mt-1" id="kpi-bindings">–</div>
+    </div>
+    <div class="sap-card p-4">
+      <div class="text-xs text-gray-400 uppercase tracking-wide">CF Apps</div>
+      <div class="text-3xl font-bold text-blue-600 mt-1" id="kpi-apps">–</div>
+    </div>
+    <div class="sap-card p-4">
+      <div class="text-xs text-gray-400 uppercase tracking-wide">Entitlements</div>
+      <div class="text-3xl font-bold text-blue-600 mt-1" id="kpi-ent">–</div>
+    </div>
+  </div>
+
+  <!-- ── SERVICES TAB ── -->
+  <div id="pane-services">
+    <div class="sap-card overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-700">Service Instances</h2>
+        <span id="spin-instances" class="spinner hidden"></span>
+      </div>
+      <table id="tbl-instances"><thead><tr>
+        <th>Name</th><th>Plan ID</th><th>Usable</th><th>Ready</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+    <div class="sap-card overflow-hidden mt-4">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-700">Service Bindings</h2>
+      </div>
+      <table id="tbl-bindings"><thead><tr>
+        <th>Binding Name</th><th>Instance ID</th><th>Ready</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- ── CF TAB ── -->
+  <div id="pane-cf" class="hidden">
+    <div class="sap-card p-4 mb-4">
+      <pre class="text-xs text-gray-500 whitespace-pre-wrap" id="cf-target-info">Loading...</pre>
+    </div>
+
+    <div class="sap-card overflow-hidden mb-4">
+      <div class="px-4 py-3 border-b font-semibold text-gray-700">CF Applications</div>
+      <div class="p-4 text-sm text-gray-500" id="cf-apps-output">Loading...</div>
+    </div>
+
+    <div class="sap-card overflow-hidden">
+      <div class="px-4 py-3 border-b font-semibold text-gray-700">CF Service Instances</div>
+      <div class="p-4 text-sm text-gray-500 whitespace-pre-wrap mono" id="cf-services-output">Loading...</div>
+    </div>
+  </div>
+
+  <!-- ── SECURITY TAB ── -->
+  <div id="pane-security" class="hidden">
+    <div class="sap-card overflow-hidden">
+      <div class="px-4 py-3 border-b font-semibold text-gray-700">Role Collections</div>
+      <table id="tbl-roles"><thead><tr>
+        <th>Name</th><th>Description</th><th>Read-Only</th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- ── DESTINATIONS TAB ── -->
+  <div id="pane-destinations" class="hidden">
+    <div class="sap-card overflow-hidden">
+      <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-700">Destinations</h2>
+        <button class="sap-btn text-xs" onclick="showCreateDest()">+ HTTP Destination</button>
+      </div>
+      <table id="tbl-dest"><thead><tr>
+        <th>Name</th><th>Type</th><th>URL</th><th>Authentication</th><th></th>
+      </tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- Create destination form (hidden by default) -->
+    <div id="form-dest" class="sap-card p-5 mt-4 hidden">
+      <h3 class="font-semibold text-gray-700 mb-4">New HTTP Destination</h3>
+      <div class="grid grid-cols-2 gap-4">
+        <div><label>Name</label><input id="d-name" placeholder="my-backend"></div>
+        <div><label>URL</label><input id="d-url" placeholder="https://api.example.com"></div>
+        <div><label>Authentication</label>
+          <select id="d-auth">
+            <option>NoAuthentication</option>
+            <option>BasicAuthentication</option>
+            <option>OAuth2ClientCredentials</option>
+            <option>PrincipalPropagation</option>
+          </select>
+        </div>
+        <div><label>Proxy Type</label>
+          <select id="d-proxy"><option>Internet</option><option>OnPremise</option></select>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-4">
+        <button class="sap-btn" onclick="createDestination()">Create</button>
+        <button class="sap-btn-ghost" onclick="hideDest()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CREATE TAB ── -->
+  <div id="pane-create" class="hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+      <!-- Scaffold App -->
+      <div class="sap-card p-5">
+        <h3 class="font-semibold text-gray-700 mb-4">🚀 Scaffold & Deploy CF App</h3>
+        <div class="space-y-3">
+          <div><label>App Name</label><input id="sc-name" placeholder="my-app"></div>
+          <div><label>Runtime</label>
+            <select id="sc-runtime">
+              <option value="python">Python (Flask + gunicorn)</option>
+              <option value="nodejs">Node.js (Express)</option>
+              <option value="static">Static HTML5</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label>Memory</label><input id="sc-memory" value="256M"></div>
+            <div><label>Instances</label><input id="sc-instances" type="number" value="1"></div>
+          </div>
+          <div><label>Description</label><input id="sc-desc" placeholder="Optional"></div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" id="sc-push" checked class="w-4 h-4">
+            <label class="mb-0">Push to CF after scaffold</label>
+          </div>
+        </div>
+        <button class="sap-btn mt-4 w-full" onclick="scaffoldApp()">Deploy App</button>
+        <div id="sc-result" class="mt-3 text-sm hidden"></div>
+      </div>
+
+      <!-- Create Service Instance -->
+      <div class="sap-card p-5">
+        <h3 class="font-semibold text-gray-700 mb-4">⚙️ Create Service Instance</h3>
+        <div class="space-y-3">
+          <div><label>Instance Name</label><input id="si-name" placeholder="my-xsuaa"></div>
+          <div><label>Service Offering</label>
+            <select id="si-offering" onchange="loadPlans(this.value)">
+              <option value="">Select offering…</option>
+            </select>
+          </div>
+          <div><label>Plan</label>
+            <select id="si-plan"><option value="">Select plan…</option></select>
+          </div>
+        </div>
+        <button class="sap-btn mt-4 w-full" onclick="createInstance()">Create Instance</button>
+        <div id="si-result" class="mt-3 text-sm hidden"></div>
+      </div>
+
+    </div>
+  </div>
+
+</main>
+
+<!-- Toast -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+const API = '';   // same origin
+
+// ── State ──────────────────────────────────────────────────────────────────
+let _snapshot = {};
+let _offerings = [];
+let _currentTab = 'services';
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+async function refreshAll() {
+  await Promise.all([loadSnapshot(), loadEntitlementCount(), loadOfferings()]);
+}
+
+async function loadSnapshot() {
+  try {
+    const r = await fetch(`${API}/api/snapshot`);
+    _snapshot = await r.json();
+    renderShellBar();
+    renderKPIs();
+    renderInstances();
+    renderBindings();
+    renderCF();
+    renderSecurity();
+    renderDestinations();
+  } catch(e) { toast('Failed to load snapshot: ' + e.message, 'err'); }
+}
+
+async function loadEntitlementCount() {
+  try {
+    const r = await fetch(`${API}/api/entitlements?subaccount_guid=`);
+    const d = await r.json();
+    document.getElementById('kpi-ent').textContent = Array.isArray(d) ? d.length : '?';
+  } catch {}
+}
+
+async function loadOfferings() {
+  try {
+    const r = await fetch(`${API}/api/services/offerings`);
+    _offerings = await r.json();
+    const sel = document.getElementById('si-offering');
+    sel.innerHTML = '<option value="">Select offering…</option>' +
+      _offerings.map(o => `<option value="${o.name}">${o.name}</option>`).join('');
+  } catch {}
+}
+
+async function loadPlans(offering) {
+  const sel = document.getElementById('si-plan');
+  sel.innerHTML = '<option>Loading…</option>';
+  const r = await fetch(`${API}/api/services/plans?offering=${offering}`);
+  const plans = await r.json();
+  sel.innerHTML = plans.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+}
+
+// ── Render helpers ──────────────────────────────────────────────────────────
+function renderShellBar() {
+  const ga = _snapshot.global_account || {};
+  document.getElementById('ga-label').textContent =
+    `Global Account: ${ga.displayName || ga.subdomain || '–'}`;
+  const sas = _snapshot.subaccounts || [];
+  const sa = sas[0] || {};
+  document.getElementById('subaccount-label').textContent =
+    `Subaccount: ${sa.displayName || sa.subdomain || '–'}`;
+}
+
+function renderKPIs() {
+  const inst = _snapshot.service_instances;
+  document.getElementById('kpi-instances').textContent =
+    Array.isArray(inst) ? inst.length : '?';
+  const bind = _snapshot.service_bindings;
+  document.getElementById('kpi-bindings').textContent =
+    Array.isArray(bind) ? bind.length : '?';
+  // CF apps count
+  const cfOut = (_snapshot.cf_apps || '').toString();
+  const appMatches = cfOut.match(/\n/g);
+  document.getElementById('kpi-apps').textContent =
+    appMatches ? Math.max(0, appMatches.length - 4) : '0';
+}
+
+function renderInstances() {
+  const rows = Array.isArray(_snapshot.service_instances)
+    ? _snapshot.service_instances : [];
+  const tbody = document.querySelector('#tbl-instances tbody');
+  tbody.innerHTML = rows.length ? rows.map(i => `
+    <tr>
+      <td class="font-medium">${i.name || '–'}</td>
+      <td class="mono">${(i.service_plan_id||'–').slice(0,24)}…</td>
+      <td>${badge(i.usable, i.usable ? 'ok':'err')}</td>
+      <td>${badge(i.ready,  i.ready  ? 'ok':'warn')}</td>
+    </tr>`).join('') :
+    '<tr><td colspan="4" class="text-gray-400 text-center py-6">No service instances</td></tr>';
+}
+
+function renderBindings() {
+  const rows = Array.isArray(_snapshot.service_bindings)
+    ? _snapshot.service_bindings : [];
+  const tbody = document.querySelector('#tbl-bindings tbody');
+  tbody.innerHTML = rows.length ? rows.map(b => `
+    <tr>
+      <td class="font-medium">${b.name || '–'}</td>
+      <td class="mono">${(b.service_instance_id||'–').slice(0,24)}…</td>
+      <td>${badge(b.ready, b.ready ? 'ok':'warn')}</td>
+    </tr>`).join('') :
+    '<tr><td colspan="3" class="text-gray-400 text-center py-6">No bindings</td></tr>';
+}
+
+function renderCF() {
+  document.getElementById('cf-target-info').textContent =
+    _snapshot.cf_target || 'CF info unavailable';
+  document.getElementById('cf-services-output').textContent =
+    _snapshot.cf_services || 'No CF services';
+  // Parse apps from text output
+  const apps = (_snapshot.cf_apps || '').toString();
+  document.getElementById('cf-apps-output').innerHTML =
+    `<pre class="mono text-xs whitespace-pre-wrap">${apps || 'No apps'}</pre>`;
+}
+
+function renderSecurity() {
+  const rows = Array.isArray(_snapshot.role_collections)
+    ? _snapshot.role_collections : [];
+  const tbody = document.querySelector('#tbl-roles tbody');
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="font-medium">${r.name||'–'}</td>
+      <td class="text-gray-500 text-sm">${(r.description||'').slice(0,80)}</td>
+      <td>${r.isReadOnly
+            ? '<span class="badge-blue px-2 py-0.5 rounded text-xs">Read-only</span>'
+            : '<span class="badge-ok px-2 py-0.5 rounded text-xs">Editable</span>'}</td>
+    </tr>`).join('') ||
+    '<tr><td colspan="3" class="text-gray-400 text-center py-6">No role collections</td></tr>';
+}
+
+async function renderDestinations() {
+  try {
+    const r = await fetch(`${API}/api/destinations`);
+    if (!r.ok) { document.querySelector('#tbl-dest tbody').innerHTML =
+      '<tr><td colspan="5" class="text-gray-400 text-center py-6">No destination binding configured</td></tr>'; return; }
+    const dests = await r.json();
+    const tbody = document.querySelector('#tbl-dest tbody');
+    tbody.innerHTML = dests.map(d => `
+      <tr>
+        <td class="font-medium">${d.Name||'–'}</td>
+        <td>${badge(d.Type, 'blue')}</td>
+        <td class="mono text-xs">${(d.URL||'–').slice(0,50)}</td>
+        <td class="text-gray-500 text-sm">${d.Authentication||'–'}</td>
+        <td><button class="sap-btn-ghost text-xs sap-btn-danger"
+            onclick="deleteDest('${d.Name}')">Delete</button></td>
+      </tr>`).join('') ||
+      '<tr><td colspan="5" class="text-gray-400 text-center py-6">No destinations</td></tr>';
+  } catch { }
+}
+
+// ── Actions ─────────────────────────────────────────────────────────────────
+async function scaffoldApp() {
+  const name     = document.getElementById('sc-name').value.trim();
+  const runtime  = document.getElementById('sc-runtime').value;
+  const memory   = document.getElementById('sc-memory').value;
+  const instances= parseInt(document.getElementById('sc-instances').value);
+  const desc     = document.getElementById('sc-desc').value.trim();
+  const push     = document.getElementById('sc-push').checked;
+  if (!name) { toast('App name is required', 'err'); return; }
+
+  const res = document.getElementById('sc-result');
+  res.className = 'mt-3 text-sm text-gray-400';
+  res.classList.remove('hidden');
+  res.textContent = '⏳ Deploying…';
+
+  try {
+    const r = await fetch(`${API}/api/cf/apps/scaffold`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({app_name: name, runtime, memory, instances, description: desc, push}),
+    });
+    const d = await r.json();
+    if (d.status === 'deployed') {
+      res.className = 'mt-3 text-sm text-green-700 bg-green-50 p-3 rounded';
+      res.textContent = `✓ ${name} deployed! Files: ${(d.files||[]).join(', ')}`;
+      toast(`App '${name}' deployed`, 'ok');
+      loadSnapshot();
+    } else {
+      res.className = 'mt-3 text-sm text-orange-700 bg-orange-50 p-3 rounded';
+      res.textContent = `Scaffolded but push failed: ${d.error||d.status}`;
+    }
+  } catch(e) {
+    res.className = 'mt-3 text-sm text-red-700';
+    res.textContent = 'Error: ' + e.message;
+  }
+}
+
+async function createInstance() {
+  const name     = document.getElementById('si-name').value.trim();
+  const offering = document.getElementById('si-offering').value;
+  const plan     = document.getElementById('si-plan').value;
+  if (!name || !offering || !plan) { toast('Fill all fields', 'err'); return; }
+
+  const res = document.getElementById('si-result');
+  res.textContent = '⏳ Creating…';
+  res.className = 'mt-3 text-sm text-gray-400';
+  res.classList.remove('hidden');
+
+  try {
+    const r = await fetch(`${API}/api/services/instances`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, offering_name: offering, plan_name: plan}),
+    });
+    const d = await r.json();
+    if (r.ok) {
+      res.className = 'mt-3 text-sm text-green-700 bg-green-50 p-3 rounded';
+      res.textContent = `✓ Instance '${name}' created`;
+      toast(`Instance '${name}' created`, 'ok');
+      loadSnapshot();
+    } else {
+      res.className = 'mt-3 text-sm text-red-700';
+      res.textContent = d.detail || JSON.stringify(d);
+    }
+  } catch(e) { res.textContent = e.message; }
+}
+
+async function createDestination() {
+  const name  = document.getElementById('d-name').value.trim();
+  const url   = document.getElementById('d-url').value.trim();
+  const auth  = document.getElementById('d-auth').value;
+  const proxy = document.getElementById('d-proxy').value;
+  if (!name || !url) { toast('Name and URL required', 'err'); return; }
+
+  try {
+    const r = await fetch(`${API}/api/destinations/http`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({name, url, authentication: auth, proxy_type: proxy}),
+    });
+    const d = await r.json();
+    if (r.ok) { toast(`Destination '${name}' created`, 'ok'); hideDest(); renderDestinations(); }
+    else       { toast(d.detail || 'Failed', 'err'); }
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+async function deleteDest(name) {
+  if (!confirm(`Delete destination '${name}'?`)) return;
+  try {
+    await fetch(`${API}/api/destinations/${encodeURIComponent(name)}`, {method: 'DELETE'});
+    toast(`Deleted '${name}'`, 'ok');
+    renderDestinations();
+  } catch(e) { toast(e.message, 'err'); }
+}
+
+// ── UI helpers ───────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  ['services','cf','security','destinations','create'].forEach(t => {
+    document.getElementById(`pane-${t}`).classList.toggle('hidden', t !== tab);
+    document.getElementById(`tab-${t}`).classList.toggle('tab-active', t === tab);
+    document.getElementById(`tab-${t}`).classList.toggle('tab', true);
+  });
+  _currentTab = tab;
+}
+
+function badge(val, type) {
+  const cls = {ok:'badge-ok', err:'badge-err', warn:'badge-warn', blue:'badge-blue'}[type] || 'badge-blue';
+  return `<span class="${cls} px-2 py-0.5 rounded text-xs font-medium">${val}</span>`;
+}
+
+function showCreateDest() { document.getElementById('form-dest').classList.remove('hidden'); }
+function hideDest()        { document.getElementById('form-dest').classList.add('hidden'); }
+
+function toast(msg, type='ok') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast toast-${type}`;
+  setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+refreshAll();
+</script>
+</body>
+</html>

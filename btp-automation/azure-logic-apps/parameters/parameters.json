@@ -1,0 +1,38 @@
+{
+  "subaccountManagementUrl": {
+    "type": "String",
+    "value": "https://btp-automation-dev.azurewebsites.net/api/wf-btp-automation-subaccount-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "entitlementsManagementUrl": {
+    "type": "String",
+    "value": "https://btp-automation-dev.azurewebsites.net/api/wf-btp-automation-entitlements-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "provisioningManagementUrl": {
+    "type": "String",
+    "value": "https://btp-automation-dev.azurewebsites.net/api/wf-btp-automation-provisioning-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "authorizationManagementUrl": {
+    "type": "String",
+    "value": "https://btp-automation-dev.azurewebsites.net/api/wf-btp-automation-authorization-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "destinationsManagementUrl": {
+    "type": "String",
+    "value": "https://btp-automation-dev.azurewebsites.net/api/wf-btp-automation-destinations-management/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "mainOrchestratorUrl": {
+    "type": "String",
+    "value": "https://btp-automation-dev.azurewebsites.net/api/wf-btp-automation-main-orchestrator/triggers/manual/invoke?api-version=2022-05-01"
+  },
+  "defaultAccountsServiceUrl": {
+    "type": "String",
+    "value": "https://accounts-service.cfapps.eu10.hana.ondemand.com"
+  },
+  "defaultEntitlementsServiceUrl": {
+    "type": "String",
+    "value": "https://entitlements-service.cfapps.eu10.hana.ondemand.com"
+  },
+  "defaultProvisioningServiceUrl": {
+    "type": "String",
+    "value": "https://provisioning-service.cfapps.eu10.hana.ondemand.com"
+  }
+}

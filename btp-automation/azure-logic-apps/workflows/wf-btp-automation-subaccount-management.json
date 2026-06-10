@@ -1,0 +1,395 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "defaultAccountsServiceUrl": {
+        "type": "String",
+        "defaultValue": "https://accounts-service.cfapps.eu10.hana.ondemand.com"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "required": ["cisCredentials", "action"],
+            "properties": {
+              "cisCredentials": {
+                "type": "object",
+                "properties": {
+                  "tokenUrl":     { "type": "string" },
+                  "clientId":     { "type": "string" },
+                  "clientSecret": { "type": "string" }
+                }
+              },
+              "btpConfig": {
+                "type": "object",
+                "properties": {
+                  "globalAccountGuid":  { "type": "string" },
+                  "accountsServiceUrl": { "type": "string" }
+                }
+              },
+              "action":      { "type": "string", "description": "list | get | create | update | delete" },
+              "subResource": { "type": "string", "description": "subaccount | directory (default: subaccount)" },
+              "payload": {
+                "type": "object",
+                "description": "list: {} | get/delete: {guid} | create: {displayName, subdomain, region, description?, betaEnabled?} | update: {guid, fields:{displayName?, description?}}"
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+
+      "Get_CIS_Token": {
+        "type": "Http",
+        "inputs": {
+          "method": "POST",
+          "uri": "@{triggerBody()?['cisCredentials']?['tokenUrl']}",
+          "headers": { "Content-Type": "application/x-www-form-urlencoded" },
+          "authentication": {
+            "type": "Basic",
+            "username": "@{triggerBody()?['cisCredentials']?['clientId']}",
+            "password": "@{triggerBody()?['cisCredentials']?['clientSecret']}"
+          },
+          "body": "grant_type=client_credentials"
+        },
+        "runAfter": {}
+      },
+
+      "Set_AccountsBaseUrl": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{
+            "name": "accountsBaseUrl",
+            "type": "string",
+            "value": "@{coalesce(triggerBody()?['btpConfig']?['accountsServiceUrl'], parameters('defaultAccountsServiceUrl'))}"
+          }]
+        },
+        "runAfter": { "Get_CIS_Token": ["Succeeded"] }
+      },
+
+      "Switch_By_SubResource": {
+        "type": "Switch",
+        "expression": "@coalesce(triggerBody()?['subResource'], 'subaccount')",
+        "runAfter": { "Set_AccountsBaseUrl": ["Succeeded"] },
+
+        "cases": {
+
+          "subaccount": {
+            "case": "subaccount",
+            "actions": {
+              "Switch_SA_Action": {
+                "type": "Switch",
+                "expression": "@triggerBody()?['action']",
+                "runAfter": {},
+                "cases": {
+
+                  "list": {
+                    "case": "list",
+                    "actions": {
+                      "HTTP_SA_List": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/subaccounts?globalAccountGUID=@{triggerBody()?['btpConfig']?['globalAccountGuid']}",
+                          "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                        }
+                      },
+                      "Resp_SA_List": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_SA_List')['statusCode']",
+                          "body": "@body('HTTP_SA_List')"
+                        },
+                        "runAfter": { "HTTP_SA_List": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "get": {
+                    "case": "get",
+                    "actions": {
+                      "HTTP_SA_Get": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/subaccounts/@{triggerBody()?['payload']?['guid']}",
+                          "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                        }
+                      },
+                      "Resp_SA_Get": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_SA_Get')['statusCode']",
+                          "body": "@body('HTTP_SA_Get')"
+                        },
+                        "runAfter": { "HTTP_SA_Get": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "create": {
+                    "case": "create",
+                    "actions": {
+                      "HTTP_SA_Create": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "POST",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/subaccounts",
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}",
+                            "Content-Type": "application/json"
+                          },
+                          "body": {
+                            "betaEnabled":  "@{coalesce(triggerBody()?['payload']?['betaEnabled'], false)}",
+                            "description":  "@{coalesce(triggerBody()?['payload']?['description'], '')}",
+                            "displayName":  "@{triggerBody()?['payload']?['displayName']}",
+                            "parentGUID":   "@{triggerBody()?['btpConfig']?['globalAccountGuid']}",
+                            "region":       "@{triggerBody()?['payload']?['region']}",
+                            "subdomain":    "@{triggerBody()?['payload']?['subdomain']}"
+                          }
+                        }
+                      },
+                      "Resp_SA_Create": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_SA_Create')['statusCode']",
+                          "body": "@body('HTTP_SA_Create')"
+                        },
+                        "runAfter": { "HTTP_SA_Create": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "update": {
+                    "case": "update",
+                    "actions": {
+                      "HTTP_SA_Update": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "PATCH",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/subaccounts/@{triggerBody()?['payload']?['guid']}",
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}",
+                            "Content-Type": "application/json"
+                          },
+                          "body": "@triggerBody()?['payload']?['fields']"
+                        }
+                      },
+                      "Resp_SA_Update": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_SA_Update')['statusCode']",
+                          "body": "@body('HTTP_SA_Update')"
+                        },
+                        "runAfter": { "HTTP_SA_Update": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "delete": {
+                    "case": "delete",
+                    "actions": {
+                      "HTTP_SA_Delete": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "DELETE",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/subaccounts/@{triggerBody()?['payload']?['guid']}",
+                          "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                        }
+                      },
+                      "Resp_SA_Delete": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_SA_Delete')['statusCode']",
+                          "body": { "status": "deleted", "guid": "@triggerBody()?['payload']?['guid']" }
+                        },
+                        "runAfter": { "HTTP_SA_Delete": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  }
+
+                },
+                "default": {
+                  "actions": {
+                    "Resp_SA_Invalid": {
+                      "type": "Response", "kind": "Http", "runAfter": {},
+                      "inputs": { "statusCode": 400, "body": { "error": "Invalid action for subaccount. Use: list | get | create | update | delete" } }
+                    }
+                  }
+                }
+              }
+            }
+          },
+
+          "directory": {
+            "case": "directory",
+            "actions": {
+              "Switch_Dir_Action": {
+                "type": "Switch",
+                "expression": "@triggerBody()?['action']",
+                "runAfter": {},
+                "cases": {
+
+                  "list": {
+                    "case": "list",
+                    "actions": {
+                      "HTTP_Dir_List": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/directories?parentGUID=@{triggerBody()?['btpConfig']?['globalAccountGuid']}",
+                          "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                        }
+                      },
+                      "Resp_Dir_List": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Dir_List')['statusCode']",
+                          "body": "@body('HTTP_Dir_List')"
+                        },
+                        "runAfter": { "HTTP_Dir_List": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "get": {
+                    "case": "get",
+                    "actions": {
+                      "HTTP_Dir_Get": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "GET",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/directories/@{triggerBody()?['payload']?['guid']}",
+                          "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                        }
+                      },
+                      "Resp_Dir_Get": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Dir_Get')['statusCode']",
+                          "body": "@body('HTTP_Dir_Get')"
+                        },
+                        "runAfter": { "HTTP_Dir_Get": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "create": {
+                    "case": "create",
+                    "actions": {
+                      "HTTP_Dir_Create": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "POST",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/directories",
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}",
+                            "Content-Type": "application/json"
+                          },
+                          "body": {
+                            "displayName":  "@{triggerBody()?['payload']?['displayName']}",
+                            "description":  "@{coalesce(triggerBody()?['payload']?['description'], '')}",
+                            "parentGUID":   "@{coalesce(triggerBody()?['payload']?['parentGuid'], triggerBody()?['btpConfig']?['globalAccountGuid'])}"
+                          }
+                        }
+                      },
+                      "Resp_Dir_Create": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Dir_Create')['statusCode']",
+                          "body": "@body('HTTP_Dir_Create')"
+                        },
+                        "runAfter": { "HTTP_Dir_Create": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "update": {
+                    "case": "update",
+                    "actions": {
+                      "HTTP_Dir_Update": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "PATCH",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/directories/@{triggerBody()?['payload']?['guid']}",
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}",
+                            "Content-Type": "application/json"
+                          },
+                          "body": "@triggerBody()?['payload']?['fields']"
+                        }
+                      },
+                      "Resp_Dir_Update": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Dir_Update')['statusCode']",
+                          "body": "@body('HTTP_Dir_Update')"
+                        },
+                        "runAfter": { "HTTP_Dir_Update": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  },
+
+                  "delete": {
+                    "case": "delete",
+                    "actions": {
+                      "HTTP_Dir_Delete": {
+                        "type": "Http", "runAfter": {},
+                        "inputs": {
+                          "method": "DELETE",
+                          "uri": "@{variables('accountsBaseUrl')}/accounts/v1/directories/@{triggerBody()?['payload']?['guid']}",
+                          "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                        }
+                      },
+                      "Resp_Dir_Delete": {
+                        "type": "Response", "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Dir_Delete')['statusCode']",
+                          "body": { "status": "deleted", "guid": "@triggerBody()?['payload']?['guid']" }
+                        },
+                        "runAfter": { "HTTP_Dir_Delete": ["Succeeded", "Failed"] }
+                      }
+                    }
+                  }
+
+                },
+                "default": {
+                  "actions": {
+                    "Resp_Dir_Invalid": {
+                      "type": "Response", "kind": "Http", "runAfter": {},
+                      "inputs": { "statusCode": 400, "body": { "error": "Invalid action for directory. Use: list | get | create | update | delete" } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+        },
+        "default": {
+          "actions": {
+            "Resp_Invalid_SubResource": {
+              "type": "Response", "kind": "Http", "runAfter": {},
+              "inputs": {
+                "statusCode": 400,
+                "body": {
+                  "error": "Invalid subResource. Use: subaccount | directory",
+                  "received": "@triggerBody()?['subResource']"
+                }
+              }
+            }
+          }
+        }
+      }
+
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

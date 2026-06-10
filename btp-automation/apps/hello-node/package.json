@@ -1,0 +1,15 @@
+{
+  "name": "hello-node",
+  "version": "1.0.0",
+  "description": "SAP BTP CF app: hello-node",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

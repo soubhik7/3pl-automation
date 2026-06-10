@@ -1,0 +1,289 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "required": ["destinationCredentials", "action"],
+            "properties": {
+              "destinationCredentials": {
+                "type": "object",
+                "description": "Credentials from a BTP Destination service binding. baseUrl = binding.credentials.uri",
+                "properties": {
+                  "tokenUrl":     { "type": "string", "description": "OAuth token endpoint from binding credentials" },
+                  "clientId":     { "type": "string" },
+                  "clientSecret": { "type": "string" },
+                  "baseUrl":      { "type": "string", "description": "Destination service URI from binding credentials" }
+                }
+              },
+              "action": {
+                "type": "string",
+                "description": "list | get | create | update | delete"
+              },
+              "payload": {
+                "type": "object",
+                "description": "list: {} | get/delete: {name} | create/update: {Name, Type, URL, Authentication, ProxyType?, ...extra} — see BTP Destination Service API for full field reference"
+              }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+
+      "Get_Destination_Token": {
+        "type": "Http",
+        "inputs": {
+          "method": "POST",
+          "uri": "@{triggerBody()?['destinationCredentials']?['tokenUrl']}",
+          "headers": { "Content-Type": "application/x-www-form-urlencoded" },
+          "authentication": {
+            "type": "Basic",
+            "username": "@{triggerBody()?['destinationCredentials']?['clientId']}",
+            "password": "@{triggerBody()?['destinationCredentials']?['clientSecret']}"
+          },
+          "body": "grant_type=client_credentials"
+        },
+        "runAfter": {}
+      },
+
+      "Set_DestinationBaseUrl": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{
+            "name": "destinationBaseUrl",
+            "type": "string",
+            "value": "@{triggerBody()?['destinationCredentials']?['baseUrl']}"
+          }]
+        },
+        "runAfter": { "Get_Destination_Token": ["Succeeded"] }
+      },
+
+      "Switch_By_Action": {
+        "type": "Switch",
+        "expression": "@triggerBody()?['action']",
+        "runAfter": { "Set_DestinationBaseUrl": ["Succeeded"] },
+
+        "cases": {
+
+          "Case_List": {
+            "case": "list",
+            "actions": {
+              "HTTP_Dest_List": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "GET",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations",
+                  "headers": { "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}" }
+                }
+              },
+              "Response_List": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_List')['statusCode']",
+                  "body": "@body('HTTP_Dest_List')"
+                },
+                "runAfter": { "HTTP_Dest_List": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Get": {
+            "case": "get",
+            "actions": {
+              "HTTP_Dest_Get": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "GET",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations/@{triggerBody()?['payload']?['name']}",
+                  "headers": { "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}" }
+                }
+              },
+              "Response_Get": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_Get')['statusCode']",
+                  "body": "@body('HTTP_Dest_Get')"
+                },
+                "runAfter": { "HTTP_Dest_Get": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Create": {
+            "case": "create",
+            "actions": {
+              "HTTP_Dest_Create": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations",
+                  "headers": {
+                    "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}",
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()?['payload']"
+                }
+              },
+              "Response_Create": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_Create')['statusCode']",
+                  "body": {
+                    "status": "created",
+                    "name": "@triggerBody()?['payload']?['Name']"
+                  }
+                },
+                "runAfter": { "HTTP_Dest_Create": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Update": {
+            "case": "update",
+            "actions": {
+              "HTTP_Dest_Update": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "PUT",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations",
+                  "headers": {
+                    "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}",
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()?['payload']"
+                }
+              },
+              "Response_Update": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_Update')['statusCode']",
+                  "body": {
+                    "status": "updated",
+                    "name": "@triggerBody()?['payload']?['Name']"
+                  }
+                },
+                "runAfter": { "HTTP_Dest_Update": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_Delete": {
+            "case": "delete",
+            "actions": {
+              "HTTP_Dest_Delete": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "DELETE",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations/@{triggerBody()?['payload']?['name']}",
+                  "headers": { "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}" }
+                }
+              },
+              "Response_Delete": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_Delete')['statusCode']",
+                  "body": { "status": "deleted", "name": "@triggerBody()?['payload']?['name']" }
+                },
+                "runAfter": { "HTTP_Dest_Delete": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_CreateHTTP": {
+            "case": "createHTTP",
+            "actions": {
+              "HTTP_Dest_CreateHTTP": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations",
+                  "headers": {
+                    "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}",
+                    "Content-Type": "application/json"
+                  },
+                  "body": {
+                    "Name":           "@{triggerBody()?['payload']?['name']}",
+                    "Type":           "HTTP",
+                    "URL":            "@{triggerBody()?['payload']?['url']}",
+                    "Authentication": "@{coalesce(triggerBody()?['payload']?['authentication'], 'NoAuthentication')}",
+                    "ProxyType":      "@{coalesce(triggerBody()?['payload']?['proxyType'], 'Internet')}",
+                    "Description":    "@{coalesce(triggerBody()?['payload']?['description'], '')}"
+                  }
+                }
+              },
+              "Response_CreateHTTP": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_CreateHTTP')['statusCode']",
+                  "body": { "status": "created", "name": "@triggerBody()?['payload']?['name']", "type": "HTTP" }
+                },
+                "runAfter": { "HTTP_Dest_CreateHTTP": ["Succeeded", "Failed"] }
+              }
+            }
+          },
+
+          "Case_CreateOAuth": {
+            "case": "createOAuth",
+            "actions": {
+              "HTTP_Dest_CreateOAuth": {
+                "type": "Http", "runAfter": {},
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@{variables('destinationBaseUrl')}/destination-configuration/v1/subaccountDestinations",
+                  "headers": {
+                    "Authorization": "Bearer @{body('Get_Destination_Token')?['access_token']}",
+                    "Content-Type": "application/json"
+                  },
+                  "body": {
+                    "Name":              "@{triggerBody()?['payload']?['name']}",
+                    "Type":              "HTTP",
+                    "URL":               "@{triggerBody()?['payload']?['url']}",
+                    "Authentication":    "OAuth2ClientCredentials",
+                    "ProxyType":         "@{coalesce(triggerBody()?['payload']?['proxyType'], 'Internet')}",
+                    "clientId":          "@{triggerBody()?['payload']?['clientId']}",
+                    "clientSecret":      "@{triggerBody()?['payload']?['clientSecret']}",
+                    "tokenServiceURL":   "@{triggerBody()?['payload']?['tokenServiceUrl']}",
+                    "Description":       "@{coalesce(triggerBody()?['payload']?['description'], '')}"
+                  }
+                }
+              },
+              "Response_CreateOAuth": {
+                "type": "Response", "kind": "Http",
+                "inputs": {
+                  "statusCode": "@outputs('HTTP_Dest_CreateOAuth')['statusCode']",
+                  "body": { "status": "created", "name": "@triggerBody()?['payload']?['name']", "type": "OAuth2ClientCredentials" }
+                },
+                "runAfter": { "HTTP_Dest_CreateOAuth": ["Succeeded", "Failed"] }
+              }
+            }
+          }
+
+        },
+        "default": {
+          "actions": {
+            "Response_Invalid_Action": {
+              "type": "Response", "kind": "Http", "runAfter": {},
+              "inputs": {
+                "statusCode": 400,
+                "body": {
+                  "error": "Invalid action. Use: list | get | create | update | delete | createHTTP | createOAuth",
+                  "received": "@triggerBody()?['action']"
+                }
+              }
+            }
+          }
+        }
+      }
+
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

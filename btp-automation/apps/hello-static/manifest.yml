@@ -1,0 +1,12 @@
+applications:
+- name: hello-static
+  memory: 256M
+  instances: 1
+  buildpacks:
+  - staticfile_buildpack
+  metadata:
+    annotations:
+      description: "SAP BTP landing page"
+  env:
+    APP_NAME: hello-static
+    APP_ENV: production

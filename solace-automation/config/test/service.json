@@ -1,0 +1,89 @@
+{
+  "_comment": "TEST environment — clone from dev-export or fill manually",
+  "_usage": "python3 solace.py provision run --config config/test/service.json",
+
+  "sourceCountry": "TEST",
+  "environment":   "test",
+
+  "service": {
+    "serviceId":     "",
+    "name":          "automation-test",
+    "datacenterId":  "",
+    "serviceTypeId": "developer",
+    "serviceClassId":"developer"
+  },
+
+  "eventPortal": {
+    "domainName":        "AutomationTest",
+    "domainDescription": "Automation domain — TEST environment",
+
+    "schemas": [
+      {
+        "name":    "OrderPayloadSchema",
+        "type":    "jsonSchema",
+        "version": "1.0.0",
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["orderId", "eventType", "timestamp"],
+          "properties": {
+            "orderId":   { "type": "string" },
+            "eventType": { "type": "string", "enum": ["CREATED","UPDATED","SHIPPED"] },
+            "timestamp": { "type": "string", "format": "date-time" }
+          }
+        }
+      }
+    ],
+
+    "events": [
+      {
+        "name":      "OrderCreated",
+        "version":   "1.0.0",
+        "topic":     "acme/test/orders/{orderId}/created",
+        "schemaRef": "OrderPayloadSchema"
+      }
+    ],
+
+    "applications": [
+      {
+        "name": "SourceSystem-TEST", "type": "standard", "version": "1.0.0",
+        "produces": ["OrderCreated"], "consumes": []
+      },
+      {
+        "name": "TargetSystem-TEST", "type": "standard", "version": "1.0.0",
+        "produces": [], "consumes": ["OrderCreated"]
+      }
+    ]
+  },
+
+  "clusterManagement": {
+    "vpnName": "",
+
+    "clientProfiles": [ { "name": "acme-test-profile" } ],
+
+    "aclProfiles": [
+      {
+        "name": "acme-test-acl",
+        "publishDefault": "disallow", "subscribeDefault": "disallow",
+        "publishExceptions":  ["acme/test/>"],
+        "subscribeExceptions":["acme/test/>"]
+      }
+    ],
+
+    "clientUsernames": [
+      {
+        "name": "acme-test-user", "password": "",
+        "clientProfile": "acme-test-profile", "aclProfile": "acme-test-acl", "enabled": true
+      }
+    ],
+
+    "queues": [
+      {
+        "name": "acme-test-orders-q", "accessType": "non-exclusive",
+        "subscriptions": ["acme/test/orders/>", "acme/test/orders/*/created"]
+      }
+    ],
+
+    "restDeliveryPoints": []
+  }
+}
