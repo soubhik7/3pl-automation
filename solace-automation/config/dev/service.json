@@ -6,9 +6,9 @@
   "environment":   "dev",
 
   "service": {
-    "serviceId":     "",
-    "name":          "automation-dev",
-    "datacenterId":  "",
+    "serviceId":     "ruj2y805m8u",
+    "name":          "3pl-automation-dev",
+    "datacenterId":  "aks-australiaeast",
     "serviceTypeId": "developer",
     "serviceClassId":"developer"
   },
@@ -57,7 +57,7 @@
   },
 
   "clusterManagement": {
-    "vpnName": "",
+    "vpnName": "msgvpn-ruj2y805m8u",
 
     "clientProfiles": [ { "name": "acme-dev-profile" } ],
 

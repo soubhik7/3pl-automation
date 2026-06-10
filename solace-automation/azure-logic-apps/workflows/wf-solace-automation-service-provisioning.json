@@ -20,13 +20,25 @@
           "schema": {
             "type": "object",
             "properties": {
-              "serviceName": {"type": "string"},
-              "datacenterId": {"type": "string"},
-              "serviceTypeId": {"type": "string"},
-              "serviceClassId": {"type": "string"},
-              "apiToken": {"type": "string"}
+              "serviceName": {
+                "type": "string"
+              },
+              "datacenterId": {
+                "type": "string"
+              },
+              "serviceTypeId": {
+                "type": "string"
+              },
+              "serviceClassId": {
+                "type": "string"
+              }
             },
-            "required": ["serviceName", "datacenterId", "serviceTypeId", "serviceClassId", "apiToken"]
+            "required": [
+              "serviceName",
+              "datacenterId",
+              "serviceTypeId",
+              "serviceClassId"
+            ]
           }
         }
       }
@@ -35,38 +47,48 @@
       "Initialize_serviceId": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "serviceId",
-            "type": "string",
-            "value": ""
-          }]
+          "variables": [
+            {
+              "name": "serviceId",
+              "type": "string",
+              "value": ""
+            }
+          ]
         },
         "runAfter": {}
       },
       "Initialize_creationState": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "creationState",
-            "type": "string",
-            "value": "pending"
-          }]
+          "variables": [
+            {
+              "name": "creationState",
+              "type": "string",
+              "value": "pending"
+            }
+          ]
         },
         "runAfter": {
-          "Initialize_serviceId": ["Succeeded"]
+          "Initialize_serviceId": [
+            "Succeeded"
+          ]
         }
       },
       "Initialize_pollCount": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "pollCount",
-            "type": "integer",
-            "value": 0
-          }]
+          "variables": [
+            {
+              "name": "pollCount",
+              "type": "integer",
+              "value": 0
+            }
+          ]
         },
         "runAfter": {
-          "Initialize_creationState": ["Succeeded"]
+          "Initialize_creationState": [
+            "Succeeded"
+          ]
         }
       },
       "Create_Service": {
@@ -75,7 +97,7 @@
           "method": "POST",
           "uri": "https://api.solace.cloud/api/v0/services",
           "headers": {
-            "Authorization": "Bearer @{triggerBody()?['apiToken']}",
+            "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
             "Content-Type": "application/json"
           },
           "body": {
@@ -88,7 +110,9 @@
           }
         },
         "runAfter": {
-          "Initialize_pollCount": ["Succeeded"]
+          "Initialize_pollCount": [
+            "Succeeded"
+          ]
         }
       },
       "Parse_Create_Response": {
@@ -101,15 +125,21 @@
               "data": {
                 "type": "object",
                 "properties": {
-                  "serviceId": {"type": "string"},
-                  "creationState": {"type": "string"}
+                  "serviceId": {
+                    "type": "string"
+                  },
+                  "creationState": {
+                    "type": "string"
+                  }
                 }
               }
             }
           }
         },
         "runAfter": {
-          "Create_Service": ["Succeeded"]
+          "Create_Service": [
+            "Succeeded"
+          ]
         }
       },
       "Set_ServiceId": {
@@ -119,7 +149,9 @@
           "value": "@body('Parse_Create_Response')?['data']?['serviceId']"
         },
         "runAfter": {
-          "Parse_Create_Response": ["Succeeded"]
+          "Parse_Create_Response": [
+            "Succeeded"
+          ]
         }
       },
       "Wait_For_Service_Ready": {
@@ -146,7 +178,9 @@
               }
             },
             "runAfter": {
-              "Increment_PollCount": ["Succeeded"]
+              "Increment_PollCount": [
+                "Succeeded"
+              ]
             }
           },
           "Get_Service_Status": {
@@ -155,11 +189,13 @@
               "method": "GET",
               "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
               "headers": {
-                "Authorization": "Bearer @{triggerBody()?['apiToken']}"
+                "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
               }
             },
             "runAfter": {
-              "Delay_15_Seconds": ["Succeeded"]
+              "Delay_15_Seconds": [
+                "Succeeded"
+              ]
             }
           },
           "Parse_Status_Response": {
@@ -172,14 +208,18 @@
                   "data": {
                     "type": "object",
                     "properties": {
-                      "creationState": {"type": "string"}
+                      "creationState": {
+                        "type": "string"
+                      }
                     }
                   }
                 }
               }
             },
             "runAfter": {
-              "Get_Service_Status": ["Succeeded"]
+              "Get_Service_Status": [
+                "Succeeded"
+              ]
             }
           },
           "Update_CreationState": {
@@ -189,23 +229,29 @@
               "value": "@body('Parse_Status_Response')?['data']?['creationState']"
             },
             "runAfter": {
-              "Parse_Status_Response": ["Succeeded"]
+              "Parse_Status_Response": [
+                "Succeeded"
+              ]
             }
           }
         },
         "runAfter": {
-          "Set_ServiceId": ["Succeeded"]
+          "Set_ServiceId": [
+            "Succeeded"
+          ]
         }
       },
       "Check_Service_Ready": {
         "type": "If",
         "expression": {
-          "and": [{
-            "equals": [
-              "@variables('creationState')",
-              "completed"
-            ]
-          }]
+          "and": [
+            {
+              "equals": [
+                "@variables('creationState')",
+                "completed"
+              ]
+            }
+          ]
         },
         "actions": {
           "Get_Final_Service_Details": {
@@ -214,7 +260,7 @@
               "method": "GET",
               "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
               "headers": {
-                "Authorization": "Bearer @{triggerBody()?['apiToken']}"
+                "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
               }
             }
           },
@@ -228,17 +274,27 @@
                   "data": {
                     "type": "object",
                     "properties": {
-                      "serviceId": {"type": "string"},
-                      "msgVpnName": {"type": "string"},
-                      "serviceConnectionEndpoints": {"type": "array"},
-                      "managementProtocols": {"type": "array"}
+                      "serviceId": {
+                        "type": "string"
+                      },
+                      "msgVpnName": {
+                        "type": "string"
+                      },
+                      "serviceConnectionEndpoints": {
+                        "type": "array"
+                      },
+                      "managementProtocols": {
+                        "type": "array"
+                      }
                     }
                   }
                 }
               }
             },
             "runAfter": {
-              "Get_Final_Service_Details": ["Succeeded"]
+              "Get_Final_Service_Details": [
+                "Succeeded"
+              ]
             }
           },
           "Compose_SEMP_Credentials": {
@@ -253,7 +309,9 @@
               "sempPassword": "@body('Parse_Final_Service')?['data']?['managementProtocols']?[0]?['password']"
             },
             "runAfter": {
-              "Parse_Final_Service": ["Succeeded"]
+              "Parse_Final_Service": [
+                "Succeeded"
+              ]
             }
           },
           "Response_Success": {
@@ -264,7 +322,9 @@
               "body": "@outputs('Compose_SEMP_Credentials')"
             },
             "runAfter": {
-              "Compose_SEMP_Credentials": ["Succeeded"]
+              "Compose_SEMP_Credentials": [
+                "Succeeded"
+              ]
             }
           }
         },
@@ -286,7 +346,9 @@
           }
         },
         "runAfter": {
-          "Wait_For_Service_Ready": ["Succeeded"]
+          "Wait_For_Service_Ready": [
+            "Succeeded"
+          ]
         }
       }
     },
