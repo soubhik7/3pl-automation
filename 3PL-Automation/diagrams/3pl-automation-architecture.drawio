@@ -20,10 +20,10 @@
                     <mxGeometry x="250" y="135" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-sub-la" value="&lt;b&gt;Submission&#xa;Logic App&lt;/b&gt;&#xa;Validates &amp; stores config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="570" y="135" width="190" height="70" as="geometry"/>
+                    <mxGeometry x="610" y="135" width="190" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-blob" value="&lt;b&gt;Azure Blob Storage&lt;/b&gt;&#xa;/pending/{id}.json&#xa;/status/{id}-status.json" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="880" y="115" width="200" height="110" as="geometry"/>
+                    <mxGeometry x="1130" y="100" width="200" height="110" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="h-mgr" target="h-ui" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -32,7 +32,12 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a3" value="Write blob +&#xa;status: pending" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-sub-la" target="h-blob" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="945" y="160"/>
+                            <mxPoint x="945" y="155"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="h-sub-ret" value="Returns submissionId" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;exitX=0.5;exitY=0;entryX=0.5;entryY=0;exitDx=0;exitDy=0;" parent="1" source="h-sub-la" target="h-ui" edge="1">
                     <mxGeometry relative="1" as="geometry">
@@ -52,7 +57,7 @@
                     <mxGeometry x="250" y="320" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-app-la" value="&lt;b&gt;Approve Logic App&lt;/b&gt;&#xa;Reads config · Updates status&#xa;Returns 200 immediately →&#xa;fires orchestrator async" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="570" y="310" width="190" height="90" as="geometry"/>
+                    <mxGeometry x="710" y="305" width="190" height="90" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a4" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="h-arch" target="h-arch-ui" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -61,7 +66,12 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a-read" value="Read config blob" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#d6b656;" parent="1" source="h-blob" target="h-app-la" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1230" y="230"/>
+                            <mxPoint x="665" y="230"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="h-a-approved" value="status: approved" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#2f75b5;" parent="1" source="h-app-la" target="h-blob" edge="1">
                     <mxGeometry relative="1" as="geometry">
@@ -78,7 +88,11 @@
                     <mxGeometry x="230" y="490" width="280" height="60" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a6" value="async POST&#xa;(fire-and-forget)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-app-la" target="h-orch" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="370" y="410"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="h-orch-blob" value="status: running" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#9673a6;" parent="1" source="h-orch" target="h-blob" edge="1">
                     <mxGeometry relative="1" as="geometry">
@@ -107,13 +121,13 @@
                     <mxGeometry x="1170" y="450" width="420" height="530" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-stat-la" value="&lt;b&gt;Status Logic App&lt;/b&gt;&#xa;Reads status blob&#xa;Returns current state" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1230" y="510" width="200" height="70" as="geometry"/>
+                    <mxGeometry x="1280" y="510" width="200" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-prog-ui" value="&lt;b&gt;UI: Progress View&lt;/b&gt;&#xa;Solace ✅ · MuleSoft 🚧 · BTP 🚧&#xa;Service status per pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d9f7e8;strokeColor=#2ea44f;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1230" y="640" width="240" height="70" as="geometry"/>
+                    <mxGeometry x="1270" y="660" width="240" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-mon" value="3PL&#xa;Manager" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#2ea44f;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1260" y="760" width="70" height="70" as="geometry"/>
+                    <mxGeometry x="1300" y="820" width="70" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a10" value="GET (poll 10s)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-prog-ui" target="h-stat-la" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -127,9 +141,9 @@
                 <mxCell id="h-a-final-stat" value="status: completed/failed" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#82b366;" parent="1" source="h-sol-cloud" target="h-blob" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="800" y="930"/>
-                            <mxPoint x="980" y="930"/>
-                            <mxPoint x="980" y="220"/>
+                            <mxPoint x="260" y="930"/>
+                            <mxPoint x="1030" y="930"/>
+                            <mxPoint x="1030" y="155"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
@@ -148,7 +162,7 @@
                 <mxCell id="h-leg4" value="Future Scope (TBD 🚧)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=10;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="1360" y="1082" width="170" height="38" as="geometry"/>
                 </mxCell>
-                <mxCell id="3" value="" style="group" vertex="1" connectable="0" parent="1">
+                <mxCell id="3" value="" style="group" parent="1" vertex="1" connectable="0">
                     <mxGeometry x="50" y="650" width="420" height="390" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-sol-bg" value="&lt;b&gt;SOLACE AUTOMATION&lt;/b&gt;&#xa;✅ Fully Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;" parent="3" vertex="1">

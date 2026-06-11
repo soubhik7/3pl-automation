@@ -127,6 +127,7 @@
             "actions": {
               "Invoke_Orchestrator_DEV": {
                 "type": "Http",
+                "operationOptions": "DisableAsyncPattern",
                 "runAfter": {},
                 "inputs": {
                   "method": "POST",
@@ -213,6 +214,7 @@
               "actions": {
                 "Invoke_Orchestrator_UAT": {
                   "type": "Http",
+                  "operationOptions": "DisableAsyncPattern",
                   "inputs": {
                     "method": "POST",
                     "uri": "@parameters('mainOrchestratorUrl')",
@@ -308,6 +310,7 @@
               "actions": {
                 "Invoke_Orchestrator_PROD": {
                   "type": "Http",
+                  "operationOptions": "DisableAsyncPattern",
                   "inputs": {
                     "method": "POST",
                     "uri": "@parameters('mainOrchestratorUrl')",
