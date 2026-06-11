@@ -253,6 +253,92 @@
     .cq-del { background: none; border: none; cursor: pointer; color: #c0392b; font-size: 13px; flex-shrink: 0; display: flex; align-items: center; padding: 0; opacity: .7; }
     .cq-del:hover { opacity: 1; }
     .cq-empty { font-size: 10px; color: var(--color-text-tertiary); font-style: italic; text-align: center; padding: 3px 0; }
+
+    /* ── ROLE SWITCHER ── */
+    .role-switcher { display: flex; gap: 3px; background: #f0f2f5; border-radius: 20px; padding: 3px; }
+    .role-btn { font-size: 11px; padding: 4px 12px; border-radius: 16px; border: none; cursor: pointer; font-weight: 500; color: var(--color-text-secondary); background: none; transition: all .15s; white-space: nowrap; }
+    .role-btn.active { background: #fff; color: var(--teal-m); box-shadow: 0 1px 4px rgba(0,0,0,.1); font-weight: 600; }
+    .role-btn:hover:not(.active) { color: var(--color-text-primary); }
+
+    /* ── ARCHITECT / PROGRESS VIEWS ── */
+    #architect-view, #progress-view { display: none; padding: 18px 20px; overflow-y: auto; height: 100%; }
+    #architect-view.active, #progress-view.active { display: block; }
+    .view-heading { font-size: 14px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 4px; letter-spacing: -.01em; }
+    .view-sub { font-size: 11px; color: var(--color-text-secondary); margin-bottom: 16px; }
+    .approval-card { border: 1px solid var(--color-border-secondary); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; background: #fff; transition: box-shadow .15s; }
+    .approval-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.07); }
+    .approval-card.reviewing { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(29,158,117,.08); }
+    .ac-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+    .ac-partner { font-size: 14px; font-weight: 700; color: var(--color-text-primary); }
+    .ac-id { font-family: var(--font-mono); font-size: 10px; color: var(--color-text-tertiary); margin-top: 2px; }
+    .ac-time { font-size: 11px; color: var(--color-text-secondary); text-align: right; flex-shrink: 0; }
+    .ac-stats { display: flex; gap: 10px; margin-bottom: 10px; }
+    .ac-stat { font-size: 11px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 4px; }
+    .ac-stat i { font-size: 12px; color: var(--teal); }
+    .ac-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ac-btn { font-size: 11px; padding: 5px 12px; border-radius: 7px; border: 1px solid; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 4px; transition: all .15s; }
+    .ac-btn.approve { background: linear-gradient(135deg,#27AE60,#1e9452); color: #fff; border-color: transparent; box-shadow: 0 2px 5px rgba(39,174,96,.25); }
+    .ac-btn.approve:hover { box-shadow: 0 3px 10px rgba(39,174,96,.4); transform: translateY(-1px); }
+    .ac-btn.approve:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .ac-btn.review { background: #f5f7fa; color: var(--color-text-primary); border-color: #e5e9f0; }
+    .ac-btn.review:hover { background: #edf0f5; }
+    .ac-btn.reject { background: none; color: #c0392b; border-color: #f5c6c6; }
+    .ac-btn.reject:hover { background: #fff5f5; }
+    .ac-json-preview { display: none; margin-top: 10px; background: #0d1117; color: #e6edf3; font-family: var(--font-mono); font-size: 10.5px; line-height: 1.6; padding: 12px; border-radius: 8px; overflow-x: auto; white-space: pre; max-height: 240px; overflow-y: auto; border: 1px solid #21262d; }
+    .ac-json-preview.open { display: block; }
+    .ac-status { display: none; font-size: 11px; padding: 5px 9px; border-radius: 6px; margin-top: 8px; align-items: center; gap: 6px; }
+    .ac-status.show { display: flex; }
+    .ac-status.loading { background: #EBF5FB; color: #1a5276; }
+    .ac-status.success { background: #EAFAF1; color: #1a7a3c; }
+    .ac-status.error   { background: #FDEDEC; color: #922b21; }
+    .ac-spinner { width: 11px; height: 11px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: az-spin .6s linear infinite; flex-shrink: 0; }
+    .empty-approvals { text-align: center; padding: 40px 20px; color: var(--color-text-tertiary); }
+    .empty-approvals i { font-size: 32px; display: block; margin-bottom: 8px; }
+    .empty-approvals p { font-size: 12px; }
+    .progress-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .ps-chip { font-size: 11px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--color-border-secondary); cursor: pointer; background: #fff; color: var(--color-text-secondary); transition: all .12s; white-space: nowrap; }
+    .ps-chip:hover { border-color: var(--teal); color: var(--teal-m); }
+    .ps-chip.active { background: var(--teal-l); border-color: var(--teal); color: var(--teal-m); font-weight: 600; }
+    .progress-panel { border: 1px solid var(--color-border-secondary); border-radius: 12px; padding: 16px; background: #fff; }
+    .pp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
+    .pp-partner { font-size: 15px; font-weight: 700; color: var(--color-text-primary); }
+    .pp-id { font-family: var(--font-mono); font-size: 10px; color: var(--color-text-tertiary); margin-top: 2px; }
+    .overall-badge { font-size: 11px; font-weight: 700; padding: 4px 12px; border-radius: 12px; flex-shrink: 0; }
+    .overall-badge.running            { background: #EBF5FB; color: #1a5276; }
+    .overall-badge.completed          { background: #EAFAF1; color: #1a7a3c; }
+    .overall-badge.completed_partial  { background: #fff3cd; color: #856404; }
+    .overall-badge.failed             { background: #FDEDEC; color: #922b21; }
+    .overall-badge.approved           { background: #FEF9E7; color: #856404; }
+    .overall-badge.pending_approval   { background: #f8f9fa; color: #6c757d; }
+    .pp-meta-row { display: flex; gap: 16px; margin-bottom: 12px; flex-wrap: wrap; }
+    .pp-meta-item { font-size: 11px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 4px; }
+    .pp-meta-item i { color: var(--teal); font-size: 12px; }
+    .pp-meta-item strong { color: var(--color-text-primary); }
+    .services-list { display: flex; flex-direction: column; gap: 10px; }
+    .svc-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 9px; border: 1px solid #eaeef4; background: #fafbfc; }
+    .svc-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 16px; }
+    .svc-icon.solace   { background: linear-gradient(135deg,#1D9E75,#0F6E56); color: #fff; }
+    .svc-icon.mulesoft { background: linear-gradient(135deg,#00a1e0,#0070a8); color: #fff; }
+    .svc-icon.btp      { background: linear-gradient(135deg,#1b6ef3,#1251b5); color: #fff; }
+    .svc-icon.future   { background: #f0f2f5; color: #adb5bd; }
+    .svc-body { flex: 1; min-width: 0; }
+    .svc-name { font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
+    .svc-msg  { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .svc-badge { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 9px; flex-shrink: 0; letter-spacing: .02em; }
+    .svc-badge.running        { background: #EBF5FB; color: #1a5276; }
+    .svc-badge.success        { background: #EAFAF1; color: #1a7a3c; }
+    .svc-badge.failed         { background: #FDEDEC; color: #922b21; }
+    .svc-badge.pending        { background: #f8f9fa; color: #6c757d; }
+    .svc-badge.not_configured { background: #fff3cd; color: #856404; }
+    .svc-badge.skipped        { background: #f0f2f5; color: #6c757d; }
+    .poll-note  { font-size: 10px; color: var(--color-text-tertiary); margin-top: 10px; display: flex; align-items: center; gap: 5px; }
+    .poll-dot   { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: pulse-dot 1.5s infinite; flex-shrink: 0; }
+    #submit-status { display: none; font-size: 11px; padding: 7px 11px; border-radius: 6px; align-items: center; gap: 7px; line-height: 1.4; }
+    #submit-status.loading { display: flex; background: #EBF5FB; color: #1a5276; }
+    #submit-status.success { display: flex; background: #EAFAF1; color: #1a7a3c; }
+    #submit-status.error   { display: flex; background: #FDEDEC; color: #922b21; }
+    .submit-spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: az-spin .6s linear infinite; flex-shrink: 0; }
+    .sub-id-badge { font-family: var(--font-mono); background: rgba(29,158,117,.1); color: var(--teal-m); padding: 1px 5px; border-radius: 3px; font-size: 10px; word-break: break-all; }
   </style>
 </head>
 <body>
@@ -264,7 +350,11 @@
     <span id="tb-brand">Integration Hub</span>
     <span id="tb-rolepill">3PL Manager</span>
     <div id="tb-right">
-      <span id="tb-login">Login as: <strong>3PL Manager</strong></span>
+      <div class="role-switcher">
+        <button class="role-btn active" id="rbtn-manager"   onclick="switchRole('manager')"  >3PL Manager</button>
+        <button class="role-btn"        id="rbtn-architect" onclick="switchRole('architect')" >Architect</button>
+        <button class="role-btn"        id="rbtn-progress"  onclick="switchRole('progress')"  >Progress</button>
+      </div>
       <button id="tb-gen-btn" disabled onclick="generateConfig()" title="Generate and download Solace automation config JSON">
         <i class="ti ti-file-download"></i> Generate Config
       </button>
@@ -303,6 +393,21 @@
           <p class="title">No integration selected</p>
           <p class="sub">Select an integration from the left panel.</p>
         </div>
+        <!-- ARCHITECT VIEW -->
+        <div id="architect-view">
+          <p class="view-heading">Pending Approvals</p>
+          <p class="view-sub">Review submitted 3PL onboarding requests and approve to start automation.</p>
+          <div id="approval-list"></div>
+        </div>
+
+        <!-- PROGRESS VIEW -->
+        <div id="progress-view">
+          <p class="view-heading">Automation Progress</p>
+          <p class="view-sub">Track per-service automation status for submitted onboarding requests.</p>
+          <div class="progress-selector" id="progress-chips"></div>
+          <div id="progress-panel-container"></div>
+        </div>
+
         <div id="detail-view">
           <div class="dv-topbar">
             <div>
@@ -470,7 +575,7 @@
           <button class="cq-toggle-btn" id="cq-toggle"><i class="ti ti-chevron-down"></i></button>
         </div>
         <div id="cq-body">
-          <div class="cq-hint">Add queues &amp; subscriptions outside the auto-generated set for E2E testing. They are merged into the <strong>DEV</strong> cluster payload on submit.</div>
+          <div class="cq-hint">Add queues &amp; subscriptions outside the auto-generated set for E2E testing. They are merged into the Solace cluster payload on submit.</div>
           <div class="cq-add-row">
             <input id="cq-name" class="cq-inp" type="text" placeholder="Queue name  e.g. Q/3PL/LOGICO/DEV/testObject/in" />
             <input id="cq-sub"  class="cq-inp" type="text" placeholder="Topic subscription  e.g. 3pl/DE/3PL-001/testObject/in/>" />
@@ -480,19 +585,18 @@
         </div>
       </div>
       <div class="az-row">
-        <div class="az-env-sel">
-          <label class="az-env-opt"><input type="radio" name="az-env" value="dev" checked onchange="updateAzBtn()"><i class="ti ti-code"></i> DEV</label>
-          <label class="az-env-opt az-env-locked" title="Requires Solace service creation quota — not available in sandbox" style="opacity:.45;cursor:not-allowed"><input type="radio" name="az-env" value="uatprod" disabled onchange="updateAzBtn()"><i class="ti ti-layers"></i> UAT + PROD</label>
+        <div style="flex:1;font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-info-circle" style="color:var(--teal);font-size:13px;"></i>
+          Config will be saved to Azure Blob Storage and sent to an Architect for review before automation runs.
         </div>
-        <div class="az-ep-display" id="az-ep-display">solace-main-orchestrator</div>
-        <button class="jc-btn primary" id="az-submit-btn" onclick="submitToAzure()" disabled>
-          <i class="ti ti-cloud-upload"></i> Submit to Azure
+        <button class="jc-btn primary" id="submit-approval-btn" onclick="submitForApproval()" disabled>
+          <i class="ti ti-send"></i> Submit for Approval
         </button>
       </div>
-      <div id="az-status"></div>
-      <span class="footer-note">
-        <strong>DEV</strong> — provisions queues &amp; ACLs on existing service <code style="font-size:10px;background:#f0f2f5;padding:1px 4px;border-radius:3px">ruj2y805m8u</code> (msgvpn-ruj2y805m8u). No new service creation. &nbsp;
-        <span style="color:#c0392b"><i class="ti ti-lock" style="font-size:10px"></i> UAT+PROD locked</span> — requires Solace enterprise service quota (unavailable in this sandbox).
+      <div id="submit-status"></div>
+      <span class="footer-note" style="font-size:10px;color:var(--color-text-tertiary);">
+        After approval, the Architect can review the config under the <strong>Architect</strong> tab and trigger the automation pipeline.
+        Progress is visible under <strong>Progress</strong> tab.
       </span>
     </div>
   </div>
@@ -987,20 +1091,13 @@ function generateConfig() {
 let currentJsonTab = 'info';
 
 function updateModalTabs() {
-  const env = getSelectedEnv();
   const tabsEl = document.getElementById('json-tabs');
-  if (env === 'dev') {
-    tabsEl.innerHTML =
-      '<div class="json-tab" onclick="switchJsonTab(\'info\')">Summary</div>' +
-      '<div class="json-tab" onclick="switchJsonTab(\'dev\')">DEV Payload</div>' +
-      '<div class="json-tab" onclick="switchJsonTab(\'full\')">Full Config</div>';
-  } else {
-    tabsEl.innerHTML =
-      '<div class="json-tab" onclick="switchJsonTab(\'info\')">Summary</div>' +
-      '<div class="json-tab" onclick="switchJsonTab(\'uat\')">UAT Payload</div>' +
-      '<div class="json-tab" onclick="switchJsonTab(\'prod\')">PROD Payload</div>' +
-      '<div class="json-tab" onclick="switchJsonTab(\'full\')">Full Config</div>';
-  }
+  tabsEl.innerHTML =
+    '<div class="json-tab" onclick="switchJsonTab(\'info\')">Summary</div>' +
+    '<div class="json-tab" onclick="switchJsonTab(\'dev\')">DEV Payload</div>' +
+    '<div class="json-tab" onclick="switchJsonTab(\'uat\')">UAT Payload</div>' +
+    '<div class="json-tab" onclick="switchJsonTab(\'prod\')">PROD Payload</div>' +
+    '<div class="json-tab" onclick="switchJsonTab(\'full\')">Full Config</div>';
 }
 
 function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
@@ -1041,8 +1138,8 @@ function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
   updateModalTabs();
   switchJsonTab('info');
   document.getElementById('json-overlay').classList.add('open');
-  // Reset Azure status and re-evaluate submit button
-  showAzStatus('', '');
+  // Reset submit status and re-evaluate submit button
+  showSubmitStatus('', '');
   updateAzBtn();
 }
 
@@ -1270,51 +1367,23 @@ function triggerNew() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   AZURE SUBMIT — endpoints hardcoded from deployed-urls.json
+   3PL PIPELINE ENDPOINTS  — fill in after deploying new Logic Apps
+   wf-3pl-onboarding-submission  → submission
+   wf-3pl-onboarding-approve     → approve
+   wf-3pl-onboarding-status      → status
 ───────────────────────────────────────────────────────────── */
+const PIPELINE_ENDPOINTS = {
+  submission: 'https://prod-31.eastus.logic.azure.com:443/workflows/3ef3737c9b2b4acca30f5100838cae44/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED07',
+  approve:    'https://prod-15.eastus.logic.azure.com:443/workflows/508093b4b4394a518c20a7e3b21fa02e/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED18',
+  status:     'https://prod-07.eastus.logic.azure.com:443/workflows/d189231b590b41f7b6b6e77b26ab1647/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED13'
+};
+
+/* Legacy direct Solace endpoint kept for backward-compat */
 const AZ_ENDPOINTS = {
   dev:     'https://prod-93.eastus.logic.azure.com:443/workflows/a3aa7415cd0b4fc8afc868d94da85829/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED06',
   uatprod: 'https://prod-73.eastus.logic.azure.com:443/workflows/ce419f64db0e4ccfa7908f109c4f6d7d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED03'
 };
 
-function getSelectedEnv() {
-  const el = document.querySelector('input[name="az-env"]:checked');
-  return el ? el.value : 'dev';
-}
-
-function updateAzBtn() {
-  const env = getSelectedEnv();
-  const disp = document.getElementById('az-ep-display');
-  if (disp) disp.textContent = env === 'dev' ? 'solace-main-orchestrator (DEV)' : 'wf-solace-automation-blob-upload (UAT+PROD)';
-  const btn = document.getElementById('az-submit-btn');
-  if (btn) btn.disabled = !generatedJSON;
-  // Show custom queue panel only for DEV
-  const cqPanel = document.getElementById('cq-panel');
-  if (cqPanel) cqPanel.classList.toggle('hidden', env !== 'dev');
-  // Update namespace hint from the generated config
-  if (generatedJSON && env === 'dev') {
-    const ns  = generatedJSON.partner && generatedJSON.partner.topicNamespace || '';
-    const pid = generatedJSON.partner && generatedJSON.partner.partnerID || '';
-    const hint = document.getElementById('cq-ns-hint');
-    if (hint && ns) hint.textContent = `ns: ${ns}`;
-    // Pre-fill queue name placeholder with partner context
-    const nameInp = document.getElementById('cq-name');
-    if (nameInp && pid) nameInp.placeholder = `e.g. Q/3PL/${pid}/DEV/testObject/in`;
-    const subInp  = document.getElementById('cq-sub');
-    if (subInp  && ns) subInp.placeholder  = `e.g. ${ns}/testObject/in/>`;
-  }
-  // Refresh modal tabs when env changes while modal is open
-  if (document.getElementById('json-overlay').classList.contains('open') && generatedJSON) {
-    updateModalTabs();
-    switchJsonTab('info');
-    showAzStatus('', '');
-  }
-}
-
-function showAzStatus(state, html) {
-  const el = document.getElementById('az-status');
-  el.className = state; el.innerHTML = html;
-}
 
 function buildDevPayload(cfg) {
   const uatCluster = cfg.orchestrationPayloads.phase1_uatRun.config.clusterManagement;
@@ -1398,54 +1467,338 @@ function renderCustomQueues() {
     </div>`).join('');
 }
 
-function submitToAzure() {
-  if (!generatedJSON) { showAzStatus('error', '<i class="ti ti-alert-triangle"></i> Generate the config first.'); return; }
-  const env = getSelectedEnv();
-
-  // Always route through blob-upload so the browser gets 202 immediately.
-  // blob-trigger branches on config.runMode: "dev" = single-phase DEV, otherwise UAT+PROD.
-  let configToSend = generatedJSON;
-  if (env === 'dev') {
-    // Rebuild devRun now to pick up any custom queues added since generateConfig()
-    const freshDevRun = buildDevPayload(generatedJSON);
-    configToSend = Object.assign({}, generatedJSON, {
-      runMode: 'dev',
-      orchestrationPayloads: Object.assign({}, generatedJSON.orchestrationPayloads, {
-        devRun: freshDevRun
-      })
-    });
+/* ─────────────────────────────────────────────────────────────
+   SUBMIT FOR APPROVAL  — saves config blob, awaits architect
+─────────────────────────────────────────────────────────────── */
+function updateAzBtn() {
+  const btn = document.getElementById('submit-approval-btn');
+  if (btn) btn.disabled = !generatedJSON;
+  const cqPanel = document.getElementById('cq-panel');
+  if (cqPanel) cqPanel.classList.remove('hidden');
+  if (generatedJSON) {
+    const ns  = generatedJSON.partner && generatedJSON.partner.topicNamespace || '';
+    const pid = generatedJSON.partner && generatedJSON.partner.partnerID || '';
+    const hint = document.getElementById('cq-ns-hint');
+    if (hint && ns) hint.textContent = `ns: ${ns}`;
+    const nameInp = document.getElementById('cq-name');
+    if (nameInp && pid) nameInp.placeholder = `e.g. Q/3PL/${pid}/DEV/testObject/in`;
+    const subInp  = document.getElementById('cq-sub');
+    if (subInp  && ns) subInp.placeholder  = `e.g. ${ns}/testObject/in/>`;
   }
+}
 
-  const btn = document.getElementById('az-submit-btn');
+function showSubmitStatus(state, html) {
+  const el = document.getElementById('submit-status');
+  if (!el) return;
+  el.className = state; el.innerHTML = html;
+}
+
+function submitForApproval() {
+  if (!generatedJSON) { showSubmitStatus('error', '<i class="ti ti-alert-triangle"></i> Generate the config first.'); return; }
+  if (!PIPELINE_ENDPOINTS.submission) {
+    showSubmitStatus('error', '<i class="ti ti-alert-triangle"></i> Submission endpoint not configured — set PIPELINE_ENDPOINTS.submission in the JS.');
+    return;
+  }
+  const freshDevRun = buildDevPayload(generatedJSON);
+  const configToSend = Object.assign({}, generatedJSON, {
+    orchestrationPayloads: Object.assign({}, generatedJSON.orchestrationPayloads, { devRun: freshDevRun })
+  });
+  const pid  = generatedJSON.partner && generatedJSON.partner.partnerID || 'UNKNOWN';
+  const pname = generatedJSON.partner && generatedJSON.partner.partnerName || activePartner || 'Unknown Partner';
+  const btn  = document.getElementById('submit-approval-btn');
   btn.disabled = true;
-  showAzStatus('loading', `<div class="az-spinner"></div> Submitting to Azure (${env === 'dev' ? 'DEV — single phase' : 'UAT+PROD pipeline'})…`);
+  showSubmitStatus('loading', '<div class="submit-spinner"></div> Saving to Azure Blob Storage…');
 
-  const pid = (generatedJSON._metadata && generatedJSON._metadata.partnerID)
-    || (generatedJSON.partner && generatedJSON.partner.id)
-    || (activePartner ? activePartner.replace(/\s+/g,'-').toUpperCase() : 'unknown');
-
-  fetch(AZ_ENDPOINTS.uatprod, {
+  fetch(PIPELINE_ENDPOINTS.submission, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ config: configToSend, partnerID: pid })
+    body: JSON.stringify({ config: configToSend, partnerID: pid, partnerName: pname, submittedBy: '3PL Manager' })
   })
   .then(r => {
     if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status} — ${t.slice(0,140)}`); });
     return r.json().catch(() => ({}));
   })
   .then(data => {
-    const blob = data.blobPath || 'solace-onboarding/…';
-    const cqNote = (env === 'dev' && customQueues.length)
-      ? ` <strong>+${customQueues.length} custom queue${customQueues.length > 1 ? 's' : ''}</strong> included.`
-      : '';
-    showAzStatus('success',
-      `<i class="ti ti-circle-check"></i>&nbsp;<span>Accepted. Blob: <span class="blob-path">${blob}</span>. Pipeline running in background.${cqNote}</span>`);
+    const subId = data.submissionId || '—';
+    showSubmitStatus('success',
+      `<i class="ti ti-circle-check"></i>&nbsp;Submitted! ID: <span class="sub-id-badge">${subId}</span>. An architect must approve before automation runs.`);
     btn.disabled = false;
+    // save to localStorage so Architect tab can list it
+    saveSubmissionLocally({
+      submissionId: subId,
+      blobPath:     data.blobPath || '',
+      statusPath:   data.statusPath || '',
+      partnerID:    pid,
+      partnerName:  pname,
+      submittedAt:  data.submittedAt || new Date().toISOString(),
+      status:       'pending_approval',
+      config:       configToSend
+    });
+    // badge the architect button
+    refreshArchitectBadge();
   })
   .catch(err => {
-    showAzStatus('error', `<i class="ti ti-alert-triangle"></i>&nbsp;<strong>Failed:</strong> ${err.message}`);
+    showSubmitStatus('error', `<i class="ti ti-alert-triangle"></i>&nbsp;<strong>Failed:</strong> ${err.message}`);
     btn.disabled = false;
   });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LOCAL SUBMISSIONS STORE  (localStorage)
+─────────────────────────────────────────────────────────────── */
+function loadLocalSubmissions() {
+  try { return JSON.parse(localStorage.getItem('3pl_submissions') || '[]'); } catch(e) { return []; }
+}
+function saveLocalSubmissions(list) {
+  try { localStorage.setItem('3pl_submissions', JSON.stringify(list)); } catch(e) {}
+}
+function saveSubmissionLocally(sub) {
+  const list = loadLocalSubmissions();
+  list.unshift(sub);
+  saveLocalSubmissions(list.slice(0, 50)); // cap at 50
+}
+function updateLocalSubmission(submissionId, patch) {
+  const list = loadLocalSubmissions().map(s => s.submissionId === submissionId ? Object.assign({}, s, patch) : s);
+  saveLocalSubmissions(list);
+}
+function refreshArchitectBadge() {
+  const pending = loadLocalSubmissions().filter(s => s.status === 'pending_approval').length;
+  document.getElementById('rbtn-architect').textContent = pending ? `Architect (${pending})` : 'Architect';
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ROLE SWITCHER
+─────────────────────────────────────────────────────────────── */
+let currentRole = 'manager';
+let progressPollTimer = null;
+
+function switchRole(role) {
+  currentRole = role;
+  ['manager','architect','progress'].forEach(r => {
+    document.getElementById('rbtn-'+r).classList.toggle('active', r === role);
+  });
+  const mainBody = document.getElementById('main-body');
+  mainBody.querySelectorAll(':scope > *').forEach(el => el.classList.remove('active'));
+  if (role === 'manager') {
+    const hasParter = activePartner && activeItfId;
+    document.getElementById('empty-no-partner').style.display = (!activePartner) ? 'flex' : 'none';
+    document.getElementById('empty-no-itf').style.display     = (activePartner && !activeItfId) ? 'flex' : 'none';
+    if (hasParter) document.getElementById('detail-view').style.display = 'block';
+  } else {
+    document.getElementById('empty-no-partner').style.display = 'none';
+    document.getElementById('empty-no-itf').style.display     = 'none';
+    document.getElementById('detail-view').style.display      = 'none';
+    if (role === 'architect') {
+      document.getElementById('architect-view').classList.add('active');
+      renderApprovalCards();
+    } else if (role === 'progress') {
+      document.getElementById('progress-view').classList.add('active');
+      renderProgressChips();
+    }
+  }
+  stopProgressPoll();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARCHITECT VIEW
+─────────────────────────────────────────────────────────────── */
+function timeAgo(iso) {
+  const secs = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (secs < 60)   return `${secs}s ago`;
+  if (secs < 3600) return `${Math.floor(secs/60)}m ago`;
+  if (secs < 86400)return `${Math.floor(secs/3600)}h ago`;
+  return new Date(iso).toLocaleDateString();
+}
+
+function renderApprovalCards() {
+  const list = loadLocalSubmissions();
+  const pending = list.filter(s => s.status === 'pending_approval');
+  const el = document.getElementById('approval-list');
+  if (!pending.length) {
+    el.innerHTML = `<div class="empty-approvals"><i class="ti ti-checks"></i><p>No pending approvals. Submissions from the Manager tab will appear here.</p></div>`;
+    return;
+  }
+  el.innerHTML = pending.map(s => {
+    const itfCount  = s.config && s.config.interfaces ? s.config.interfaces.length : '—';
+    const schCount  = s.config && s.config.eventPortal && s.config.eventPortal.schemas ? s.config.eventPortal.schemas.length : '—';
+    const evCount   = s.config && s.config.eventPortal && s.config.eventPortal.events  ? s.config.eventPortal.events.length  : '—';
+    return `
+    <div class="approval-card" id="ac-${s.submissionId}">
+      <div class="ac-header">
+        <div><div class="ac-partner">${s.partnerName || s.partnerID}</div><div class="ac-id">${s.submissionId}</div></div>
+        <div class="ac-time">${timeAgo(s.submittedAt)}</div>
+      </div>
+      <div class="ac-stats">
+        <span class="ac-stat"><i class="ti ti-git-branch"></i>${itfCount} interfaces</span>
+        <span class="ac-stat"><i class="ti ti-layers-difference"></i>${schCount} schemas</span>
+        <span class="ac-stat"><i class="ti ti-bolt"></i>${evCount} events</span>
+      </div>
+      <div class="ac-actions">
+        <button class="ac-btn approve" id="ac-appbtn-${s.submissionId}" onclick="approveSubmission('${s.submissionId}','${s.blobPath}','${s.statusPath}')"><i class="ti ti-check"></i> Approve</button>
+        <button class="ac-btn review"  onclick="toggleAcJson('${s.submissionId}')"><i class="ti ti-code"></i> Review JSON</button>
+        <button class="ac-btn reject"  onclick="rejectSubmission('${s.submissionId}')"><i class="ti ti-x"></i> Reject</button>
+      </div>
+      <div class="ac-status" id="ac-status-${s.submissionId}"></div>
+      <pre class="ac-json-preview" id="ac-json-${s.submissionId}">${JSON.stringify(s.config, null, 2)}</pre>
+    </div>`;
+  }).join('');
+}
+
+function toggleAcJson(id) {
+  const pre = document.getElementById('ac-json-'+id);
+  const card = document.getElementById('ac-'+id);
+  if (!pre) return;
+  pre.classList.toggle('open');
+  card.classList.toggle('reviewing', pre.classList.contains('open'));
+}
+
+function setAcStatus(id, state, html) {
+  const el = document.getElementById('ac-status-'+id);
+  if (!el) return;
+  el.className = 'ac-status show ' + state; el.innerHTML = html;
+}
+
+function approveSubmission(submissionId, blobPath, statusPath) {
+  if (!PIPELINE_ENDPOINTS.approve) {
+    setAcStatus(submissionId, 'error', '<i class="ti ti-alert-triangle"></i> Approve endpoint not configured — set PIPELINE_ENDPOINTS.approve.');
+    return;
+  }
+  const btn = document.getElementById('ac-appbtn-'+submissionId);
+  if (btn) btn.disabled = true;
+  setAcStatus(submissionId, 'loading', '<div class="ac-spinner"></div> Approving and starting automation…');
+
+  fetch(PIPELINE_ENDPOINTS.approve, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ submissionId, blobPath, statusPath, approvedBy: 'Architect' })
+  })
+  .then(r => {
+    if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status} — ${t.slice(0,140)}`); });
+    return r.json().catch(() => ({}));
+  })
+  .then(() => {
+    setAcStatus(submissionId, 'success', '<i class="ti ti-circle-check"></i> Approved! Automation pipeline started. Check Progress tab.');
+    updateLocalSubmission(submissionId, { status: 'approved', approvedAt: new Date().toISOString() });
+    refreshArchitectBadge();
+    setTimeout(() => renderApprovalCards(), 1500);
+  })
+  .catch(err => {
+    if (btn) btn.disabled = false;
+    setAcStatus(submissionId, 'error', `<i class="ti ti-alert-triangle"></i> ${err.message}`);
+  });
+}
+
+function rejectSubmission(submissionId) {
+  if (!confirm(`Reject submission ${submissionId}? It will be removed from the queue.`)) return;
+  updateLocalSubmission(submissionId, { status: 'rejected' });
+  refreshArchitectBadge();
+  renderApprovalCards();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PROGRESS VIEW
+─────────────────────────────────────────────────────────────── */
+let activeProgressId = null;
+
+function renderProgressChips() {
+  const list = loadLocalSubmissions().filter(s => ['approved','running','completed','failed','completed_partial'].includes(s.status));
+  const el = document.getElementById('progress-chips');
+  const container = document.getElementById('progress-panel-container');
+  if (!list.length) {
+    el.innerHTML = '';
+    container.innerHTML = '<div class="empty-approvals"><i class="ti ti-chart-line"></i><p>No approved submissions yet. Approve a submission from the Architect tab to start tracking.</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(s =>
+    `<span class="ps-chip ${s.submissionId===activeProgressId?'active':''}" onclick="showProgressFor('${s.submissionId}')">${s.partnerName || s.partnerID}</span>`
+  ).join('');
+  if (!activeProgressId || !list.find(s => s.submissionId === activeProgressId)) {
+    showProgressFor(list[0].submissionId);
+  } else {
+    showProgressFor(activeProgressId);
+  }
+}
+
+function showProgressFor(submissionId) {
+  activeProgressId = submissionId;
+  document.querySelectorAll('.ps-chip').forEach(c => c.classList.toggle('active', c.textContent.trim() && c.getAttribute('onclick') && c.getAttribute('onclick').includes(submissionId)));
+  const sub = loadLocalSubmissions().find(s => s.submissionId === submissionId);
+  if (!sub) return;
+  renderProgressPanel(sub, null);
+  if (['approved','running'].includes(sub.status)) startProgressPoll(submissionId);
+}
+
+function renderProgressPanel(sub, liveStatus) {
+  const s = liveStatus || {};
+  const overall   = s.status   || sub.status;
+  const services  = s.services || {};
+  const solace    = services.solace   || { status: sub.status === 'pending_approval' ? 'pending' : (sub.status === 'approved' ? 'pending' : 'pending'), message: 'Awaiting start...' };
+  const mulesoft  = services.mulesoft || { status: 'not_configured', message: 'Future scope — not yet enabled' };
+  const btp       = services.btp      || { status: 'not_configured', message: 'Future scope — not yet enabled' };
+  const approvedAt = s.approvedAt || sub.approvedAt || '';
+  const startedAt  = s.startedAt  || '';
+  const completedAt = s.completedAt || '';
+
+  const svcRows = [
+    { key: 'solace',   name: 'Solace',    icon: 'ti-topology-star', iconCls: 'solace',   svc: solace },
+    { key: 'mulesoft', name: 'MuleSoft',  icon: 'ti-cloud',         iconCls: 'future',   svc: mulesoft },
+    { key: 'btp',      name: 'SAP BTP',   icon: 'ti-building-bank', iconCls: 'future',   svc: btp }
+  ].map(({key, name, icon, iconCls, svc}) => `
+    <div class="svc-row">
+      <div class="svc-icon ${iconCls}"><i class="ti ${icon}"></i></div>
+      <div class="svc-body">
+        <div class="svc-name">${name}</div>
+        <div class="svc-msg">${svc.message || ''}</div>
+        ${svc.serviceId ? `<div class="svc-msg" style="margin-top:2px;font-family:var(--font-mono);font-size:10px;color:var(--teal-m)">serviceId: ${svc.serviceId}</div>` : ''}
+      </div>
+      <span class="svc-badge ${svc.status}">${svc.status.replace('_',' ')}</span>
+    </div>`).join('');
+
+  const isRunning = ['approved','running'].includes(overall);
+  document.getElementById('progress-panel-container').innerHTML = `
+    <div class="progress-panel">
+      <div class="pp-header">
+        <div><div class="pp-partner">${sub.partnerName || sub.partnerID}</div><div class="pp-id">${sub.submissionId}</div></div>
+        <span class="overall-badge ${overall}">${overall.replace('_',' ')}</span>
+      </div>
+      <div class="pp-meta-row">
+        <span class="pp-meta-item"><i class="ti ti-calendar"></i>Submitted: <strong>${new Date(sub.submittedAt).toLocaleString()}</strong></span>
+        ${approvedAt ? `<span class="pp-meta-item"><i class="ti ti-check"></i>Approved: <strong>${new Date(approvedAt).toLocaleString()}</strong></span>` : ''}
+        ${startedAt  ? `<span class="pp-meta-item"><i class="ti ti-player-play"></i>Started: <strong>${new Date(startedAt).toLocaleString()}</strong></span>` : ''}
+        ${completedAt? `<span class="pp-meta-item"><i class="ti ti-flag"></i>Completed: <strong>${new Date(completedAt).toLocaleString()}</strong></span>` : ''}
+      </div>
+      <div class="services-list">${svcRows}</div>
+      ${isRunning ? `<div class="poll-note"><span class="poll-dot"></span> Auto-refreshing every 10 seconds…</div>` : ''}
+    </div>`;
+}
+
+function startProgressPoll(submissionId) {
+  stopProgressPoll();
+  if (!PIPELINE_ENDPOINTS.status) return;
+  progressPollTimer = setInterval(() => {
+    const sub = loadLocalSubmissions().find(s => s.submissionId === submissionId);
+    if (!sub) { stopProgressPoll(); return; }
+    fetch(PIPELINE_ENDPOINTS.status, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submissionId, statusPath: sub.statusPath || '' })
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      renderProgressPanel(sub, data);
+      if (data.status && !['approved','running'].includes(data.status)) {
+        updateLocalSubmission(submissionId, { status: data.status });
+        stopProgressPoll();
+        renderProgressChips();
+      }
+    })
+    .catch(() => {});
+  }, 10000);
+}
+
+function stopProgressPoll() {
+  if (progressPollTimer) { clearInterval(progressPollTimer); progressPollTimer = null; }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1494,6 +1847,7 @@ renderPartners();
 showEmpty('no-partner');
 initEditableFields();
 updateAzBtn();
+refreshArchitectBadge();
 </script>
 </body>
 </html>

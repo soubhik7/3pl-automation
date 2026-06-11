@@ -1,0 +1,261 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "solaceOrchestratorUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of wf-solace-automation-main-orchestrator (Solace is live; all provisioning handled there)"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "required": ["submissionId", "statusPath", "config"],
+            "properties": {
+              "submissionId": { "type": "string" },
+              "statusPath":   { "type": "string", "description": "Blob path for writing status updates" },
+              "config":       { "type": "object", "description": "Full 3PL onboarding config" }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+      "Initialize_OverallStatus": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{ "name": "overallStatus", "type": "string", "value": "running" }]
+        },
+        "runAfter": {}
+      },
+      "Initialize_SolaceStatus": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{ "name": "solaceStatus", "type": "string", "value": "running" }]
+        },
+        "runAfter": { "Initialize_OverallStatus": ["Succeeded"] }
+      },
+      "Initialize_SolaceServiceId": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{ "name": "solaceServiceId", "type": "string", "value": "" }]
+        },
+        "runAfter": { "Initialize_SolaceStatus": ["Succeeded"] }
+      },
+      "Initialize_SolaceDomainId": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [{ "name": "solaceDomainId", "type": "string", "value": "" }]
+        },
+        "runAfter": { "Initialize_SolaceServiceId": ["Succeeded"] }
+      },
+
+      "Write_Status_Running": {
+        "type": "Http",
+        "inputs": {
+          "method": "PUT",
+          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', triggerBody()?['statusPath'], '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "headers": { "x-ms-blob-type": "BlockBlob", "Content-Type": "application/json" },
+          "body": {
+            "submissionId": "@{triggerBody()?['submissionId']}",
+            "status":       "running",
+            "startedAt":    "@{utcNow()}",
+            "services": {
+              "solace":   { "status": "running",           "message": "Solace automation in progress..." },
+              "mulesoft": { "status": "not_configured",    "message": "Future scope — not yet enabled" },
+              "btp":      { "status": "not_configured",    "message": "Future scope — not yet enabled" }
+            }
+          }
+        },
+        "runAfter": { "Initialize_SolaceDomainId": ["Succeeded"] }
+      },
+
+      "Scope_Solace_Automation": {
+        "type": "Scope",
+        "runAfter": { "Write_Status_Running": ["Succeeded"] },
+        "actions": {
+          "Compose_Solace_Payload": {
+            "type": "Compose",
+            "runAfter": {},
+            "inputs": {
+              "config": "@triggerBody()?['config']?['orchestrationPayloads']?['devRun']?['config']",
+              "skipEventPortal": "@coalesce(triggerBody()?['config']?['orchestrationPayloads']?['devRun']?['skipEventPortal'], true)",
+              "skipCluster":     "@coalesce(triggerBody()?['config']?['orchestrationPayloads']?['devRun']?['skipCluster'], false)"
+            }
+          },
+          "Check_Solace_Payload_Valid": {
+            "type": "If",
+            "runAfter": { "Compose_Solace_Payload": ["Succeeded"] },
+            "expression": {
+              "and": [
+                {
+                  "not": {
+                    "equals": ["@parameters('solaceOrchestratorUrl')", ""]
+                  }
+                }
+              ]
+            },
+            "actions": {
+              "Invoke_Solace_Orchestrator": {
+                "type": "Http",
+                "runAfter": {},
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@parameters('solaceOrchestratorUrl')",
+                  "headers": { "Content-Type": "application/json" },
+                  "body": "@outputs('Compose_Solace_Payload')",
+                  "retryPolicy": {
+                    "type": "fixed",
+                    "count": 2,
+                    "interval": "PT30S"
+                  }
+                }
+              },
+              "Set_Solace_ServiceId": {
+                "type": "SetVariable",
+                "runAfter": { "Invoke_Solace_Orchestrator": ["Succeeded"] },
+                "inputs": {
+                  "name": "solaceServiceId",
+                  "value": "@{coalesce(body('Invoke_Solace_Orchestrator')?['serviceId'], '')}"
+                }
+              },
+              "Set_Solace_DomainId": {
+                "type": "SetVariable",
+                "runAfter": { "Set_Solace_ServiceId": ["Succeeded"] },
+                "inputs": {
+                  "name": "solaceDomainId",
+                  "value": "@{coalesce(body('Invoke_Solace_Orchestrator')?['domainId'], '')}"
+                }
+              },
+              "Set_Solace_Status_Success": {
+                "type": "SetVariable",
+                "runAfter": { "Set_Solace_DomainId": ["Succeeded"] },
+                "inputs": { "name": "solaceStatus", "value": "success" }
+              }
+            },
+            "else": {
+              "actions": {
+                "Set_Solace_Status_Skipped": {
+                  "type": "SetVariable",
+                  "runAfter": {},
+                  "inputs": { "name": "solaceStatus", "value": "skipped" }
+                }
+              }
+            }
+          }
+        }
+      },
+
+      "Set_Solace_Status_Failed": {
+        "type": "SetVariable",
+        "runAfter": { "Scope_Solace_Automation": ["Failed", "TimedOut"] },
+        "inputs": { "name": "solaceStatus", "value": "failed" }
+      },
+
+      "Scope_MuleSoft_Stub": {
+        "type": "Scope",
+        "runAfter": {
+          "Scope_Solace_Automation": ["Succeeded", "Skipped"],
+          "Set_Solace_Status_Failed": ["Succeeded", "Skipped"]
+        },
+        "actions": {
+          "MuleSoft_FutureScope_Stub": {
+            "type": "Compose",
+            "runAfter": {},
+            "inputs": {
+              "service": "mulesoft",
+              "status":  "not_configured",
+              "message": "Future scope — MuleSoft automation will be enabled in a future release"
+            }
+          }
+        }
+      },
+
+      "Scope_BTP_Stub": {
+        "type": "Scope",
+        "runAfter": { "Scope_MuleSoft_Stub": ["Succeeded"] },
+        "actions": {
+          "BTP_FutureScope_Stub": {
+            "type": "Compose",
+            "runAfter": {},
+            "inputs": {
+              "service": "btp",
+              "status":  "not_configured",
+              "message": "Future scope — SAP BTP automation will be enabled in a future release"
+            }
+          }
+        }
+      },
+
+      "Determine_Overall_Status": {
+        "type": "SetVariable",
+        "runAfter": { "Scope_BTP_Stub": ["Succeeded"] },
+        "inputs": {
+          "name": "overallStatus",
+          "value": "@{if(equals(variables('solaceStatus'), 'success'), 'completed', if(equals(variables('solaceStatus'), 'skipped'), 'completed_partial', 'failed'))}"
+        }
+      },
+
+      "Write_Final_Status": {
+        "type": "Http",
+        "inputs": {
+          "method": "PUT",
+          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', triggerBody()?['statusPath'], '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "headers": { "x-ms-blob-type": "BlockBlob", "Content-Type": "application/json" },
+          "body": {
+            "submissionId": "@{triggerBody()?['submissionId']}",
+            "status":       "@{variables('overallStatus')}",
+            "completedAt":  "@{utcNow()}",
+            "services": {
+              "solace": {
+                "status":    "@{variables('solaceStatus')}",
+                "serviceId": "@{variables('solaceServiceId')}",
+                "domainId":  "@{variables('solaceDomainId')}",
+                "message":   "@{if(equals(variables('solaceStatus'), 'success'), 'Solace provisioning completed successfully', if(equals(variables('solaceStatus'), 'skipped'), 'Solace endpoint not configured', 'Solace provisioning failed — check Azure Logic Apps run history'))}"
+              },
+              "mulesoft": {
+                "status":  "not_configured",
+                "message": "Future scope — not yet enabled"
+              },
+              "btp": {
+                "status":  "not_configured",
+                "message": "Future scope — not yet enabled"
+              }
+            }
+          }
+        },
+        "runAfter": { "Determine_Overall_Status": ["Succeeded"] }
+      },
+
+      "Response_Success": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200,
+          "headers": { "Content-Type": "application/json" },
+          "body": {
+            "status":       "@{variables('overallStatus')}",
+            "submissionId": "@{triggerBody()?['submissionId']}",
+            "solace": {
+              "status":    "@{variables('solaceStatus')}",
+              "serviceId": "@{variables('solaceServiceId')}",
+              "domainId":  "@{variables('solaceDomainId')}"
+            },
+            "mulesoft": { "status": "not_configured" },
+            "btp":      { "status": "not_configured" }
+          }
+        },
+        "runAfter": { "Write_Final_Status": ["Succeeded", "Failed"] }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}
