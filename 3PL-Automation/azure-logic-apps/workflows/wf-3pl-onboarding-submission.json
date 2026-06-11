@@ -1,0 +1,162 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "required": ["config", "partnerID"],
+            "properties": {
+              "config":      { "type": "object",  "description": "Full generated onboarding config JSON" },
+              "partnerID":   { "type": "string",  "description": "e.g. 3PL-002" },
+              "partnerName": { "type": "string",  "description": "e.g. FastFulfill BV" },
+              "submittedBy": { "type": "string",  "description": "User display name or email" }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+      "Compose_SubmissionId": {
+        "type": "Compose",
+        "inputs": "@{concat(triggerBody()?['partnerID'], '-', formatDateTime(utcNow(), 'yyyyMMddHHmmss'))}",
+        "runAfter": {}
+      },
+      "Initialize_SubmissionId": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "submissionId",
+              "type": "string",
+              "value": "@{outputs('Compose_SubmissionId')}"
+            }
+          ]
+        },
+        "runAfter": {
+          "Compose_SubmissionId": ["Succeeded"]
+        }
+      },
+      "Compose_BlobPath": {
+        "type": "Compose",
+        "inputs": "3pl-onboarding/pending/@{variables('submissionId')}.json",
+        "runAfter": {
+          "Initialize_SubmissionId": ["Succeeded"]
+        }
+      },
+      "Compose_StatusBlobPath": {
+        "type": "Compose",
+        "inputs": "3pl-onboarding/status/@{variables('submissionId')}-status.json",
+        "runAfter": {
+          "Compose_BlobPath": ["Succeeded"]
+        }
+      },
+      "Compose_ConfigBlob": {
+        "type": "Compose",
+        "inputs": {
+          "submissionId":   "@{variables('submissionId')}",
+          "partnerID":      "@{triggerBody()?['partnerID']}",
+          "partnerName":    "@{triggerBody()?['partnerName']}",
+          "submittedBy":    "@{coalesce(triggerBody()?['submittedBy'], '3PL Manager')}",
+          "submittedAt":    "@{utcNow()}",
+          "approvalStatus": "pending_approval",
+          "config":         "@triggerBody()?['config']"
+        },
+        "runAfter": {
+          "Compose_StatusBlobPath": ["Succeeded"]
+        }
+      },
+      "Write_Config_Blob": {
+        "type": "Http",
+        "inputs": {
+          "method": "PUT",
+          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', outputs('Compose_BlobPath'), '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "headers": {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": "application/json"
+          },
+          "body": "@outputs('Compose_ConfigBlob')"
+        },
+        "runAfter": {
+          "Compose_ConfigBlob": ["Succeeded"]
+        }
+      },
+      "Compose_InitialStatus": {
+        "type": "Compose",
+        "inputs": {
+          "submissionId": "@{variables('submissionId')}",
+          "partnerID":    "@{triggerBody()?['partnerID']}",
+          "partnerName":  "@{triggerBody()?['partnerName']}",
+          "submittedAt":  "@{utcNow()}",
+          "status":       "pending_approval",
+          "blobPath":     "@{outputs('Compose_BlobPath')}",
+          "services": {
+            "solace":    { "status": "pending",  "message": "Awaiting approval" },
+            "mulesoft":  { "status": "pending",  "message": "Awaiting approval" },
+            "btp":       { "status": "pending",  "message": "Awaiting approval" }
+          }
+        },
+        "runAfter": {
+          "Write_Config_Blob": ["Succeeded"]
+        }
+      },
+      "Write_Status_Blob": {
+        "type": "Http",
+        "inputs": {
+          "method": "PUT",
+          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', outputs('Compose_StatusBlobPath'), '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "headers": {
+            "x-ms-blob-type": "BlockBlob",
+            "Content-Type": "application/json"
+          },
+          "body": "@outputs('Compose_InitialStatus')"
+        },
+        "runAfter": {
+          "Compose_InitialStatus": ["Succeeded"]
+        }
+      },
+      "Response_Success": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 200,
+          "headers": { "Content-Type": "application/json" },
+          "body": {
+            "status":       "pending_approval",
+            "submissionId": "@{variables('submissionId')}",
+            "blobPath":     "@{outputs('Compose_BlobPath')}",
+            "statusPath":   "@{outputs('Compose_StatusBlobPath')}",
+            "submittedAt":  "@{utcNow()}",
+            "message":      "Submission saved. Awaiting architect approval."
+          }
+        },
+        "runAfter": {
+          "Write_Status_Blob": ["Succeeded"]
+        }
+      },
+      "Response_Error": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 500,
+          "headers": { "Content-Type": "application/json" },
+          "body": {
+            "status":  "error",
+            "message": "Failed to save submission to blob storage — check Logic App run history"
+          }
+        },
+        "runAfter": {
+          "Write_Status_Blob": ["Failed", "TimedOut", "Skipped"]
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

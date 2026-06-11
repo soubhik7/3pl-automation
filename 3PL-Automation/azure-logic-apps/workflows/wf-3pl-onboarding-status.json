@@ -1,0 +1,120 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {},
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "method": "POST",
+          "schema": {
+            "type": "object",
+            "required": ["submissionId"],
+            "properties": {
+              "submissionId": { "type": "string" },
+              "statusPath":   { "type": "string", "description": "Optional override. Defaults to 3pl-onboarding/status/{submissionId}-status.json" }
+            }
+          }
+        }
+      }
+    },
+    "actions": {
+      "Compose_StatusPath": {
+        "type": "Compose",
+        "inputs": "@{coalesce(triggerBody()?['statusPath'], concat('3pl-onboarding/status/', triggerBody()?['submissionId'], '-status.json'))}",
+        "runAfter": {}
+      },
+      "Read_Status_Blob": {
+        "type": "Http",
+        "inputs": {
+          "method": "GET",
+          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', outputs('Compose_StatusPath'), '?', appsetting('BLOB_SAS_TOKEN'))}"
+        },
+        "runAfter": {
+          "Compose_StatusPath": ["Succeeded"]
+        }
+      },
+      "Check_Blob_Found": {
+        "type": "If",
+        "runAfter": {
+          "Read_Status_Blob": ["Succeeded", "Failed"]
+        },
+        "expression": {
+          "and": [
+            {
+              "equals": [
+                "@outputs('Read_Status_Blob')?['statusCode']",
+                200
+              ]
+            }
+          ]
+        },
+        "actions": {
+          "Parse_Status_Blob": {
+            "type": "ParseJson",
+            "inputs": {
+              "content": "@body('Read_Status_Blob')",
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "submissionId": { "type": "string" },
+                  "partnerID":    { "type": "string" },
+                  "partnerName":  { "type": "string" },
+                  "status":       { "type": "string" },
+                  "submittedAt":  { "type": "string" },
+                  "approvedAt":   { "type": "string" },
+                  "approvedBy":   { "type": "string" },
+                  "startedAt":    { "type": "string" },
+                  "completedAt":  { "type": "string" },
+                  "blobPath":     { "type": "string" },
+                  "services": {
+                    "type": "object",
+                    "properties": {
+                      "solace":   { "type": "object" },
+                      "mulesoft": { "type": "object" },
+                      "btp":      { "type": "object" }
+                    }
+                  }
+                }
+              }
+            },
+            "runAfter": {}
+          },
+          "Response_Status_Found": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "headers": { "Content-Type": "application/json" },
+              "body": "@body('Parse_Status_Blob')"
+            },
+            "runAfter": {
+              "Parse_Status_Blob": ["Succeeded"]
+            }
+          }
+        },
+        "else": {
+          "actions": {
+            "Response_Not_Found": {
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": 404,
+                "headers": { "Content-Type": "application/json" },
+                "body": {
+                  "status":       "not_found",
+                  "submissionId": "@{triggerBody()?['submissionId']}",
+                  "message":      "Status record not found — submission may not exist or status blob has not been written yet"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}
