@@ -108,6 +108,7 @@
       },
       "Invoke_Blob_Trigger_Workflow": {
         "type": "Http",
+        "operationOptions": "DisableAsyncPattern",
         "inputs": {
           "method": "POST",
           "uri": "@parameters('blobTriggerUrl')",
