@@ -61,6 +61,9 @@
                           "body": {
                             "name": "@{triggerBody()?['payload']?['name']}",
                             "description": "@{triggerBody()?['payload']?['description']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -91,6 +94,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/applicationDomains/@{triggerBody()?['payload']?['domainId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -124,6 +130,9 @@
                           },
                           "queries": {
                             "name": "@{coalesce(triggerBody()?['payload']?['name'],  '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -156,7 +165,10 @@
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
                             "Content-Type": "application/json"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_Domain_Update": {
@@ -186,6 +198,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/applicationDomains/@{triggerBody()?['payload']?['domainId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -252,6 +267,9 @@
                             "name": "@{triggerBody()?['payload']?['name']}",
                             "applicationDomainId": "@{triggerBody()?['payload']?['domainId']}",
                             "schemaType": "@{triggerBody()?['payload']?['schemaType']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -282,6 +300,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/schemas/@{triggerBody()?['payload']?['schemaId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -315,6 +336,9 @@
                           },
                           "queries": {
                             "applicationDomainId": "@{coalesce(triggerBody()?['payload']?['domainId'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -347,7 +371,10 @@
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
                             "Content-Type": "application/json"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_Schema_Update": {
@@ -377,6 +404,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/schemas/@{triggerBody()?['payload']?['schemaId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -445,6 +475,9 @@
                             "displayName": "v@{triggerBody()?['payload']?['version']}",
                             "description": "@{triggerBody()?['payload']?['description']}",
                             "content": "@{string(triggerBody()?['payload']?['content'])}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -475,6 +508,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/schemaVersions/@{triggerBody()?['payload']?['versionId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -508,6 +544,9 @@
                           },
                           "queries": {
                             "schemaId": "@{coalesce(triggerBody()?['payload']?['schemaId'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -538,6 +577,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/schemaVersions/@{triggerBody()?['payload']?['versionId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -604,6 +646,9 @@
                             "name": "@{triggerBody()?['payload']?['name']}",
                             "applicationDomainId": "@{triggerBody()?['payload']?['domainId']}",
                             "description": "@{triggerBody()?['payload']?['description']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -634,6 +679,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/events/@{triggerBody()?['payload']?['eventId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -667,6 +715,9 @@
                           },
                           "queries": {
                             "applicationDomainId": "@{coalesce(triggerBody()?['payload']?['domainId'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -699,7 +750,10 @@
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
                             "Content-Type": "application/json"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_Event_Update": {
@@ -729,6 +783,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/events/@{triggerBody()?['payload']?['eventId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -804,6 +861,9 @@
                                 "addressLevels": "@triggerBody()?['payload']?['addressLevels']"
                               }
                             }
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -834,6 +894,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/eventVersions/@{triggerBody()?['payload']?['versionId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -867,6 +930,9 @@
                           },
                           "queries": {
                             "eventId": "@{coalesce(triggerBody()?['payload']?['eventId'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -897,6 +963,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/eventVersions/@{triggerBody()?['payload']?['versionId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -965,6 +1034,9 @@
                             "applicationType": "@{coalesce(triggerBody()?['payload']?['applicationType'], 'standard')}",
                             "brokerType": "solace",
                             "description": "@{triggerBody()?['payload']?['description']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -995,6 +1067,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/applications/@{triggerBody()?['payload']?['applicationId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1028,6 +1103,9 @@
                           },
                           "queries": {
                             "applicationDomainId": "@{coalesce(triggerBody()?['payload']?['domainId'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1060,7 +1138,10 @@
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
                             "Content-Type": "application/json"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_App_Update": {
@@ -1090,6 +1171,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/applications/@{triggerBody()?['payload']?['applicationId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1159,6 +1243,9 @@
                             "description": "@{triggerBody()?['payload']?['description']}",
                             "declaredProducedEventVersionIds": "@triggerBody()?['payload']?['produces']",
                             "declaredConsumedEventVersionIds": "@triggerBody()?['payload']?['consumes']"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1189,6 +1276,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/applicationVersions/@{triggerBody()?['payload']?['versionId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1222,6 +1312,9 @@
                           },
                           "queries": {
                             "applicationId": "@{coalesce(triggerBody()?['payload']?['applicationId'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1252,6 +1345,9 @@
                           "uri": "https://api.solace.cloud/api/v2/architecture/applicationVersions/@{triggerBody()?['payload']?['versionId']}",
                           "headers": {
                             "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },

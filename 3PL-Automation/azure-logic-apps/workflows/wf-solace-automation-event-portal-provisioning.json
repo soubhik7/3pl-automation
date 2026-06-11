@@ -99,6 +99,9 @@
           "body": {
             "name": "@{triggerBody()?['eventPortalConfig']?['domainName']}",
             "description": "@{triggerBody()?['eventPortalConfig']?['domainDescription']}"
+          },
+          "retryPolicy": {
+            "type": "none"
           }
         },
         "runAfter": {
@@ -163,6 +166,9 @@
                 "name": "@{items('For_Each_Schema')?['name']}",
                 "applicationDomainId": "@{variables('domainId')}",
                 "schemaType": "@{items('For_Each_Schema')?['type']}"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             }
           },
@@ -205,6 +211,9 @@
                 "description": "@{items('For_Each_Schema')?['description']}",
                 "displayName": "v@{items('For_Each_Schema')?['version']}",
                 "content": "@{string(items('For_Each_Schema')?['content'])}"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             },
             "runAfter": {
@@ -282,6 +291,9 @@
                 "name": "@{items('For_Each_Event')?['name']}",
                 "applicationDomainId": "@{variables('domainId')}",
                 "description": "@{items('For_Each_Event')?['description']}"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             }
           },
@@ -364,6 +376,9 @@
                     "addressLevels": "@body('Build_AddressLevels')"
                   }
                 }
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             },
             "runAfter": {
@@ -443,6 +458,9 @@
                 "applicationType": "@{items('For_Each_Application')?['type']}",
                 "brokerType": "solace",
                 "description": "@{items('For_Each_Application')?['description']}"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             }
           },
@@ -510,6 +528,9 @@
                 "displayName": "v@{items('For_Each_Application')?['version']}",
                 "declaredProducedEventVersionIds": "@body('Map_Produces_EventNames_To_Ids')",
                 "declaredConsumedEventVersionIds": "@body('Map_Consumes_EventNames_To_Ids')"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             },
             "runAfter": {
@@ -551,7 +572,7 @@
           "statusCode": 500,
           "body": {
             "status": "error",
-            "message": "Event Portal provisioning failed — check Azure Logic Apps run history for details",
+            "message": "Event Portal provisioning failed \u2014 check Azure Logic Apps run history for details",
             "failedStep": "@{if(not(equals(actions('For_Each_Schema')?['status'], 'Succeeded')), 'schema-creation', if(not(equals(actions('For_Each_Event')?['status'], 'Succeeded')), 'event-creation', 'application-creation'))}",
             "domainId": "@variables('domainId')"
           }

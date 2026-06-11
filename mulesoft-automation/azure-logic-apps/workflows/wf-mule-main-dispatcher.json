@@ -3,11 +3,31 @@
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "yamlPatchManagementUrl":  { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of yaml-patch-management workflow" },
-      "translationManagementUrl":{ "type": "String", "defaultValue": "", "description": "HTTP trigger URL of translation-management workflow" },
-      "muleBranchManagementUrl": { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of mule-branch-management workflow" },
-      "mulePrManagementUrl":     { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of mule-pr-management workflow" },
-      "mainOrchestratorUrl":     { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of main-orchestrator workflow" }
+      "yamlPatchManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of yaml-patch-management workflow"
+      },
+      "translationManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of translation-management workflow"
+      },
+      "muleBranchManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of mule-branch-management workflow"
+      },
+      "mulePrManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of mule-pr-management workflow"
+      },
+      "mainOrchestratorUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of main-orchestrator workflow"
+      }
     },
     "triggers": {
       "manual": {
@@ -16,7 +36,9 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["resource"],
+            "required": [
+              "resource"
+            ],
             "properties": {
               "resource": {
                 "type": "string",
@@ -26,19 +48,60 @@
                 "type": "string",
                 "description": "For mule-branch: create | get | list | delete. For mule-pr: create | get | list | merge"
               },
-              "onboardingInput":   { "type": "object", "description": "Required for: yaml-patch, translation, fullOnboarding" },
-              "muleWebAppUrl":     { "type": "string", "description": "Override web app URL for yaml-patch / translation" },
-              "githubCredentials": { "type": "object", "properties": { "pat": { "type": "string" } } },
-              "repoConfig":        { "type": "object", "description": "GitHub repo config for mule-branch, yaml-patch, mule-pr" },
-              "payload":           { "type": "object", "description": "Action-specific payload for mule-branch and mule-pr" },
-              "notificationConfig":{ "type": "object", "description": "Teams notification config for mule-pr create" },
-              "githubConfig":      { "type": "object", "description": "GitHub commit config for yaml-patch" },
-              "branchName":        { "type": "string", "description": "Feature branch override for fullOnboarding (auto-generated if omitted)" },
-              "prTitle":           { "type": "string" },
-              "prBody":            { "type": "string" },
-              "prReviewers":       { "type": "array", "items": { "type": "string" } },
-              "skipMuleBranch":    { "type": "boolean" },
-              "skipMulePr":        { "type": "boolean" }
+              "onboardingInput": {
+                "type": "object",
+                "description": "Required for: yaml-patch, translation, fullOnboarding"
+              },
+              "muleWebAppUrl": {
+                "type": "string",
+                "description": "Override web app URL for yaml-patch / translation"
+              },
+              "githubCredentials": {
+                "type": "object",
+                "properties": {
+                  "pat": {
+                    "type": "string"
+                  }
+                }
+              },
+              "repoConfig": {
+                "type": "object",
+                "description": "GitHub repo config for mule-branch, yaml-patch, mule-pr"
+              },
+              "payload": {
+                "type": "object",
+                "description": "Action-specific payload for mule-branch and mule-pr"
+              },
+              "notificationConfig": {
+                "type": "object",
+                "description": "Teams notification config for mule-pr create"
+              },
+              "githubConfig": {
+                "type": "object",
+                "description": "GitHub commit config for yaml-patch"
+              },
+              "branchName": {
+                "type": "string",
+                "description": "Feature branch override for fullOnboarding (auto-generated if omitted)"
+              },
+              "prTitle": {
+                "type": "string"
+              },
+              "prBody": {
+                "type": "string"
+              },
+              "prReviewers": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "skipMuleBranch": {
+                "type": "boolean"
+              },
+              "skipMulePr": {
+                "type": "boolean"
+              }
             }
           }
         }
@@ -49,9 +112,7 @@
         "type": "Switch",
         "expression": "@triggerBody()?['resource']",
         "runAfter": {},
-
         "cases": {
-
           "Case_YAML_Patch": {
             "case": "yaml-patch",
             "actions": {
@@ -60,11 +121,16 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('yamlPatchManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "onboardingInput": "@triggerBody()?['onboardingInput']",
-                    "muleWebAppUrl":   "@triggerBody()?['muleWebAppUrl']",
-                    "githubConfig":    "@triggerBody()?['githubConfig']"
+                    "muleWebAppUrl": "@triggerBody()?['muleWebAppUrl']",
+                    "githubConfig": "@triggerBody()?['githubConfig']"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -76,11 +142,15 @@
                   "statusCode": "@outputs('Invoke_YAML_Patch_Management')['statusCode']",
                   "body": "@body('Invoke_YAML_Patch_Management')"
                 },
-                "runAfter": { "Invoke_YAML_Patch_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_YAML_Patch_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Translation": {
             "case": "translation",
             "actions": {
@@ -89,10 +159,15 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('translationManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "onboardingInput": "@triggerBody()?['onboardingInput']",
-                    "muleWebAppUrl":   "@triggerBody()?['muleWebAppUrl']"
+                    "muleWebAppUrl": "@triggerBody()?['muleWebAppUrl']"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -104,11 +179,15 @@
                   "statusCode": "@outputs('Invoke_Translation_Management')['statusCode']",
                   "body": "@body('Invoke_Translation_Management')"
                 },
-                "runAfter": { "Invoke_Translation_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Translation_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Mule_Branch": {
             "case": "mule-branch",
             "actions": {
@@ -117,12 +196,17 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('muleBranchManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "githubCredentials": "@triggerBody()?['githubCredentials']",
-                    "repoConfig":        "@triggerBody()?['repoConfig']",
-                    "action":            "@triggerBody()?['action']",
-                    "payload":           "@triggerBody()?['payload']"
+                    "repoConfig": "@triggerBody()?['repoConfig']",
+                    "action": "@triggerBody()?['action']",
+                    "payload": "@triggerBody()?['payload']"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -134,11 +218,15 @@
                   "statusCode": "@outputs('Invoke_Mule_Branch_Management')['statusCode']",
                   "body": "@body('Invoke_Mule_Branch_Management')"
                 },
-                "runAfter": { "Invoke_Mule_Branch_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Mule_Branch_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Mule_PR": {
             "case": "mule-pr",
             "actions": {
@@ -147,13 +235,18 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('mulePrManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
-                    "githubCredentials":  "@triggerBody()?['githubCredentials']",
-                    "repoConfig":         "@triggerBody()?['repoConfig']",
-                    "action":             "@triggerBody()?['action']",
-                    "payload":            "@triggerBody()?['payload']",
+                    "githubCredentials": "@triggerBody()?['githubCredentials']",
+                    "repoConfig": "@triggerBody()?['repoConfig']",
+                    "action": "@triggerBody()?['action']",
+                    "payload": "@triggerBody()?['payload']",
                     "notificationConfig": "@triggerBody()?['notificationConfig']"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -165,11 +258,15 @@
                   "statusCode": "@outputs('Invoke_Mule_PR_Management')['statusCode']",
                   "body": "@body('Invoke_Mule_PR_Management')"
                 },
-                "runAfter": { "Invoke_Mule_PR_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Mule_PR_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Full_Onboarding": {
             "case": "fullOnboarding",
             "actions": {
@@ -178,8 +275,13 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('mainOrchestratorUrl')",
-                  "headers": { "Content-Type": "application/json" },
-                  "body": "@triggerBody()"
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -190,13 +292,16 @@
                   "statusCode": "@outputs('Invoke_Full_Orchestration')['statusCode']",
                   "body": "@body('Invoke_Full_Orchestration')"
                 },
-                "runAfter": { "Invoke_Full_Orchestration": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Full_Orchestration": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           }
-
         },
-
         "default": {
           "actions": {
             "Response_Invalid_Resource": {
@@ -205,7 +310,9 @@
               "runAfter": {},
               "inputs": {
                 "statusCode": 400,
-                "headers": { "Content-Type": "application/json" },
+                "headers": {
+                  "Content-Type": "application/json"
+                },
                 "body": {
                   "error": "Invalid resource. Valid values: yaml-patch | translation | mule-branch | mule-pr | fullOnboarding",
                   "received": "@{triggerBody()?['resource']}"

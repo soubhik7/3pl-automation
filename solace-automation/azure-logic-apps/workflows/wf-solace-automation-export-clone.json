@@ -49,6 +49,9 @@
           "uri": "https://api.solace.cloud/api/v0/services/@{triggerBody()?['sourceServiceId']}",
           "headers": {
             "Authorization": "Bearer @{triggerBody()?['apiToken']}"
+          },
+          "retryPolicy": {
+            "type": "none"
           }
         },
         "runAfter": {}

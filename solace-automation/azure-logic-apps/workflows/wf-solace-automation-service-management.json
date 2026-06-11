@@ -94,6 +94,9 @@
                   "uri": "https://api.solace.cloud/api/v0/services",
                   "headers": {
                     "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -124,6 +127,9 @@
                   "uri": "https://api.solace.cloud/api/v0/services/@{triggerBody()?['payload']?['serviceId']}",
                   "headers": {
                     "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -163,6 +169,9 @@
                     "datacenterId": "@{triggerBody()?['payload']?['datacenterId']}",
                     "adminState": "@{coalesce(triggerBody()?['payload']?['adminState'], 'start')}",
                     "partitionId": "default"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -243,6 +252,9 @@
                       "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
                       "headers": {
                         "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
                     "runAfter": {
@@ -314,6 +326,9 @@
                       "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
                       "headers": {
                         "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
                     "runAfter": {}
@@ -419,7 +434,10 @@
                     "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}",
                     "Content-Type": "application/json"
                   },
-                  "body": "@triggerBody()?['payload']?['fields']"
+                  "body": "@triggerBody()?['payload']?['fields']",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -449,6 +467,9 @@
                   "uri": "https://api.solace.cloud/api/v0/services/@{triggerBody()?['payload']?['serviceId']}",
                   "headers": {
                     "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}

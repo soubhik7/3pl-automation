@@ -80,7 +80,10 @@
                   "headers": {
                     "Content-Type": "application/json"
                   },
-                  "body": "@triggerBody()"
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -111,7 +114,10 @@
                   "headers": {
                     "Content-Type": "application/json"
                   },
-                  "body": "@triggerBody()"
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -142,7 +148,10 @@
                   "headers": {
                     "Content-Type": "application/json"
                   },
-                  "body": "@triggerBody()"
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -177,6 +186,9 @@
                     "config": "@triggerBody()?['payload']",
                     "skipEventPortal": "@coalesce(triggerBody()?['skipEventPortal'], false)",
                     "skipCluster": "@coalesce(triggerBody()?['skipCluster'], false)"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -208,7 +220,10 @@
                   "headers": {
                     "Content-Type": "application/json"
                   },
-                  "body": "@triggerBody()"
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },

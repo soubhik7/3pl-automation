@@ -69,6 +69,9 @@
                         "allowGuaranteedMsgSendEnabled": true,
                         "allowGuaranteedMsgReceiveEnabled": true,
                         "allowTransactedSessionsEnabled": true
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     }
                   }
@@ -103,6 +106,9 @@
                         "clientConnectDefaultAction": "allow",
                         "publishTopicDefaultAction": "@{items('Provision_AclProfiles')?['publishDefault']}",
                         "subscribeTopicDefaultAction": "@{items('Provision_AclProfiles')?['subscribeDefault']}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     }
                   },
@@ -134,6 +140,9 @@
                             "publishTopicExceptionSyntax": "smf",
                             "aclProfileName": "@{items('Provision_AclProfiles')?['name']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       }
@@ -167,6 +176,9 @@
                             "subscribeTopicExceptionSyntax": "smf",
                             "aclProfileName": "@{items('Provision_AclProfiles')?['name']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       }
@@ -204,6 +216,9 @@
                         "aclProfileName": "@{items('Provision_ClientUsernames')?['aclProfile']}",
                         "enabled": "@equals(toLower(string(items('Provision_ClientUsernames')?['enabled'])), 'true')",
                         "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     }
                   }
@@ -242,6 +257,9 @@
                         "maxMsgSpoolUsage": 1500,
                         "permission": "consume",
                         "owner": "@{items('Provision_Queues')?['owner']}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     }
                   },
@@ -272,6 +290,9 @@
                             "subscriptionTopic": "@{items('Prov_QSubs')}",
                             "queueName": "@{items('Provision_Queues')?['name']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       }
@@ -307,6 +328,9 @@
                         "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}",
                         "clientProfileName": "@{items('Provision_RDPs')?['clientProfile']}",
                         "enabled": "@equals(toLower(string(items('Provision_RDPs')?['enabled'])), 'true')"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     }
                   },
@@ -343,6 +367,9 @@
                             "httpMethod": "@{items('Prov_Consumers')?['httpMethod']}",
                             "authenticationScheme": "none",
                             "enabled": true
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       }
@@ -376,6 +403,9 @@
                             "postRequestTarget": "@{items('Provision_RDPs')?['postRequestTarget']}",
                             "restDeliveryPointName": "@{items('Provision_RDPs')?['name']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       }
@@ -457,6 +487,9 @@
                             "allowGuaranteedMsgSendEnabled": true,
                             "allowGuaranteedMsgReceiveEnabled": true,
                             "allowTransactedSessionsEnabled": true
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -489,6 +522,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -521,6 +557,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -557,7 +596,10 @@
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_CP_Update": {
@@ -589,6 +631,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -660,6 +705,9 @@
                             "clientConnectDefaultAction": "allow",
                             "publishTopicDefaultAction": "@{coalesce(triggerBody()?['payload']?['publishDefault'], 'allow')}",
                             "subscribeTopicDefaultAction": "@{coalesce(triggerBody()?['payload']?['subscribeDefault'], 'allow')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -692,6 +740,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -724,6 +775,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -756,6 +810,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -826,6 +883,9 @@
                             "publishTopicExceptionSyntax": "@{coalesce(triggerBody()?['payload']?['syntax'], 'smf')}",
                             "aclProfileName": "@{triggerBody()?['payload']?['aclName']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -858,6 +918,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -890,6 +953,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -960,6 +1026,9 @@
                             "subscribeTopicExceptionSyntax": "@{coalesce(triggerBody()?['payload']?['syntax'], 'smf')}",
                             "aclProfileName": "@{triggerBody()?['payload']?['aclName']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -992,6 +1061,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1024,6 +1096,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1096,6 +1171,9 @@
                             "aclProfileName": "@{triggerBody()?['payload']?['aclProfile']}",
                             "enabled": "@equals(toLower(string(coalesce(triggerBody()?['payload']?['enabled'], 'true'))), 'true')",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1128,6 +1206,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1160,6 +1241,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1196,7 +1280,10 @@
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_CU_Update": {
@@ -1228,6 +1315,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1303,6 +1393,9 @@
                             "maxMsgSpoolUsage": "@int(string(coalesce(triggerBody()?['payload']?['maxSpoolMb'], 1500)))",
                             "permission": "consume",
                             "owner": "@{triggerBody()?['payload']?['owner']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1335,6 +1428,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1367,6 +1463,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1403,7 +1502,10 @@
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_Queue_Update": {
@@ -1435,6 +1537,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1504,6 +1609,9 @@
                             "subscriptionTopic": "@{triggerBody()?['payload']?['topic']}",
                             "queueName": "@{triggerBody()?['payload']?['queueName']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1536,6 +1644,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1568,6 +1679,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1638,6 +1752,9 @@
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}",
                             "clientProfileName": "@{triggerBody()?['payload']?['clientProfile']}",
                             "enabled": "@equals(toLower(string(coalesce(triggerBody()?['payload']?['enabled'], 'true'))), 'true')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1670,6 +1787,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1702,6 +1822,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1734,6 +1857,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1809,6 +1935,9 @@
                             "httpMethod": "@{coalesce(triggerBody()?['payload']?['httpMethod'], 'post')}",
                             "authenticationScheme": "none",
                             "enabled": true
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1841,6 +1970,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1877,7 +2009,10 @@
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
                           },
-                          "body": "@triggerBody()?['payload']?['fields']"
+                          "body": "@triggerBody()?['payload']?['fields']",
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_Update": {
@@ -1909,6 +2044,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -1979,6 +2117,9 @@
                             "postRequestTarget": "@{triggerBody()?['payload']?['postRequestTarget']}",
                             "restDeliveryPointName": "@{triggerBody()?['payload']?['rdpName']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -2011,6 +2152,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
@@ -2043,6 +2187,9 @@
                             "type": "Basic",
                             "username": "@appsetting('SOLACE_SEMP_USERNAME')",
                             "password": "@appsetting('SOLACE_SEMP_PASSWORD')"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },

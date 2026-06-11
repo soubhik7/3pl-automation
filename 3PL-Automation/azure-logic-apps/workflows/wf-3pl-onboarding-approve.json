@@ -17,12 +17,25 @@
           "method": "POST",
           "schema": {
             "type": "object",
-            "required": ["submissionId", "blobPath"],
+            "required": [
+              "submissionId",
+              "blobPath"
+            ],
             "properties": {
-              "submissionId": { "type": "string" },
-              "blobPath":     { "type": "string",  "description": "3pl-onboarding/pending/{submissionId}.json" },
-              "statusPath":   { "type": "string",  "description": "3pl-onboarding/status/{submissionId}-status.json" },
-              "approvedBy":   { "type": "string" }
+              "submissionId": {
+                "type": "string"
+              },
+              "blobPath": {
+                "type": "string",
+                "description": "3pl-onboarding/pending/{submissionId}.json"
+              },
+              "statusPath": {
+                "type": "string",
+                "description": "3pl-onboarding/status/{submissionId}-status.json"
+              },
+              "approvedBy": {
+                "type": "string"
+              }
             }
           }
         }
@@ -46,10 +59,15 @@
         "type": "Http",
         "inputs": {
           "method": "GET",
-          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', triggerBody()?['blobPath'], '?', appsetting('BLOB_SAS_TOKEN'))}"
+          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', triggerBody()?['blobPath'], '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
         "runAfter": {
-          "Initialize_StatusPath": ["Succeeded"]
+          "Initialize_StatusPath": [
+            "Succeeded"
+          ]
         }
       },
       "Parse_Config_Blob": {
@@ -59,17 +77,31 @@
           "schema": {
             "type": "object",
             "properties": {
-              "submissionId":   { "type": "string" },
-              "partnerID":      { "type": "string" },
-              "partnerName":    { "type": "string" },
-              "submittedAt":    { "type": "string" },
-              "approvalStatus": { "type": "string" },
-              "config":         { "type": "object" }
+              "submissionId": {
+                "type": "string"
+              },
+              "partnerID": {
+                "type": "string"
+              },
+              "partnerName": {
+                "type": "string"
+              },
+              "submittedAt": {
+                "type": "string"
+              },
+              "approvalStatus": {
+                "type": "string"
+              },
+              "config": {
+                "type": "object"
+              }
             }
           }
         },
         "runAfter": {
-          "Read_Config_Blob": ["Succeeded"]
+          "Read_Config_Blob": [
+            "Succeeded"
+          ]
         }
       },
       "Write_Approved_Status_Blob": {
@@ -83,22 +115,36 @@
           },
           "body": {
             "submissionId": "@{body('Parse_Config_Blob')?['submissionId']}",
-            "partnerID":    "@{body('Parse_Config_Blob')?['partnerID']}",
-            "partnerName":  "@{body('Parse_Config_Blob')?['partnerName']}",
-            "submittedAt":  "@{body('Parse_Config_Blob')?['submittedAt']}",
-            "approvedAt":   "@{utcNow()}",
-            "approvedBy":   "@{coalesce(triggerBody()?['approvedBy'], 'Architect')}",
-            "status":       "approved",
-            "blobPath":     "@{triggerBody()?['blobPath']}",
+            "partnerID": "@{body('Parse_Config_Blob')?['partnerID']}",
+            "partnerName": "@{body('Parse_Config_Blob')?['partnerName']}",
+            "submittedAt": "@{body('Parse_Config_Blob')?['submittedAt']}",
+            "approvedAt": "@{utcNow()}",
+            "approvedBy": "@{coalesce(triggerBody()?['approvedBy'], 'Architect')}",
+            "status": "approved",
+            "blobPath": "@{triggerBody()?['blobPath']}",
             "services": {
-              "solace":   { "status": "pending", "message": "Automation starting..." },
-              "mulesoft": { "status": "not_configured", "message": "Future scope — not yet enabled" },
-              "btp":      { "status": "not_configured", "message": "Future scope — not yet enabled" }
+              "solace": {
+                "status": "pending",
+                "message": "Automation starting..."
+              },
+              "mulesoft": {
+                "status": "not_configured",
+                "message": "Future scope \u2014 not yet enabled"
+              },
+              "btp": {
+                "status": "not_configured",
+                "message": "Future scope \u2014 not yet enabled"
+              }
             }
+          },
+          "retryPolicy": {
+            "type": "none"
           }
         },
         "runAfter": {
-          "Parse_Config_Blob": ["Succeeded"]
+          "Parse_Config_Blob": [
+            "Succeeded"
+          ]
         }
       },
       "Response_Accepted": {
@@ -106,16 +152,20 @@
         "kind": "Http",
         "inputs": {
           "statusCode": 200,
-          "headers": { "Content-Type": "application/json" },
+          "headers": {
+            "Content-Type": "application/json"
+          },
           "body": {
-            "status":       "approved",
+            "status": "approved",
             "submissionId": "@{triggerBody()?['submissionId']}",
-            "approvedAt":   "@{utcNow()}",
-            "message":      "Approved. Automation pipeline starting."
+            "approvedAt": "@{utcNow()}",
+            "message": "Approved. Automation pipeline starting."
           }
         },
         "runAfter": {
-          "Write_Approved_Status_Blob": ["Succeeded"]
+          "Write_Approved_Status_Blob": [
+            "Succeeded"
+          ]
         }
       },
       "Trigger_Orchestrator_Async": {
@@ -123,17 +173,23 @@
         "inputs": {
           "method": "POST",
           "uri": "@parameters('orchestratorUrl')",
-          "headers": { "Content-Type": "application/json" },
+          "headers": {
+            "Content-Type": "application/json"
+          },
           "body": {
             "submissionId": "@{triggerBody()?['submissionId']}",
-            "statusPath":   "@{variables('statusPath')}",
-            "config":       "@body('Parse_Config_Blob')?['config']"
+            "statusPath": "@{variables('statusPath')}",
+            "config": "@body('Parse_Config_Blob')?['config']"
           },
-          "retryPolicy": { "type": "none" }
+          "retryPolicy": {
+            "type": "none"
+          }
         },
         "operationOptions": "DisableAsyncPattern",
         "runAfter": {
-          "Response_Accepted": ["Succeeded"]
+          "Response_Accepted": [
+            "Succeeded"
+          ]
         }
       },
       "Response_Error": {
@@ -141,14 +197,20 @@
         "kind": "Http",
         "inputs": {
           "statusCode": 500,
-          "headers": { "Content-Type": "application/json" },
+          "headers": {
+            "Content-Type": "application/json"
+          },
           "body": {
-            "status":  "error",
-            "message": "Approval failed — unable to read submission or update status"
+            "status": "error",
+            "message": "Approval failed \u2014 unable to read submission or update status"
           }
         },
         "runAfter": {
-          "Write_Approved_Status_Blob": ["Failed", "TimedOut", "Skipped"]
+          "Write_Approved_Status_Blob": [
+            "Failed",
+            "TimedOut",
+            "Skipped"
+          ]
         }
       }
     },

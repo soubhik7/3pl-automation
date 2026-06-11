@@ -3,10 +3,26 @@
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "subaccountManagementUrl":    { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of subaccount-management workflow" },
-      "entitlementsManagementUrl":  { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of entitlements-management workflow" },
-      "provisioningManagementUrl":  { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of provisioning-management workflow" },
-      "authorizationManagementUrl": { "type": "String", "defaultValue": "", "description": "HTTP trigger URL of authorization-management workflow" }
+      "subaccountManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of subaccount-management workflow"
+      },
+      "entitlementsManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of entitlements-management workflow"
+      },
+      "provisioningManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of provisioning-management workflow"
+      },
+      "authorizationManagementUrl": {
+        "type": "String",
+        "defaultValue": "",
+        "description": "HTTP trigger URL of authorization-management workflow"
+      }
     },
     "triggers": {
       "manual": {
@@ -15,35 +31,62 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["cisCredentials", "config"],
+            "required": [
+              "cisCredentials",
+              "config"
+            ],
             "properties": {
               "cisCredentials": {
                 "type": "object",
                 "description": "CIS Central OAuth2 credentials for accounts/entitlements/provisioning",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  }
                 }
               },
               "xsuaaCredentials": {
                 "type": "object",
                 "description": "XSUAA OAuth2 credentials for authorization",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" },
-                  "baseUrl":      { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "baseUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "btpConfig": {
                 "type": "object",
                 "properties": {
-                  "globalAccountGuid":      { "type": "string" },
-                  "globalAccountSubdomain": { "type": "string" },
-                  "accountsServiceUrl":     { "type": "string" },
-                  "entitlementsServiceUrl": { "type": "string" },
-                  "provisioningServiceUrl": { "type": "string" }
+                  "globalAccountGuid": {
+                    "type": "string"
+                  },
+                  "globalAccountSubdomain": {
+                    "type": "string"
+                  },
+                  "accountsServiceUrl": {
+                    "type": "string"
+                  },
+                  "entitlementsServiceUrl": {
+                    "type": "string"
+                  },
+                  "provisioningServiceUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "config": {
@@ -53,11 +96,22 @@
                   "subaccount": {
                     "type": "object",
                     "properties": {
-                      "guid":        { "type": "string", "description": "Leave empty to create new subaccount" },
-                      "displayName": { "type": "string" },
-                      "subdomain":   { "type": "string" },
-                      "region":      { "type": "string" },
-                      "description": { "type": "string" }
+                      "guid": {
+                        "type": "string",
+                        "description": "Leave empty to create new subaccount"
+                      },
+                      "displayName": {
+                        "type": "string"
+                      },
+                      "subdomain": {
+                        "type": "string"
+                      },
+                      "region": {
+                        "type": "string"
+                      },
+                      "description": {
+                        "type": "string"
+                      }
                     }
                   },
                   "entitlements": {
@@ -66,8 +120,12 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "serviceName": { "type": "string" },
-                        "planName":    { "type": "string" }
+                        "serviceName": {
+                          "type": "string"
+                        },
+                        "planName": {
+                          "type": "string"
+                        }
                       }
                     }
                   },
@@ -75,11 +133,22 @@
                     "type": "object",
                     "description": "CF or Kyma environment to provision",
                     "properties": {
-                      "type":        { "type": "string", "description": "cloudfoundry | kyma" },
-                      "name":        { "type": "string" },
-                      "planName":    { "type": "string" },
-                      "serviceName": { "type": "string" },
-                      "parameters":  { "type": "object" }
+                      "type": {
+                        "type": "string",
+                        "description": "cloudfoundry | kyma"
+                      },
+                      "name": {
+                        "type": "string"
+                      },
+                      "planName": {
+                        "type": "string"
+                      },
+                      "serviceName": {
+                        "type": "string"
+                      },
+                      "parameters": {
+                        "type": "object"
+                      }
                     }
                   },
                   "roleCollections": {
@@ -88,55 +157,112 @@
                     "items": {
                       "type": "object",
                       "properties": {
-                        "name":        { "type": "string" },
-                        "description": { "type": "string" },
-                        "roles":       { "type": "array" },
-                        "users":       { "type": "array" }
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": "string"
+                        },
+                        "roles": {
+                          "type": "array"
+                        },
+                        "users": {
+                          "type": "array"
+                        }
                       }
                     }
                   }
                 }
               },
-              "skipEntitlements": { "type": "boolean", "default": false },
-              "skipProvisioning":  { "type": "boolean", "default": false },
-              "skipAuthorization": { "type": "boolean", "default": false }
+              "skipEntitlements": {
+                "type": "boolean",
+                "default": false
+              },
+              "skipProvisioning": {
+                "type": "boolean",
+                "default": false
+              },
+              "skipAuthorization": {
+                "type": "boolean",
+                "default": false
+              }
             }
           }
         }
       }
     },
     "actions": {
-
       "Initialize_subaccountGuid": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "subaccountGuid", "type": "string", "value": "" }] },
+        "inputs": {
+          "variables": [
+            {
+              "name": "subaccountGuid",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
         "runAfter": {}
       },
       "Initialize_environmentId": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "environmentId", "type": "string", "value": "" }] },
-        "runAfter": { "Initialize_subaccountGuid": ["Succeeded"] }
+        "inputs": {
+          "variables": [
+            {
+              "name": "environmentId",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_subaccountGuid": [
+            "Succeeded"
+          ]
+        }
       },
       "Initialize_cfApiUrl": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "cfApiUrl", "type": "string", "value": "" }] },
-        "runAfter": { "Initialize_environmentId": ["Succeeded"] }
+        "inputs": {
+          "variables": [
+            {
+              "name": "cfApiUrl",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_environmentId": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Scope_Subaccount": {
         "type": "Scope",
         "actions": {
           "Check_Subaccount_Exists": {
             "type": "If",
             "expression": {
-              "and": [{
-                "not": { "equals": ["@triggerBody()?['config']?['subaccount']?['guid']", ""] }
-              }]
+              "and": [
+                {
+                  "not": {
+                    "equals": [
+                      "@triggerBody()?['config']?['subaccount']?['guid']",
+                      ""
+                    ]
+                  }
+                }
+              ]
             },
             "actions": {
               "Set_Existing_SubaccountGuid": {
                 "type": "SetVariable",
-                "inputs": { "name": "subaccountGuid", "value": "@triggerBody()?['config']?['subaccount']?['guid']" }
+                "inputs": {
+                  "name": "subaccountGuid",
+                  "value": "@triggerBody()?['config']?['subaccount']?['guid']"
+                }
               }
             },
             "else": {
@@ -146,18 +272,23 @@
                   "inputs": {
                     "method": "POST",
                     "uri": "@parameters('subaccountManagementUrl')",
-                    "headers": { "Content-Type": "application/json" },
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
                     "body": {
                       "cisCredentials": "@triggerBody()?['cisCredentials']",
-                      "btpConfig":      "@triggerBody()?['btpConfig']",
-                      "action":         "create",
-                      "subResource":    "subaccount",
+                      "btpConfig": "@triggerBody()?['btpConfig']",
+                      "action": "create",
+                      "subResource": "subaccount",
                       "payload": {
                         "displayName": "@triggerBody()?['config']?['subaccount']?['displayName']",
-                        "subdomain":   "@triggerBody()?['config']?['subaccount']?['subdomain']",
-                        "region":      "@triggerBody()?['config']?['subaccount']?['region']",
+                        "subdomain": "@triggerBody()?['config']?['subaccount']?['subdomain']",
+                        "region": "@triggerBody()?['config']?['subaccount']?['region']",
                         "description": "@coalesce(triggerBody()?['config']?['subaccount']?['description'], '')"
                       }
+                    },
+                    "retryPolicy": {
+                      "type": "none"
                     }
                   },
                   "runAfter": {}
@@ -168,22 +299,36 @@
                     "name": "subaccountGuid",
                     "value": "@body('Invoke_Create_Subaccount')?['guid']"
                   },
-                  "runAfter": { "Invoke_Create_Subaccount": ["Succeeded"] }
+                  "runAfter": {
+                    "Invoke_Create_Subaccount": [
+                      "Succeeded"
+                    ]
+                  }
                 }
               }
             }
           }
         },
-        "runAfter": { "Initialize_cfApiUrl": ["Succeeded"] }
+        "runAfter": {
+          "Initialize_cfApiUrl": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Scope_Entitlements": {
         "type": "Scope",
         "actions": {
           "Check_Skip_Entitlements": {
             "type": "If",
             "expression": {
-              "and": [{ "equals": ["@coalesce(triggerBody()?['skipEntitlements'], false)", false] }]
+              "and": [
+                {
+                  "equals": [
+                    "@coalesce(triggerBody()?['skipEntitlements'], false)",
+                    false
+                  ]
+                }
+              ]
             },
             "actions": {
               "Invoke_Bulk_Assign_Entitlements": {
@@ -191,16 +336,23 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('entitlementsManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "cisCredentials": "@triggerBody()?['cisCredentials']",
                     "btpConfig": {
-                      "globalAccountGuid":      "@triggerBody()?['btpConfig']?['globalAccountGuid']",
-                      "subaccountGuid":         "@variables('subaccountGuid')",
+                      "globalAccountGuid": "@triggerBody()?['btpConfig']?['globalAccountGuid']",
+                      "subaccountGuid": "@variables('subaccountGuid')",
                       "entitlementsServiceUrl": "@coalesce(triggerBody()?['btpConfig']?['entitlementsServiceUrl'], 'https://entitlements-service.cfapps.eu10.hana.ondemand.com')"
                     },
-                    "action":  "bulkAssign",
-                    "payload": { "assignments": "@triggerBody()?['config']?['entitlements']" }
+                    "action": "bulkAssign",
+                    "payload": {
+                      "assignments": "@triggerBody()?['config']?['entitlements']"
+                    }
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -208,22 +360,41 @@
             }
           }
         },
-        "runAfter": { "Scope_Subaccount": ["Succeeded"] }
+        "runAfter": {
+          "Scope_Subaccount": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Scope_Provisioning": {
         "type": "Scope",
         "actions": {
           "Check_Skip_Provisioning": {
             "type": "If",
             "expression": {
-              "and": [{ "equals": ["@coalesce(triggerBody()?['skipProvisioning'], false)", false] }]
+              "and": [
+                {
+                  "equals": [
+                    "@coalesce(triggerBody()?['skipProvisioning'], false)",
+                    false
+                  ]
+                }
+              ]
             },
             "actions": {
               "Check_Environment_Config_Exists": {
                 "type": "If",
                 "expression": {
-                  "and": [{ "not": { "equals": ["@triggerBody()?['config']?['environment']?['name']", null] } }]
+                  "and": [
+                    {
+                      "not": {
+                        "equals": [
+                          "@triggerBody()?['config']?['environment']?['name']",
+                          null
+                        ]
+                      }
+                    }
+                  ]
                 },
                 "actions": {
                   "Invoke_Create_Environment": {
@@ -231,21 +402,26 @@
                     "inputs": {
                       "method": "POST",
                       "uri": "@parameters('provisioningManagementUrl')",
-                      "headers": { "Content-Type": "application/json" },
+                      "headers": {
+                        "Content-Type": "application/json"
+                      },
                       "body": {
                         "cisCredentials": "@triggerBody()?['cisCredentials']",
                         "btpConfig": {
-                          "subaccountGuid":        "@variables('subaccountGuid')",
+                          "subaccountGuid": "@variables('subaccountGuid')",
                           "provisioningServiceUrl": "@coalesce(triggerBody()?['btpConfig']?['provisioningServiceUrl'], 'https://provisioning-service.cfapps.eu10.hana.ondemand.com')"
                         },
                         "action": "create",
                         "payload": {
                           "environmentType": "@coalesce(triggerBody()?['config']?['environment']?['type'], 'cloudfoundry')",
-                          "name":            "@triggerBody()?['config']?['environment']?['name']",
-                          "planName":        "@coalesce(triggerBody()?['config']?['environment']?['planName'], 'standard')",
-                          "serviceName":     "@coalesce(triggerBody()?['config']?['environment']?['serviceName'], 'cloudfoundry')",
-                          "parameters":      "@coalesce(triggerBody()?['config']?['environment']?['parameters'], json('{}'))"
+                          "name": "@triggerBody()?['config']?['environment']?['name']",
+                          "planName": "@coalesce(triggerBody()?['config']?['environment']?['planName'], 'standard')",
+                          "serviceName": "@coalesce(triggerBody()?['config']?['environment']?['serviceName'], 'cloudfoundry')",
+                          "parameters": "@coalesce(triggerBody()?['config']?['environment']?['parameters'], json('{}'))"
                         }
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
                     "runAfter": {}
@@ -256,7 +432,11 @@
                       "name": "environmentId",
                       "value": "@body('Invoke_Create_Environment')?['environmentId']"
                     },
-                    "runAfter": { "Invoke_Create_Environment": ["Succeeded"] }
+                    "runAfter": {
+                      "Invoke_Create_Environment": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "Set_CfApiUrl": {
                     "type": "SetVariable",
@@ -264,7 +444,11 @@
                       "name": "cfApiUrl",
                       "value": "@coalesce(body('Invoke_Create_Environment')?['cfApiUrl'], '')"
                     },
-                    "runAfter": { "Set_EnvironmentId": ["Succeeded"] }
+                    "runAfter": {
+                      "Set_EnvironmentId": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 },
                 "runAfter": {}
@@ -272,16 +456,26 @@
             }
           }
         },
-        "runAfter": { "Scope_Entitlements": ["Succeeded"] }
+        "runAfter": {
+          "Scope_Entitlements": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Scope_Authorization": {
         "type": "Scope",
         "actions": {
           "Check_Skip_Authorization": {
             "type": "If",
             "expression": {
-              "and": [{ "equals": ["@coalesce(triggerBody()?['skipAuthorization'], false)", false] }]
+              "and": [
+                {
+                  "equals": [
+                    "@coalesce(triggerBody()?['skipAuthorization'], false)",
+                    false
+                  ]
+                }
+              ]
             },
             "actions": {
               "For_Each_RoleCollection": {
@@ -293,19 +487,24 @@
                     "inputs": {
                       "method": "POST",
                       "uri": "@parameters('authorizationManagementUrl')",
-                      "headers": { "Content-Type": "application/json" },
+                      "headers": {
+                        "Content-Type": "application/json"
+                      },
                       "body": {
                         "xsuaaCredentials": "@triggerBody()?['xsuaaCredentials']",
                         "btpConfig": {
-                          "subaccountGuid":    "@variables('subaccountGuid')",
+                          "subaccountGuid": "@variables('subaccountGuid')",
                           "subaccountSubdomain": "@triggerBody()?['btpConfig']?['globalAccountSubdomain']"
                         },
-                        "action":      "create",
+                        "action": "create",
                         "subResource": "roleCollection",
                         "payload": {
-                          "name":        "@items('For_Each_RoleCollection')?['name']",
+                          "name": "@items('For_Each_RoleCollection')?['name']",
                           "description": "@coalesce(items('For_Each_RoleCollection')?['description'], '')"
                         }
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
                     "runAfter": {}
@@ -319,27 +518,36 @@
                         "inputs": {
                           "method": "POST",
                           "uri": "@parameters('authorizationManagementUrl')",
-                          "headers": { "Content-Type": "application/json" },
+                          "headers": {
+                            "Content-Type": "application/json"
+                          },
                           "body": {
                             "xsuaaCredentials": "@triggerBody()?['xsuaaCredentials']",
                             "btpConfig": {
-                              "subaccountGuid":    "@variables('subaccountGuid')",
+                              "subaccountGuid": "@variables('subaccountGuid')",
                               "subaccountSubdomain": "@triggerBody()?['btpConfig']?['globalAccountSubdomain']"
                             },
-                            "action":      "addRole",
+                            "action": "addRole",
                             "subResource": "roleCollection",
                             "payload": {
-                              "collectionName":    "@items('For_Each_RoleCollection')?['name']",
-                              "roleName":          "@items('For_Each_Role_In_Collection')?['roleName']",
-                              "roleTemplateName":  "@items('For_Each_Role_In_Collection')?['roleTemplateName']",
-                              "appId":             "@items('For_Each_Role_In_Collection')?['appId']"
+                              "collectionName": "@items('For_Each_RoleCollection')?['name']",
+                              "roleName": "@items('For_Each_Role_In_Collection')?['roleName']",
+                              "roleTemplateName": "@items('For_Each_Role_In_Collection')?['roleTemplateName']",
+                              "appId": "@items('For_Each_Role_In_Collection')?['appId']"
                             }
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         },
                         "runAfter": {}
                       }
                     },
-                    "runAfter": { "Invoke_Create_RoleCollection": ["Succeeded"] }
+                    "runAfter": {
+                      "Invoke_Create_RoleCollection": [
+                        "Succeeded"
+                      ]
+                    }
                   },
                   "For_Each_User_In_Collection": {
                     "type": "Foreach",
@@ -350,26 +558,35 @@
                         "inputs": {
                           "method": "POST",
                           "uri": "@parameters('authorizationManagementUrl')",
-                          "headers": { "Content-Type": "application/json" },
+                          "headers": {
+                            "Content-Type": "application/json"
+                          },
                           "body": {
                             "xsuaaCredentials": "@triggerBody()?['xsuaaCredentials']",
                             "btpConfig": {
-                              "subaccountGuid":    "@variables('subaccountGuid')",
+                              "subaccountGuid": "@variables('subaccountGuid')",
                               "subaccountSubdomain": "@triggerBody()?['btpConfig']?['globalAccountSubdomain']"
                             },
-                            "action":      "assignUser",
+                            "action": "assignUser",
                             "subResource": "user",
                             "payload": {
                               "collectionName": "@items('For_Each_RoleCollection')?['name']",
-                              "userName":       "@items('For_Each_User_In_Collection')",
-                              "origin":         "sap.default"
+                              "userName": "@items('For_Each_User_In_Collection')",
+                              "origin": "sap.default"
                             }
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         },
                         "runAfter": {}
                       }
                     },
-                    "runAfter": { "For_Each_Role_In_Collection": ["Succeeded"] }
+                    "runAfter": {
+                      "For_Each_Role_In_Collection": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 },
                 "runAfter": {}
@@ -377,9 +594,12 @@
             }
           }
         },
-        "runAfter": { "Scope_Provisioning": ["Succeeded"] }
+        "runAfter": {
+          "Scope_Provisioning": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Response_Success": {
         "type": "Response",
         "kind": "Http",
@@ -389,13 +609,16 @@
             "status": "success",
             "message": "BTP provisioning completed successfully",
             "subaccountGuid": "@variables('subaccountGuid')",
-            "environmentId":  "@variables('environmentId')",
-            "cfApiUrl":       "@variables('cfApiUrl')"
+            "environmentId": "@variables('environmentId')",
+            "cfApiUrl": "@variables('cfApiUrl')"
           }
         },
-        "runAfter": { "Scope_Authorization": ["Succeeded"] }
+        "runAfter": {
+          "Scope_Authorization": [
+            "Succeeded"
+          ]
+        }
       }
-
     },
     "outputs": {}
   },

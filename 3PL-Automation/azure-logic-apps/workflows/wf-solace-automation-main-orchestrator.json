@@ -181,6 +181,9 @@
                   },
                   "body": {
                     "serviceId": "@triggerBody()?['config']?['service']?['serviceId']"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {
@@ -205,6 +208,9 @@
                       "datacenterId": "@triggerBody()?['config']?['service']?['datacenterId']",
                       "serviceTypeId": "@triggerBody()?['config']?['service']?['serviceTypeId']",
                       "serviceClassId": "@triggerBody()?['config']?['service']?['serviceClassId']"
+                    },
+                    "retryPolicy": {
+                      "type": "none"
                     }
                   },
                   "runAfter": {}
@@ -231,6 +237,9 @@
                     },
                     "body": {
                       "serviceId": "@body('Invoke_Service_Provisioning')?['serviceId']"
+                    },
+                    "retryPolicy": {
+                      "type": "none"
                     }
                   },
                   "runAfter": {
@@ -275,6 +284,9 @@
                   },
                   "body": {
                     "eventPortalConfig": "@triggerBody()?['config']?['eventPortal']"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 }
               },
@@ -328,6 +340,9 @@
                     "payload": {
                       "clusterConfig": "@triggerBody()?['config']?['clusterManagement']"
                     }
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 }
               }
@@ -365,7 +380,7 @@
           "statusCode": 500,
           "body": {
             "status": "error",
-            "message": "Provisioning failed — check Azure Logic Apps run history for details",
+            "message": "Provisioning failed \u2014 check Azure Logic Apps run history for details",
             "failedStep": "@{if(not(equals(actions('Scope_Service_Provisioning')?['status'], 'Succeeded')), 'service-provisioning', if(not(equals(actions('Scope_Event_Portal_Provisioning')?['status'], 'Succeeded')), 'event-portal-provisioning', 'cluster-provisioning'))}",
             "serviceId": "@variables('serviceId')",
             "domainId": "@variables('domainId')"
