@@ -1,0 +1,402 @@
+<mxfile host="65bd71144e">
+    <diagram id="hld" name="HLD – High Level Design">
+        <mxGraphModel dx="1091" dy="752" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="h-title" value="3PL Automation System — High Level Design" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=20;fontStyle=1;fontColor=#1a1a2e;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="18" width="1254" height="36" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sub-title" value="Azure Logic Apps · No-Code/Low-Code Pipeline · Solace Cloud (Implemented) · MuleSoft &amp; SAP BTP (TBD)" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=12;fontColor=#555555;" parent="1" vertex="1">
+                    <mxGeometry x="200" y="52" width="1254" height="22" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-p1-bg" value="① SUBMISSION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=40;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="90" width="1554" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-mgr" value="3PL&#xa;Manager" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="140" width="70" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-ui" value="&lt;b&gt;3PL Onboarding UI&lt;/b&gt;&#xa;Partner form · Config generator&#xa;Custom queues · Env selector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="135" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sub-la" value="&lt;b&gt;Submission&#xa;Logic App&lt;/b&gt;&#xa;Validates &amp; stores config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="135" width="190" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-blob" value="&lt;b&gt;Azure Blob Storage&lt;/b&gt;&#xa;/pending/{id}.json&#xa;/status/{id}-status.json" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="880" y="115" width="200" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="h-mgr" target="h-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a2" value="Submit for Approval" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-ui" target="h-sub-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a3" value="Write blob +&#xa;status: pending" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-sub-la" target="h-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sub-ret" value="Returns submissionId" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;exitX=0.5;exitY=0;entryX=0.5;entryY=0;exitDx=0;exitDy=0;" parent="1" source="h-sub-la" target="h-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="665" y="110"/>
+                            <mxPoint x="360" y="110"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="h-p2-bg" value="② ARCHITECT APPROVAL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;opacity=40;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="270" width="1554" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-arch" value="Architect" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#d6b656;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="100" y="325" width="70" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-arch-ui" value="&lt;b&gt;UI: Architect View&lt;/b&gt;&#xa;Reviews raw config JSON&#xa;Approve / Reject" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="250" y="320" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-app-la" value="&lt;b&gt;Approve Logic App&lt;/b&gt;&#xa;Reads config · Updates status&#xa;Returns 200 immediately →&#xa;fires orchestrator async" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="570" y="310" width="190" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a4" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="h-arch" target="h-arch-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a5" value="Approve" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-arch-ui" target="h-app-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a-read" value="Read config blob" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#d6b656;" parent="1" source="h-blob" target="h-app-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a-approved" value="status: approved" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#2f75b5;" parent="1" source="h-app-la" target="h-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="760" y="330"/>
+                            <mxPoint x="980" y="270"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="h-p3-bg" value="③ AUTOMATION ORCHESTRATION" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;opacity=40;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="450" width="780" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-orch" value="&lt;b&gt;Orchestrator Logic App&lt;/b&gt;&#xa;Routes to each service pipeline&#xa;Updates status blob throughout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="490" width="280" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a6" value="async POST&#xa;(fire-and-forget)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-app-la" target="h-orch" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-orch-blob" value="status: running" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#9673a6;" parent="1" source="h-orch" target="h-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="510" y="480"/>
+                            <mxPoint x="980" y="480"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="h-a7" value="POST" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" parent="1" source="h-orch" target="h-sol-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-mule-bg" value="&lt;b&gt;MULESOFT AUTOMATION&lt;/b&gt;&#xa;🚧 Future Scope — TBD&#xa;&#xa;Stub: returns not_configured" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=12;fontStyle=3;verticalAlign=middle;align=center;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="510" y="590" width="300" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a8" value="stub" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#aaaaaa;" parent="1" source="h-orch" target="h-mule-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-btp-bg" value="&lt;b&gt;SAP BTP AUTOMATION&lt;/b&gt;&#xa;🚧 Future Scope — TBD&#xa;&#xa;Stub: returns not_configured" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=12;fontStyle=3;verticalAlign=middle;align=center;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="850" y="590" width="300" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a9" value="stub" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#aaaaaa;" parent="1" source="h-orch" target="h-btp-bg" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-p5-bg" value="④ STATUS MONITORING (polls every 10 s)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d9f7e8;strokeColor=#2ea44f;opacity=40;fontSize=12;fontStyle=1;verticalAlign=top;align=left;spacingLeft=12;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="1170" y="450" width="420" height="530" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-stat-la" value="&lt;b&gt;Status Logic App&lt;/b&gt;&#xa;Reads status blob&#xa;Returns current state" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1230" y="510" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-prog-ui" value="&lt;b&gt;UI: Progress View&lt;/b&gt;&#xa;Solace ✅ · MuleSoft 🚧 · BTP 🚧&#xa;Service status per pipeline" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d9f7e8;strokeColor=#2ea44f;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1230" y="640" width="240" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-mon" value="3PL&#xa;Manager" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#2ea44f;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="760" width="70" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a10" value="GET (poll 10s)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="h-prog-ui" target="h-stat-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a11" value="Read status" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#2ea44f;" parent="1" source="h-stat-la" target="h-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a12" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="h-mon" target="h-prog-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-a-final-stat" value="status: completed/failed" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#82b366;" parent="1" source="h-sol-cloud" target="h-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="800" y="930"/>
+                            <mxPoint x="980" y="930"/>
+                            <mxPoint x="980" y="220"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="h-leg-bg" value="LEGEND" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontSize=11;fontStyle=1;verticalAlign=top;align=left;spacingLeft=10;spacingTop=6;" parent="1" vertex="1">
+                    <mxGeometry x="1180" y="1010" width="420" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-leg1" value="Azure Logic App" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=10;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="1200" y="1040" width="140" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-leg2" value="Solace (Implemented ✅)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="1040" width="170" height="28" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-leg3" value="Azure Blob / Data Store" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=10;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" parent="1" vertex="1">
+                    <mxGeometry x="1200" y="1082" width="140" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-leg4" value="Future Scope (TBD 🚧)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=10;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="1082" width="170" height="38" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="group" vertex="1" connectable="0" parent="1">
+                    <mxGeometry x="50" y="650" width="420" height="390" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-bg" value="&lt;b&gt;SOLACE AUTOMATION&lt;/b&gt;&#xa;✅ Fully Implemented" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;" parent="3" vertex="1">
+                    <mxGeometry width="420" height="390" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-main" value="&lt;b&gt;Solace Main Orchestrator&lt;/b&gt;&#xa;Coordinates full provisioning&#xa;flow across all sub-workflows" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" parent="3" vertex="1">
+                    <mxGeometry x="30" y="70" width="360" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-svc" value="Service Provisioning&#xa;(Solace Cloud)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="3" vertex="1">
+                    <mxGeometry x="30" y="160" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-cred" value="Credentials Init&#xa;(Azure ARM API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="3" vertex="1">
+                    <mxGeometry x="210" y="160" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-ep" value="Event Portal Provisioning&#xa;(EP API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="3" vertex="1">
+                    <mxGeometry x="30" y="230" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-cluster" value="Cluster Management&#xa;Queues + Subscriptions&#xa;(SEMP API)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" parent="3" vertex="1">
+                    <mxGeometry x="210" y="230" width="160" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="h-sol-cloud" value="&lt;b&gt;Solace Cloud Service&lt;/b&gt;&#xa;Cloud API v0/v2 · SEMP v2&#xa;Event Portal API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a9c4a0;strokeColor=#67ae5d;fontSize=11;fontStyle=1;" parent="3" vertex="1">
+                    <mxGeometry x="30" y="310" width="360" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+    <diagram id="lld" name="LLD – Low Level Design">
+        <mxGraphModel dx="3726" dy="654" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2480" pageHeight="1754" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="l-title" value="3PL Automation System — Low Level Design" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=20;fontStyle=1;fontColor=#1a1a2e;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="18" width="1880" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sub" value="All Logic App names, Azure hosts, blob paths and API endpoints shown for full back-traceability." style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=12;fontColor=#555;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="50" width="1880" height="20" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-col-a-bg" value="3PL ONBOARDING PIPELINE" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;opacity=30;fontSize=13;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="80" width="500" height="1600" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-mgr" value="👤 3PL Manager" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#6c8ebf;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="140" width="70" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ui" value="&lt;b&gt;3PL Onboarding UI&lt;/b&gt;&#xa;3pl-onboarding.html&#xa;• Partner form (14 interfaces)&#xa;• Config generator&#xa;• Custom queues panel&#xa;• DEV / UAT / PROD env selector" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="130" width="280" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="l-mgr" target="l-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sub-la" value="&lt;b&gt;wf-3pl-onboarding-submission&lt;/b&gt;&#xa;🌐 prod-31.eastus.logic.azure.com&#xa;&#xa;IN: {config, partnerID, partnerName}&#xa;→ PUT /pending/{submissionId}.json&#xa;→ PUT /status/{submissionId}-status.json&#xa;OUT: {submissionId, blobPath, status: pending_approval}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="280" width="440" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a2" value="POST {config, partnerID, partnerName}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-ui" target="l-sub-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-blob" value="&lt;b&gt;Azure Blob Storage&lt;/b&gt;&#xa;integrationpulsestore.blob.core.windows.net&#xa;Container: 3pl-onboarding&#xa;&#xa;/pending/{submissionId}.json        → full config&#xa;/status/{submissionId}-status.json  → live status" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=18;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="440" width="440" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a3" value="PUT blob (SAS token)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sub-la" target="l-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-arch" value="👤 Architect" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#d6b656;fontSize=11;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="120" y="630" width="70" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-arch-ui" value="&lt;b&gt;UI: Architect View&lt;/b&gt;&#xa;• Reads pending list from localStorage&#xa;• Renders approval cards with raw JSON&#xa;• Approve / Reject buttons" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="230" y="625" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a4" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="l-arch" target="l-arch-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-blob-read" value="GET /pending/{id}.json" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#d6b656;" parent="1" source="l-blob" target="l-arch-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-app-la" value="&lt;b&gt;wf-3pl-onboarding-approve&lt;/b&gt;&#xa;🌐 prod-15.eastus.logic.azure.com&#xa;&#xa;IN: {submissionId, blobPath, approvedBy}&#xa;→ GET /pending/{id}.json  (read config)&#xa;→ PUT /status/{id}-status.json  (status: approved)&#xa;→ Response 200 (immediate)&#xa;→ async POST to wf-3pl-onboarding-orchestrator&#xa;OUT: {status: approved, submissionId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="770" width="440" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a5" value="POST {submissionId, blobPath, approvedBy}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-arch-ui" target="l-app-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-app-blob" value="PUT status: approved" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#2f75b5;" parent="1" source="l-app-la" target="l-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="70" y="835"/>
+                            <mxPoint x="70" y="500"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="l-orch" value="&lt;b&gt;wf-3pl-onboarding-orchestrator&lt;/b&gt;&#xa;🌐 prod-29.eastus.logic.azure.com&#xa;&#xa;IN: {submissionId, statusPath, config}&#xa;→ PUT status: running  (services: solace=running)&#xa;→ POST wf-solace-automation-main-orchestrator&#xa;→ Compose MuleSoft stub  (not_configured)&#xa;→ Compose BTP stub          (not_configured)&#xa;→ PUT status: completed / failed&#xa;OUT: {status, solace: {serviceId, domainId}}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="970" width="440" height="150" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a6" value="async POST (DisableAsyncPattern)" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-app-la" target="l-orch" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-orch-blob" value="PUT status: running / completed / failed" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#9673a6;" parent="1" source="l-orch" target="l-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="68" y="1045"/>
+                            <mxPoint x="68" y="500"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="l-mule-stub" value="&lt;b&gt;MuleSoft — 🚧 TBD&lt;/b&gt;&#xa;Compose action returns:&#xa;{status: not_configured, message: Future scope}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=11;dashed=1;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="1190" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-btp-stub" value="&lt;b&gt;SAP BTP — 🚧 TBD&lt;/b&gt;&#xa;Compose action returns:&#xa;{status: not_configured, message: Future scope}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=11;dashed=1;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="1190" width="200" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-mule" value="stub" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#aaaaaa;" parent="1" source="l-orch" target="l-mule-stub" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-btp" value="stub" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#aaaaaa;" parent="1" source="l-orch" target="l-btp-stub" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-stat-la" value="&lt;b&gt;wf-3pl-onboarding-status&lt;/b&gt;&#xa;🌐 prod-07.eastus.logic.azure.com&#xa;&#xa;IN: {submissionId}&#xa;→ GET /status/{id}-status.json&#xa;OUT: full status JSON (or 404 if not found)&#xa;Called every 10 s by UI Progress View" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="1330" width="440" height="110" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-prog-ui" value="&lt;b&gt;UI: Progress View&lt;/b&gt;&#xa;Solace ✅ · MuleSoft 🚧 · BTP 🚧&#xa;Polls every 10 s" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d9f7e8;strokeColor=#2ea44f;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="80" y="1500" width="220" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-mgr2" value="👤 3PL Manager" style="shape=mxgraph.archimate3.actor;html=1;whiteSpace=wrap;fillColor=#fff;strokeColor=#2ea44f;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="365" y="1490" width="70" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-stat-poll" value="GET {submissionId}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-prog-ui" target="l-stat-la" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-stat-blob" value="GET status blob" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;dashed=1;strokeColor=#2ea44f;" parent="1" source="l-stat-la" target="l-blob" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="68" y="1385"/>
+                            <mxPoint x="68" y="500"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="l-a-mgr-prog" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="l-mgr2" target="l-prog-ui" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-col-b-bg" value="SOLACE AUTOMATION CHAIN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;opacity=30;fontSize=13;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="610" y="80" width="660" height="1600" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-main" value="&lt;b&gt;wf-solace-automation-main-orchestrator&lt;/b&gt;&#xa;🌐 prod-46.eastus.logic.azure.com&#xa;&#xa;IN: {config, skipEventPortal, skipCluster}&#xa;Orchestrates full provisioning sequence:&#xa;1. Service Provisioning  2. Credentials Init&#xa;3. Event Portal          4. Cluster Management&#xa;5. Export Clone&#xa;OUT: {serviceId, vpnName, domainId}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="140" width="600" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-orch-sol" value="POST {submissionId, statusPath, config}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;exitX=1;exitY=0.3;entryX=0;entryY=0.5;" parent="1" source="l-orch" target="l-sol-main" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-svc" value="&lt;b&gt;1. wf-solace-automation-service-provisioning&lt;/b&gt;&#xa;🌐 prod-79.eastus.logic.azure.com&#xa;&#xa;• POST /api/v0/services  (Solace Cloud API)&#xa;• Poll GET /api/v0/services/{id} every 15s&#xa;  until creationState = completed (max 40 polls)&#xa;OUT: {serviceId, vpnName, sempBaseUrl,&#xa;       sempUsername, sempPassword}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="330" width="600" height="120" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-sol-svc" value="1 — POST {serviceName, serviceTypeId, datacenterId}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-main" target="l-sol-svc" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-cred" value="&lt;b&gt;2. wf-solace-automation-credentials-init&lt;/b&gt;&#xa;🌐 prod-86.eastus.logic.azure.com&#xa;&#xa;• Validate Solace API token via GET /api/v2/organizations&#xa;• PATCH Azure ARM: update Logic App parameters&#xa;  (SOLACE_SEMP_BASE_URL, SOLACE_SEMP_USERNAME,&#xa;   SOLACE_SEMP_PASSWORD, SOLACE_SERVICE_ID)&#xa;OUT: {validated: true, parametersUpdated: true}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="510" width="600" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-sol-cred" value="2 — POST {serviceId, apiToken, sempCreds}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-svc" target="l-sol-cred" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-ep" value="&lt;b&gt;3. wf-solace-automation-event-portal-provisioning&lt;/b&gt;&#xa;🌐 prod-06.eastus.logic.azure.com&#xa;&#xa;• POST /architecture/eventPortalApplicationDomains&#xa;• POST schemas  (1 per unique business object)&#xa;• POST events   (1 per interface, topic-mapped)&#xa;• POST applications (3PL sender + 1NAV receiver)&#xa;• POST event-version bindings&#xa;OUT: {domainId, schemaIds[], eventIds[], appIds[]}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="700" width="600" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-sol-ep" value="3 — POST {partnerID, topicNS, schemas[], events[]}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-cred" target="l-sol-ep" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-cluster" value="&lt;b&gt;4. wf-solace-automation-cluster-management&lt;/b&gt;&#xa;🌐 prod-26.eastus.logic.azure.com&#xa;&#xa;Accepts: {action, subResource, payload}&#xa;subResource options: clientProfile · aclProfile · publishException&#xa;                     subscribeException · clientUsername · queue&#xa;                     queueSubscription · rdp · restConsumer · queueBinding&#xa;&#xa;Provisioning sequence (per call from main-orchestrator):&#xa;① create clientProfile    ② create aclProfile&#xa;③ create clientUsername   ④ create queue (per unique queue)&#xa;⑤ create queueSubscription (per queue × topic)&#xa;⑥ create restDeliveryPoint + restConsumer + queueBinding&#xa;All via Solace SEMP v2 API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="900" width="600" height="200" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-sol-cluster" value="4 — POST {action:create, subResource:queue, payload:{name, accessType, subscriptions[]}}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-ep" target="l-sol-cluster" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-export" value="&lt;b&gt;5. wf-solace-automation-export-clone&lt;/b&gt;&#xa;🌐 prod-52.eastus.logic.azure.com&#xa;&#xa;• GET full service config from Solace Cloud API&#xa;• PUT export JSON to Azure Blob Storage&#xa;OUT: {blobUrl, exportedAt}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="1160" width="600" height="100" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-sol-export" value="5 — POST {serviceId, exportConfig}" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-cluster" target="l-sol-export" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-svc-mgmt" value="&lt;b&gt;wf-solace-automation-service-management&lt;/b&gt;&#xa;🌐 prod-83.eastus.logic.azure.com&#xa;Used for service CRUD ops via Solace Cloud API" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="1320" width="290" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-ep-mgmt" value="&lt;b&gt;wf-solace-automation-event-portal-management&lt;/b&gt;&#xa;🌐 prod-94.eastus.logic.azure.com&#xa;Used for EP CRUD ops (domains, schemas, events)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="950" y="1320" width="290" height="70" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-dispatcher" value="&lt;b&gt;wf-solace-automation-main-dispatcher&lt;/b&gt;&#xa;🌐 prod-64.eastus.logic.azure.com&#xa;Routes {action, subResource} to correct sub-workflow&#xa;Used by main-orchestrator for DEV run dispatch" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="1420" width="290" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-blob-trigger" value="&lt;b&gt;wf-solace-automation-blob-trigger&lt;/b&gt;&#xa;🌐 prod-37.eastus.logic.azure.com&#xa;Triggered by blob-upload, reads config from&#xa;blob and calls main-orchestrator for UAT/PROD" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="950" y="1420" width="290" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-sol-blob-upload" value="&lt;b&gt;wf-solace-automation-blob-upload&lt;/b&gt;&#xa;🌐 prod-73.eastus.logic.azure.com&#xa;Receives config payload, writes to Azure Blob&#xa;then calls blob-trigger to start orchestration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="640" y="1530" width="290" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-col-c-bg" value="EXTERNAL SYSTEMS &amp; APIs" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdebd0;strokeColor=#e67e22;opacity=30;fontSize=13;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="1330" y="80" width="620" height="1600" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-api-cloud" value="&lt;b&gt;Solace Cloud API&lt;/b&gt;&#xa;https://api.solace.cloud/api/v0&#xa;&#xa;POST  /services                    (create)&#xa;GET   /services/{id}               (poll state)&#xa;GET   /services/{id}               (get SEMP creds)&#xa;&#xa;Auth: Bearer {SOLACE_API_TOKEN}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdebd0;strokeColor=#e67e22;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="330" width="560" height="130" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-svc-cloud" value="POST /services" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-svc" target="l-api-cloud" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-api-arm" value="&lt;b&gt;Azure ARM API&lt;/b&gt;&#xa;https://management.azure.com&#xa;&#xa;PATCH /subscriptions/{sub}/resourceGroups/{rg}&#xa;      /providers/Microsoft.Logic/workflows/{wf}&#xa;      ?api-version=2019-05-01&#xa;&#xa;Updates: SOLACE_SEMP_* parameters in Logic Apps&#xa;Auth: MSI / Bearer token" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdebd0;strokeColor=#e67e22;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="510" width="560" height="140" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-cred-arm" value="PATCH workflow params" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-cred" target="l-api-arm" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-api-ep" value="&lt;b&gt;Solace Event Portal API&lt;/b&gt;&#xa;https://api.solace.cloud/api/v2/architecture&#xa;&#xa;POST /eventPortalApplicationDomains&#xa;POST /schemaObjects + /schemaVersions&#xa;POST /eventObjects + /eventVersions&#xa;POST /applicationObjects + /applicationVersions&#xa;POST /eventVersions/{id}/publishedEventVersions&#xa;&#xa;Auth: Bearer {SOLACE_API_TOKEN}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdebd0;strokeColor=#e67e22;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="700" width="560" height="160" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-ep-api" value="POST domain, schemas, events, apps" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-ep" target="l-api-ep" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-api-semp" value="&lt;b&gt;Solace SEMP v2 Config API&lt;/b&gt;&#xa;https://mr-connection-bv61r48nseq.messaging.solace.cloud&#xa;:943/SEMP/v2/config&#xa;&#xa;POST /msgVpns/{vpn}/clientProfiles&#xa;POST /msgVpns/{vpn}/aclProfiles&#xa;POST /msgVpns/{vpn}/aclProfiles/{acl}/publishTopicExceptions&#xa;POST /msgVpns/{vpn}/aclProfiles/{acl}/subscribeTopicExceptions&#xa;POST /msgVpns/{vpn}/clientUsernames&#xa;POST /msgVpns/{vpn}/queues&#xa;POST /msgVpns/{vpn}/queues/{q}/subscriptions&#xa;POST /msgVpns/{vpn}/restDeliveryPoints&#xa;POST /msgVpns/{vpn}/restDeliveryPoints/{rdp}/restConsumers&#xa;POST /msgVpns/{vpn}/restDeliveryPoints/{rdp}/queueBindings&#xa;&#xa;Auth: Basic {SEMP_USERNAME}:{SEMP_PASSWORD}" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fdebd0;strokeColor=#e67e22;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1360" y="900" width="560" height="300" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-cluster-semp" value="POST queues + subscriptions + RDP" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-cluster" target="l-api-semp" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-blob-export" value="&lt;b&gt;Azure Blob Storage (Export)&lt;/b&gt;&#xa;integrationpulsestore&#xa;/exports/{serviceId}-config.json" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1390" y="1260" width="360" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-a-export-blob" value="PUT export JSON" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="l-sol-export" target="l-blob-export" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref-bg" value="LOGIC APP REFERENCE (all deployed in ODL-IBM-2262033 / eastus)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f9f9f9;strokeColor=#cccccc;fontSize=12;fontStyle=1;verticalAlign=top;align=center;spacingTop=8;" parent="1" vertex="1">
+                    <mxGeometry x="50" y="1680" width="2380" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref1" value="&lt;b&gt;3PL Pipeline&lt;/b&gt;&#xa;submission → prod-31&#xa;approve → prod-15&#xa;orchestrator → prod-29&#xa;status → prod-07" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="60" y="1740" width="220" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref2" value="&lt;b&gt;Solace Main&lt;/b&gt;&#xa;main-orchestrator → prod-46&#xa;main-dispatcher → prod-64&#xa;blob-trigger → prod-37&#xa;blob-upload → prod-73" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="300" y="1740" width="220" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref3" value="&lt;b&gt;Solace Provisioning&lt;/b&gt;&#xa;service-provisioning → prod-79&#xa;credentials-init → prod-86&#xa;event-portal-provisioning → prod-06&#xa;cluster-management → prod-26" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="540" y="1740" width="240" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref4" value="&lt;b&gt;Solace Management&lt;/b&gt;&#xa;service-management → prod-83&#xa;event-portal-management → prod-94&#xa;export-clone → prod-52" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="800" y="1740" width="220" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref5" value="&lt;b&gt;Blob Storage&lt;/b&gt;&#xa;Account: integrationpulsestore&#xa;Container: 3pl-onboarding&#xa;SAS expiry: 2027-12-31&#xa;Region: eastus" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=12;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1040" y="1740" width="200" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref6" value="&lt;b&gt;Solace Service&lt;/b&gt;&#xa;Service ID: ruj2y805m8u&#xa;VPN: msgvpn-ruj2y805m8u&#xa;SEMP: mr-connection-bv61r48nseq&#xa;         .messaging.solace.cloud:943" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#a9c4a0;strokeColor=#67ae5d;fontSize=10;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1260" y="1740" width="260" height="90" as="geometry"/>
+                </mxCell>
+                <mxCell id="l-ref7" value="&lt;b&gt;MuleSoft (TBD)&lt;/b&gt;&#xa;Compose stub in orchestrator&#xa;returns: not_configured&#xa;&#xa;&lt;b&gt;SAP BTP (TBD)&lt;/b&gt;&#xa;Compose stub in orchestrator&#xa;returns: not_configured" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#aaaaaa;fontColor=#888888;fontSize=10;dashed=1;align=left;spacingLeft=8;" parent="1" vertex="1">
+                    <mxGeometry x="1540" y="1740" width="220" height="90" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>
