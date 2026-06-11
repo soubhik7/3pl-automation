@@ -11,14 +11,32 @@
           "schema": {
             "type": "object",
             "properties": {
-              "sourceServiceId": { "type": "string" },
-              "sourceCountry": { "type": "string" },
-              "targetCountry": { "type": "string" },
-              "targetDatacenter": { "type": "string" },
-              "targetServiceName": { "type": "string" },
-              "apiToken": { "type": "string" }
+              "sourceServiceId": {
+                "type": "string"
+              },
+              "sourceCountry": {
+                "type": "string"
+              },
+              "targetCountry": {
+                "type": "string"
+              },
+              "targetDatacenter": {
+                "type": "string"
+              },
+              "targetServiceName": {
+                "type": "string"
+              },
+              "apiToken": {
+                "type": "string"
+              }
             },
-            "required": ["sourceServiceId", "sourceCountry", "targetCountry", "targetDatacenter", "apiToken"]
+            "required": [
+              "sourceServiceId",
+              "sourceCountry",
+              "targetCountry",
+              "targetDatacenter",
+              "apiToken"
+            ]
           }
         }
       }
@@ -45,19 +63,33 @@
               "data": {
                 "type": "object",
                 "properties": {
-                  "serviceId": { "type": "string" },
-                  "name": { "type": "string" },
-                  "datacenterId": { "type": "string" },
-                  "serviceTypeId": { "type": "string" },
-                  "serviceClassId": { "type": "string" },
-                  "msgVpnName": { "type": "string" }
+                  "serviceId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "datacenterId": {
+                    "type": "string"
+                  },
+                  "serviceTypeId": {
+                    "type": "string"
+                  },
+                  "serviceClassId": {
+                    "type": "string"
+                  },
+                  "msgVpnName": {
+                    "type": "string"
+                  }
                 }
               }
             }
           }
         },
         "runAfter": {
-          "Get_Source_Service": ["Succeeded"]
+          "Get_Source_Service": [
+            "Succeeded"
+          ]
         }
       },
       "Build_Source_Config": {
@@ -90,35 +122,45 @@
           }
         },
         "runAfter": {
-          "Parse_Source_Service": ["Succeeded"]
+          "Parse_Source_Service": [
+            "Succeeded"
+          ]
         }
       },
       "Convert_To_JSON_String": {
         "type": "Compose",
         "inputs": "@string(outputs('Build_Source_Config'))",
         "runAfter": {
-          "Build_Source_Config": ["Succeeded"]
+          "Build_Source_Config": [
+            "Succeeded"
+          ]
         }
       },
       "Replace_Country_Upper": {
         "type": "Compose",
         "inputs": "@replace(outputs('Convert_To_JSON_String'), toUpper(triggerBody()?['sourceCountry']), toUpper(triggerBody()?['targetCountry']))",
         "runAfter": {
-          "Convert_To_JSON_String": ["Succeeded"]
+          "Convert_To_JSON_String": [
+            "Succeeded"
+          ]
         }
       },
       "Replace_Country_Lower": {
         "type": "Compose",
         "inputs": "@replace(outputs('Replace_Country_Upper'), toLower(triggerBody()?['sourceCountry']), toLower(triggerBody()?['targetCountry']))",
         "runAfter": {
-          "Replace_Country_Upper": ["Succeeded"]
+          "Replace_Country_Upper": [
+            "Succeeded"
+          ]
         }
       },
       "Replace_Country_Title": {
         "type": "Compose",
         "inputs": "@replace(outputs('Replace_Country_Lower'), concat(toUpper(substring(triggerBody()?['sourceCountry'], 0, 1)), toLower(substring(triggerBody()?['sourceCountry'], 1, sub(length(triggerBody()?['sourceCountry']), 1)))), concat(toUpper(substring(triggerBody()?['targetCountry'], 0, 1)), toLower(substring(triggerBody()?['targetCountry'], 1, sub(length(triggerBody()?['targetCountry']), 1)))))",
         "runAfter": {
-          "Replace_Country_Lower": ["Succeeded"]
+          "Replace_Country_Lower": [
+            "Succeeded"
+          ]
         }
       },
       "Parse_Cloned_Config": {
@@ -128,17 +170,31 @@
           "schema": {
             "type": "object",
             "properties": {
-              "sourceCountry": { "type": "string" },
-              "targetCountry": { "type": "string" },
-              "environment": { "type": "string" },
-              "service": { "type": "object" },
-              "eventPortal": { "type": "object" },
-              "clusterManagement": { "type": "object" }
+              "sourceCountry": {
+                "type": "string"
+              },
+              "targetCountry": {
+                "type": "string"
+              },
+              "environment": {
+                "type": "string"
+              },
+              "service": {
+                "type": "object"
+              },
+              "eventPortal": {
+                "type": "object"
+              },
+              "clusterManagement": {
+                "type": "object"
+              }
             }
           }
         },
         "runAfter": {
-          "Replace_Country_Title": ["Succeeded"]
+          "Replace_Country_Title": [
+            "Succeeded"
+          ]
         }
       },
       "Response_Success": {
@@ -148,14 +204,17 @@
           "statusCode": 200,
           "body": {
             "status": "success",
-            "message": "Configuration cloned successfully — pass clonedConfig to main-orchestrator",
+            "message": "Configuration cloned successfully \u2014 pass clonedConfig to main-orchestrator",
             "sourceCountry": "@triggerBody()?['sourceCountry']",
             "targetCountry": "@triggerBody()?['targetCountry']",
             "clonedConfig": "@body('Parse_Cloned_Config')"
           }
         },
         "runAfter": {
-          "Parse_Cloned_Config": ["Succeeded"]
+          "Parse_Cloned_Config": [
+            "Succeeded",
+            "Failed"
+          ]
         }
       }
     },

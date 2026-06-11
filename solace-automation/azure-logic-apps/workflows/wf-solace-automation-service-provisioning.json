@@ -323,7 +323,8 @@
             },
             "runAfter": {
               "Compose_SEMP_Credentials": [
-                "Succeeded"
+                "Succeeded",
+                "Failed"
               ]
             }
           }
