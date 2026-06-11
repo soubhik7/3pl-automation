@@ -34,7 +34,11 @@
       "Switch_SubResource": {
         "type": "Switch",
         "expression": "@if(empty(triggerBody()?['subResource']), triggerBody()?['action'], triggerBody()?['subResource'])",
-        "runAfter": {},
+        "runAfter": {
+          "Initialize_SempError": [
+            "Succeeded"
+          ]
+        },
         "cases": {
           "provision": {
             "case": "provision",
@@ -198,7 +202,7 @@
                         "password": "@{items('Provision_ClientUsernames')?['password']}",
                         "clientProfileName": "@{items('Provision_ClientUsernames')?['clientProfile']}",
                         "aclProfileName": "@{items('Provision_ClientUsernames')?['aclProfile']}",
-                        "enabled": "@{items('Provision_ClientUsernames')?['enabled']}",
+                        "enabled": "@equals(toLower(string(items('Provision_ClientUsernames')?['enabled'])), 'true')",
                         "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
                       }
                     }
@@ -302,7 +306,7 @@
                         "restDeliveryPointName": "@{items('Provision_RDPs')?['name']}",
                         "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}",
                         "clientProfileName": "@{items('Provision_RDPs')?['clientProfile']}",
-                        "enabled": "@{items('Provision_RDPs')?['enabled']}"
+                        "enabled": "@equals(toLower(string(items('Provision_RDPs')?['enabled'])), 'true')"
                       }
                     }
                   },
@@ -335,7 +339,7 @@
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}",
                             "remoteHost": "@{items('Prov_Consumers')?['host']}",
                             "remotePort": "@{items('Prov_Consumers')?['port']}",
-                            "tlsEnabled": "@{items('Prov_Consumers')?['tlsEnabled']}",
+                            "tlsEnabled": "@equals(toLower(string(items('Prov_Consumers')?['tlsEnabled'])), 'true')",
                             "httpMethod": "@{items('Prov_Consumers')?['httpMethod']}",
                             "authenticationScheme": "none",
                             "enabled": true
@@ -384,7 +388,8 @@
                 "kind": "Http",
                 "runAfter": {
                   "Provision_RDPs": [
-                    "Succeeded"
+                    "Succeeded",
+                    "Failed"
                   ]
                 },
                 "inputs": {
@@ -393,6 +398,28 @@
                     "status": "success",
                     "message": "Cluster provisioning completed",
                     "vpnName": "@appsetting('SOLACE_VPN_NAME')"
+                  }
+                }
+              },
+              "Resp_Provision_Error": {
+                "type": "Response",
+                "kind": "Http",
+                "runAfter": {
+                  "Provision_RDPs": [
+                    "Failed",
+                    "Skipped",
+                    "TimedOut"
+                  ]
+                },
+                "inputs": {
+                  "statusCode": 500,
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": {
+                    "status": "error",
+                    "message": "Cluster provisioning failed",
+                    "sempError": "@coalesce(result('Provision_ClientProfiles')?[0]?['outputs']?[0]?['outputs']?['body'], result('Provision_AclProfiles')?[0]?['outputs']?[0]?['outputs']?['body'], result('Provision_ClientUsernames')?[0]?['outputs']?[0]?['outputs']?['body'], result('Provision_Queues')?[0]?['outputs']?[0]?['outputs']?['body'], result('Provision_RDPs')?[0]?['outputs']?[0]?['outputs']?['body'])"
                   }
                 }
               }
@@ -1067,7 +1094,7 @@
                             "password": "@{triggerBody()?['payload']?['password']}",
                             "clientProfileName": "@{triggerBody()?['payload']?['clientProfile']}",
                             "aclProfileName": "@{triggerBody()?['payload']?['aclProfile']}",
-                            "enabled": "@{coalesce(triggerBody()?['payload']?['enabled'], true)}",
+                            "enabled": "@equals(toLower(string(coalesce(triggerBody()?['payload']?['enabled'], 'true'))), 'true')",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}"
                           }
                         }
@@ -1610,7 +1637,7 @@
                             "restDeliveryPointName": "@{triggerBody()?['payload']?['name']}",
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}",
                             "clientProfileName": "@{triggerBody()?['payload']?['clientProfile']}",
-                            "enabled": "@{coalesce(triggerBody()?['payload']?['enabled'], true)}"
+                            "enabled": "@equals(toLower(string(coalesce(triggerBody()?['payload']?['enabled'], 'true'))), 'true')"
                           }
                         }
                       },
@@ -1778,7 +1805,7 @@
                             "msgVpnName": "@{appsetting('SOLACE_VPN_NAME')}",
                             "remoteHost": "@{triggerBody()?['payload']?['host']}",
                             "remotePort": "@{triggerBody()?['payload']?['port']}",
-                            "tlsEnabled": "@{coalesce(triggerBody()?['payload']?['tlsEnabled'], false)}",
+                            "tlsEnabled": "@equals(toLower(string(coalesce(triggerBody()?['payload']?['tlsEnabled'], 'false'))), 'true')",
                             "httpMethod": "@{coalesce(triggerBody()?['payload']?['httpMethod'], 'post')}",
                             "authenticationScheme": "none",
                             "enabled": true
@@ -2085,6 +2112,19 @@
             }
           }
         }
+      },
+      "Initialize_SempError": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "sempError",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {}
       }
     },
     "outputs": {}

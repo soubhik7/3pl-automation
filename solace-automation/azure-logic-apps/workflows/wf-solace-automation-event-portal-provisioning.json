@@ -540,7 +540,8 @@
         },
         "runAfter": {
           "For_Each_Application": [
-            "Succeeded"
+            "Succeeded",
+            "Failed"
           ]
         }
       }

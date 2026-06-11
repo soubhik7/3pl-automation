@@ -376,7 +376,8 @@
                     },
                     "runAfter": {
                       "Compose_Credentials": [
-                        "Succeeded"
+                        "Succeeded",
+                        "Failed"
                       ]
                     }
                   }
