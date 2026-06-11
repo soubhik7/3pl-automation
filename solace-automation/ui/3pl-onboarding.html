@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Integration Hub — 3PL Onboarding</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+  <style>
+    :root {
+      --color-background-primary:   #ffffff;
+      --color-background-secondary: #f8f9fa;
+      --color-text-primary:         #1a1a2e;
+      --color-text-secondary:       #6c757d;
+      --color-text-tertiary:        #adb5bd;
+      --color-border-secondary:     #e0e0e0;
+      --color-border-tertiary:      #ebebeb;
+      --border-radius-md:           6px;
+      --border-radius-lg:           10px;
+      --font-sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono:  'SFMono-Regular', Consolas, monospace;
+      --teal:   #1D9E75;
+      --teal-l: #E1F5EE;
+      --teal-m: #0F6E56;
+      --side:  240px;
+      --agent: 310px;
+    }
+    *  { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font-sans); background: linear-gradient(135deg, #eef2f7 0%, #e8edf5 100%); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+
+    /* ── SHELL ── */
+    #shell { display: flex; flex-direction: column; height: 720px; width: 100%; max-width: 1320px; border-radius: 14px; overflow: hidden; background: var(--color-background-primary); box-shadow: 0 8px 48px rgba(0,0,0,.12), 0 1px 4px rgba(0,0,0,.06); border: 1px solid rgba(255,255,255,.8); }
+
+    /* ── TOPBAR ── */
+    #topbar { height: 52px; background: #fff; border-bottom: 1px solid var(--color-border-tertiary); display: flex; align-items: center; padding: 0 18px; gap: 12px; flex-shrink: 0; box-shadow: 0 1px 0 rgba(0,0,0,.04); }
+    #tb-logo { width: 32px; height: 32px; background: linear-gradient(135deg, var(--teal) 0%, #0F6E56 100%); border-radius: 9px; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(29,158,117,.35); }
+    #tb-brand { font-size: 14px; font-weight: 600; color: var(--color-text-primary); letter-spacing: -.01em; }
+    #tb-rolepill { font-size: 11px; font-weight: 500; color: var(--teal-m); background: var(--teal-l); padding: 3px 10px; border-radius: 20px; border: 1px solid rgba(29,158,117,.15); }
+    #tb-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    #tb-login { font-size: 12px; color: var(--color-text-secondary); }
+    #tb-login strong { color: var(--color-text-primary); font-weight: 600; }
+    #tb-gen-btn { font-size: 12px; padding: 6px 14px; border: 1.5px solid #27AE60; border-radius: 20px; background: none; cursor: pointer; color: #1a7a3c; display: flex; align-items: center; gap: 5px; font-weight: 500; transition: all .15s; }
+    #tb-gen-btn:hover:not(:disabled) { background: #27AE60; color: #fff; }
+    #tb-gen-btn:disabled { opacity: .35; cursor: not-allowed; }
+    #tb-agent-btn { font-size: 12px; padding: 6px 14px; border: 1.5px solid var(--teal); border-radius: 20px; background: none; cursor: pointer; color: var(--teal); display: flex; align-items: center; gap: 5px; font-weight: 500; transition: all .15s; }
+    #tb-agent-btn:hover { background: var(--teal-l); }
+    #tb-agent-btn.open { background: var(--teal); color: #fff; box-shadow: 0 2px 8px rgba(29,158,117,.3); }
+    #tb-agent-btn .gdot { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; animation: pulse-dot 2s infinite; }
+    #tb-agent-btn.open .gdot { background: #fff; animation: none; }
+    @keyframes pulse-dot { 0%,100%{opacity:1}50%{opacity:.4} }
+    #tb-avatar { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#e8edf5,#dde4ed); border: 1.5px solid var(--color-border-secondary); display: flex; align-items: center; justify-content: center; color: var(--color-text-secondary); font-size: 12px; }
+
+    #body { display: flex; flex: 1; min-height: 0; }
+
+    /* ── SIDEBAR ── */
+    #sidebar { width: var(--side); background: #fafbfc; border-right: 1px solid var(--color-border-tertiary); display: flex; flex-direction: column; flex-shrink: 0; min-height: 0; }
+    #sb-info { padding: 10px 14px; border-bottom: 1px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--color-text-secondary); flex-shrink: 0; background: #fff; }
+    #sb-info i { font-size: 12px; color: var(--teal); }
+    #sb-search { padding: 8px 12px; border-bottom: 1px solid var(--color-border-tertiary); flex-shrink: 0; background: #fff; }
+    #sb-search input { width: 100%; font-size: 12px; padding: 6px 10px; border: 1px solid var(--color-border-secondary); border-radius: 8px; background: #f7f8fa; color: var(--color-text-primary); outline: none; transition: border-color .15s, background .15s; }
+    #sb-search input:focus { border-color: var(--teal); background: #fff; box-shadow: 0 0 0 3px rgba(29,158,117,.08); }
+    #sb-partners-lbl { padding: 12px 14px 5px; font-size: 10px; font-weight: 600; color: var(--color-text-tertiary); letter-spacing: .08em; text-transform: uppercase; flex-shrink: 0; }
+    #sb-partners { flex-shrink: 0; }
+    .sbp { padding: 8px 14px; font-size: 12px; color: var(--color-text-secondary); cursor: pointer; display: flex; align-items: center; gap: 8px; border-left: 2px solid transparent; transition: all .12s; }
+    .sbp:hover { background: #f0f2f5; color: var(--color-text-primary); }
+    .sbp.active { background: linear-gradient(90deg, #e1f5ee 0%, #edf9f5 100%); color: var(--teal-m); border-left-color: var(--teal); font-weight: 600; }
+    .sbp i { font-size: 14px; flex-shrink: 0; color: var(--color-text-tertiary); }
+    .sbp.active i { color: var(--teal); }
+    .sbd { width: 7px; height: 7px; border-radius: 50%; background: #D3D1C7; flex-shrink: 0; margin-left: auto; }
+    .sbd.done { background: var(--teal); box-shadow: 0 0 0 2px rgba(29,158,117,.2); }
+    .sbd.partial { background: #EF9F27; box-shadow: 0 0 0 2px rgba(239,159,39,.2); }
+
+    #sb-itf-section { display: none; flex-direction: column; flex: 1; min-height: 0; border-top: 1px solid var(--color-border-tertiary); }
+    #sb-itf-lbl { padding: 10px 14px 5px; font-size: 10px; font-weight: 600; color: var(--color-text-tertiary); letter-spacing: .08em; text-transform: uppercase; flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; }
+    #sb-itf-partner { color: var(--teal-m); text-transform: none; letter-spacing: 0; font-size: 10px; font-weight: 500; }
+    #sb-itf-list { flex: 1; overflow-y: auto; }
+    .sbi { padding: 7px 14px 7px 16px; font-size: 11px; color: var(--color-text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; border-left: 2px solid transparent; transition: all .12s; }
+    .sbi:hover { background: #f0f2f5; color: var(--color-text-primary); }
+    .sbi.active { background: linear-gradient(90deg, #edf8f3 0%, #f3faf7 100%); color: #1a5c40; border-left-color: var(--teal); font-weight: 600; }
+    .sbi-dot { width: 6px; height: 6px; border-radius: 50%; background: #D3D1C7; flex-shrink: 0; }
+    .sbi-dot.done { background: var(--teal); } .sbi-dot.partial { background: #EF9F27; }
+    .sbi-id { font-family: var(--font-mono); font-size: 10px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sbi-dir { font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 8px; flex-shrink: 0; letter-spacing: .03em; }
+    .sbi-dir.out { background: #ddeefe; color: #1a60a8; } .sbi-dir.in { background: #d4f5e7; color: #0e6644; }
+    #sb-footer { border-top: 1px solid var(--color-border-tertiary); padding: 10px 12px; flex-shrink: 0; background: #fff; }
+    .sb-new { width: 100%; text-align: left; background: none; border: 1px dashed var(--color-border-secondary); border-radius: 8px; font-size: 12px; color: var(--color-text-secondary); padding: 7px 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all .15s; font-weight: 500; }
+    .sb-new:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-l); }
+
+    /* ── MAIN ── */
+    #main { flex: 1; display: flex; flex-direction: column; min-width: 0; background: #fff; }
+    #main-info { padding: 9px 18px; border-bottom: 1px solid var(--color-border-tertiary); font-size: 11px; color: var(--color-text-secondary); display: flex; align-items: center; gap: 7px; background: #fafbfc; flex-shrink: 0; }
+    #main-info i { font-size: 12px; color: var(--teal); }
+    #main-body { flex: 1; overflow-y: auto; }
+    #main-body::-webkit-scrollbar { width: 5px; }
+    #main-body::-webkit-scrollbar-track { background: transparent; }
+    #main-body::-webkit-scrollbar-thumb { background: #dde3ec; border-radius: 3px; }
+    .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--color-text-tertiary); gap: 8px; text-align: center; padding: 24px; }
+    .empty-ico { width: 36px; height: 36px; transform: rotate(45deg); border: 2px solid #e0e5ed; margin-bottom: 6px; border-radius: 4px; }
+    .empty-state p.title { font-size: 15px; font-weight: 600; color: var(--color-text-secondary); }
+    .empty-state p.sub { font-size: 12px; line-height: 1.5; max-width: 220px; }
+    #detail-view { display: none; padding: 18px 20px; }
+    .dv-topbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--color-border-tertiary); }
+    .dv-itf { font-family: var(--font-mono); font-size: 16px; font-weight: 600; color: var(--color-text-primary); letter-spacing: -.01em; }
+    .dv-meta { font-size: 11px; color: var(--color-text-secondary); margin-top: 3px; }
+    .dv-dir { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 10px; margin-top: 5px; display: inline-block; letter-spacing: .03em; }
+    .dv-dir.out { background: #ddeefe; color: #1a60a8; } .dv-dir.in { background: #d4f5e7; color: #0e6644; }
+    .dv-pct-wrap { text-align: right; }
+    .dv-pct { font-size: 11px; color: var(--teal-m); font-weight: 600; }
+    .dv-pbar { height: 4px; background: #edf0f4; border-radius: 4px; margin-top: 5px; width: 110px; margin-left: auto; overflow: hidden; }
+    .dv-pfill { height: 100%; background: linear-gradient(90deg, var(--teal) 0%, #2ecc8f 100%); border-radius: 4px; transition: width .5s cubic-bezier(.4,0,.2,1); }
+    .sec-tabs { display: flex; border-bottom: 1px solid var(--color-border-tertiary); margin-bottom: 14px; gap: 2px; padding: 0 2px; }
+    .sec-tab { padding: 8px 14px; font-size: 11px; font-weight: 500; cursor: pointer; color: var(--color-text-secondary); border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 5px; white-space: nowrap; transition: color .12s; border-radius: 6px 6px 0 0; }
+    .sec-tab:hover { color: var(--color-text-primary); background: #f5f7fa; }
+    .sec-tab.active { color: var(--teal-m); border-bottom-color: var(--teal); font-weight: 600; background: #f0faf5; }
+    .tab-dot { width: 6px; height: 6px; border-radius: 50%; background: #D3D1C7; transition: background .2s; }
+    .tab-dot.partial { background: #EF9F27; } .tab-dot.done { background: var(--teal); }
+    .tab-content { display: none; } .tab-content.active { display: block; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .f { padding: 10px 12px; border: 1px solid #eaeef4; border-radius: 9px; transition: border-color .15s, background .15s, box-shadow .15s; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+    .f:hover { border-color: #d0d8e6; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+    .f.filled { border-color: rgba(29,158,117,.3); background: linear-gradient(135deg,#f0faf6 0%,#f5fbf8 100%); box-shadow: 0 1px 4px rgba(29,158,117,.1); }
+    .f.asking { border-color: #f5c26b; background: linear-gradient(135deg,#fffbf0 0%,#fef9ec 100%); box-shadow: 0 1px 4px rgba(239,159,39,.12); animation: ask-pulse 1.5s ease-in-out infinite; }
+    @keyframes ask-pulse { 0%,100%{box-shadow:0 1px 4px rgba(239,159,39,.12)}50%{box-shadow:0 2px 10px rgba(239,159,39,.25)} }
+    .f.wide { grid-column: 1 / -1; }
+    .fl { font-size: 10px; font-weight: 600; color: #9aa3b2; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px; }
+    .fv { font-size: 12px; color: var(--color-text-primary); font-weight: 500; word-break: break-all; }
+    .fv.empty { color: var(--color-text-tertiary); font-style: italic; font-weight: 400; font-size: 11px; }
+    /* Inline-editable field inputs */
+    .fv-input { font-size: 12px; color: var(--color-text-primary); font-weight: 500; border: none; background: transparent; width: 100%; outline: none; font-family: var(--font-sans); padding: 0; cursor: text; min-width: 0; }
+    .fv-input::placeholder { color: var(--color-text-tertiary); font-style: italic; font-weight: 400; font-size: 11px; }
+    .fv-input:hover:not([readonly]) { background: rgba(29,158,117,.05); border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
+    .fv-input:focus { color: var(--teal-m); background: rgba(29,158,117,.07); border-radius: 3px; padding: 0 2px; margin: 0 -2px; }
+    .fv-input[readonly] { cursor: default; color: var(--color-text-secondary); }
+    /* Env selector in modal footer */
+    .az-env-sel { display: flex; gap: 4px; flex-shrink: 0; }
+    .az-env-opt { display: flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 6px; border: 1px solid var(--color-border-secondary); cursor: pointer; font-size: 11px; font-weight: 500; color: var(--color-text-secondary); transition: all .12s; }
+    .az-env-opt:has(input:checked) { background: var(--teal-l); border-color: var(--teal); color: var(--teal-m); }
+    .az-env-opt input[type=radio] { display: none; }
+    .az-ep-display { flex: 1; font-size: 11px; color: var(--color-text-tertiary); font-family: var(--font-mono); background: var(--color-background-secondary); padding: 4px 8px; border-radius: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── AGENT ── */
+    #agent { width: var(--agent); background: var(--color-background-primary); border-left: 0.5px solid var(--color-border-tertiary); display: none; flex-direction: column; flex-shrink: 0; }
+    #agent.visible { display: flex; }
+    #ag-hdr { padding: 10px 14px; border-bottom: 0.5px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    #ag-logo { width: 30px; height: 30px; background: var(--teal); border-radius: 7px; display: flex; align-items: center; justify-content: center; }
+    #ag-logo i { color: #fff; font-size: 15px; }
+    #ag-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+    #ag-sub { font-size: 11px; color: var(--teal); display: flex; align-items: center; gap: 4px; }
+    .gdot2 { width: 6px; height: 6px; background: var(--teal); border-radius: 50%; }
+    #ag-mode-tabs { display: flex; border-bottom: 0.5px solid var(--color-border-tertiary); flex-shrink: 0; background: var(--color-background-primary); }
+    .ag-mode-tab { flex: 1; padding: 9px 4px; font-size: 10px; font-weight: 500; text-align: center; cursor: pointer; color: var(--color-text-secondary); border-bottom: 2px solid transparent; line-height: 1.3; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .ag-mode-tab:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+    .ag-mode-tab.active { color: var(--teal-m); border-bottom-color: var(--teal); background: var(--teal-l); }
+    .ag-mode-tab i { font-size: 14px; }
+    .ag-mode-tab span { font-size: 10px; line-height: 1.2; }
+    #ag-msgs { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .msg { max-width: 94%; }
+    .msg.bot { align-self: flex-start; } .msg.usr { align-self: flex-end; }
+    .bbl { padding: 8px 11px; border-radius: 10px; font-size: 12px; line-height: 1.5; }
+    .msg.bot .bbl { background: var(--color-background-secondary); color: var(--color-text-primary); border-bottom-left-radius: 3px; }
+    .msg.usr .bbl { background: var(--teal); color: #fff; border-bottom-right-radius: 3px; }
+    .mtime { font-size: 10px; color: var(--color-text-tertiary); margin-top: 2px; }
+    .msg.usr .mtime { text-align: right; }
+    #qr-bar { padding: 0 12px 8px; display: flex; flex-wrap: wrap; gap: 5px; flex-shrink: 0; }
+    .qr { font-size: 11px; padding: 4px 9px; border: 0.5px solid var(--color-border-secondary); border-radius: 14px; background: none; cursor: pointer; color: var(--color-text-secondary); white-space: nowrap; }
+    .qr:hover { background: var(--teal-l); color: var(--teal-m); border-color: var(--teal); }
+    #ag-inp-row { padding: 8px 12px; border-top: 0.5px solid var(--color-border-tertiary); display: flex; gap: 7px; align-items: center; flex-shrink: 0; }
+    #ag-inp { flex: 1; font-size: 12px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 6px 9px; background: var(--color-background-secondary); color: var(--color-text-primary); font-family: var(--font-sans); outline: none; }
+    #ag-inp:focus { border-color: var(--teal); }
+    #ag-send { width: 30px; height: 30px; background: var(--teal); border: none; border-radius: var(--border-radius-md); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #ag-send i { color: #fff; font-size: 14px; }
+    #ag-send:hover { background: var(--teal-m); }
+
+    /* ── JSON MODAL ── */
+    #json-overlay { display: none; position: fixed; inset: 0; background: rgba(15,20,35,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 1000; align-items: center; justify-content: center; padding: 24px; }
+    #json-overlay.open { display: flex; animation: overlay-in .2s ease; }
+    @keyframes overlay-in { from{opacity:0} to{opacity:1} }
+    #json-card { background: #fff; border-radius: 16px; width: 100%; max-width: 860px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: 0 24px 80px rgba(0,0,0,.22), 0 4px 16px rgba(0,0,0,.12); animation: card-in .22s cubic-bezier(.34,1.4,.64,1); }
+    @keyframes card-in { from{transform:scale(.96) translateY(8px);opacity:0} to{transform:scale(1) translateY(0);opacity:1} }
+    #json-card-hdr { padding: 16px 20px; border-bottom: 1px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 12px; flex-shrink: 0; background: linear-gradient(180deg,#fafffe 0%,#fff 100%); border-radius: 16px 16px 0 0; }
+    #json-card-hdr .jc-icon { width: 36px; height: 36px; background: linear-gradient(135deg,#27AE60 0%,#1a8a4a 100%); border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(39,174,96,.3); flex-shrink: 0; }
+    #json-card-hdr .jc-icon i { color: #fff; font-size: 17px; }
+    #json-card-hdr h3 { font-size: 15px; font-weight: 700; color: var(--color-text-primary); flex: 1; letter-spacing: -.02em; }
+    #json-card-hdr .jc-meta { font-size: 11px; color: var(--color-text-secondary); background: #f5f7fa; padding: 2px 8px; border-radius: 10px; }
+    .jc-btn { font-size: 12px; padding: 7px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; border: none; display: flex; align-items: center; gap: 5px; transition: all .15s; }
+    .jc-btn.primary { background: linear-gradient(135deg,#27AE60 0%,#1e9452 100%); color: #fff; box-shadow: 0 2px 6px rgba(39,174,96,.3); }
+    .jc-btn.primary:hover { box-shadow: 0 4px 12px rgba(39,174,96,.4); transform: translateY(-1px); }
+    .jc-btn.primary:disabled { opacity:.5; cursor:not-allowed; transform:none; box-shadow:none; }
+    .jc-btn.secondary { background: #f5f7fa; color: var(--color-text-primary); border: 1px solid #e5e9f0; }
+    .jc-btn.secondary:hover { background: #edf0f5; }
+    .jc-btn.close-btn { background: #f5f7fa; color: var(--color-text-secondary); border: none; padding: 7px; border-radius: 8px; }
+    .jc-btn.close-btn:hover { background: #edf0f5; color: var(--color-text-primary); }
+    #json-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--color-border-tertiary); flex-shrink: 0; padding: 0 16px; background: #fafbfc; }
+    .json-tab { padding: 10px 16px; font-size: 11px; font-weight: 500; cursor: pointer; color: var(--color-text-secondary); border-bottom: 2px solid transparent; transition: all .12s; border-radius: 6px 6px 0 0; margin-bottom: -1px; }
+    .json-tab:hover { color: var(--color-text-primary); background: #edf0f5; }
+    .json-tab.active { color: #1a7a3c; border-bottom-color: #27AE60; font-weight: 600; background: #fff; }
+    #json-body { flex: 1; overflow-y: auto; padding: 18px 20px; }
+    #json-body::-webkit-scrollbar { width: 5px; }
+    #json-body::-webkit-scrollbar-thumb { background: #dde3ec; border-radius: 3px; }
+    #json-pre { background: #0d1117; color: #e6edf3; font-family: var(--font-mono); font-size: 11.5px; line-height: 1.7; padding: 18px; border-radius: 10px; overflow-x: auto; white-space: pre; border: 1px solid #21262d; }
+    #json-info { display: none; }
+    #json-info.active { display: block; }
+    #json-pre-wrap { display: none; }
+    #json-pre-wrap.active { display: block; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+    .info-card { background: linear-gradient(135deg,#f7fafc 0%,#f2f6fb 100%); border: 1px solid #e8eef6; border-radius: 10px; padding: 14px 16px; }
+    .info-card .ic-label { font-size: 10px; font-weight: 600; color: #9aa3b2; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+    .info-card .ic-val { font-size: 28px; font-weight: 800; color: var(--teal-m); letter-spacing: -.03em; line-height: 1; }
+    .info-card .ic-sub { font-size: 11px; color: var(--color-text-secondary); margin-top: 4px; font-weight: 500; }
+    .step-list { display: flex; flex-direction: column; gap: 10px; }
+    .step-item { display: flex; gap: 14px; align-items: flex-start; padding: 12px 14px; background: linear-gradient(135deg,#f8fbf9 0%,#f4f9f6 100%); border-radius: 10px; border: 1px solid #e2ede7; }
+    .step-num { width: 26px; height: 26px; background: linear-gradient(135deg,#27AE60 0%,#1e9452 100%); border-radius: 50%; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; box-shadow: 0 2px 6px rgba(39,174,96,.3); }
+    .step-content .step-title { font-size: 12px; font-weight: 700; color: var(--color-text-primary); margin-bottom: 3px; }
+    .step-content .step-desc { font-size: 11px; color: var(--color-text-secondary); line-height: 1.6; }
+    .step-content .step-dur { font-size: 10px; font-weight: 600; color: var(--teal-m); margin-top: 4px; display: inline-block; background: rgba(29,158,117,.1); padding: 1px 7px; border-radius: 8px; }
+    #json-card-footer { padding: 14px 20px; border-top: 1px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px; flex-shrink: 0; background: #fafbfc; border-radius: 0 0 16px 16px; }
+    #json-card-footer .footer-note { font-size: 11px; color: var(--color-text-tertiary); flex: 1; line-height: 1.5; }
+    #copy-toast { display: none; font-size: 11px; color: #27AE60; font-weight: 600; align-items: center; gap: 4px; }
+    #copy-toast.show { display: flex; }
+    /* Azure Submit */
+    #json-card-footer { flex-direction: column; align-items: stretch; gap: 6px; }
+    .az-row { display: flex; align-items: center; gap: 8px; }
+    .az-url-input { flex: 1; font-size: 11px; padding: 5px 9px; border: 1px solid var(--color-border-secondary); border-radius: 6px; background: var(--color-background-secondary); color: var(--color-text-primary); font-family: var(--font-mono); outline: none; min-width: 0; }
+    .az-url-input:focus { border-color: #27AE60; background: #fff; }
+    .az-url-input::placeholder { color: var(--color-text-tertiary); font-family: var(--font-sans); font-size: 11px; }
+    #az-status { display: none; font-size: 11px; padding: 7px 11px; border-radius: 6px; align-items: center; gap: 7px; line-height: 1.4; }
+    #az-status.loading { display: flex; background: #EBF5FB; color: #1a5276; }
+    #az-status.success { display: flex; background: #EAFAF1; color: #1a7a3c; }
+    #az-status.error   { display: flex; background: #FDEDEC; color: #922b21; }
+    .az-spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: az-spin .6s linear infinite; flex-shrink: 0; }
+    @keyframes az-spin { to { transform: rotate(360deg); } }
+    .blob-path { font-family: var(--font-mono); background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 3px; font-size: 10px; word-break: break-all; }
+  </style>
+</head>
+<body>
+
+<div id="shell">
+  <!-- TOPBAR -->
+  <div id="topbar">
+    <div id="tb-logo">IH</div>
+    <span id="tb-brand">Integration Hub</span>
+    <span id="tb-rolepill">3PL Manager</span>
+    <div id="tb-right">
+      <span id="tb-login">Login as: <strong>3PL Manager</strong></span>
+      <button id="tb-gen-btn" disabled onclick="generateConfig()" title="Generate and download Solace automation config JSON">
+        <i class="ti ti-file-download"></i> Generate Config
+      </button>
+      <button id="tb-agent-btn" onclick="toggleAgent()"><span class="gdot"></span> IHUB Agent</button>
+      <div id="tb-avatar"><i class="ti ti-user" style="font-size:14px"></i></div>
+    </div>
+  </div>
+
+  <div id="body">
+    <!-- SIDEBAR -->
+    <div id="sidebar">
+      <div id="sb-info"><i class="ti ti-building-warehouse"></i> 3PL Manager — select a partner.</div>
+      <div id="sb-search"><input type="text" placeholder="Search…" oninput="filterPartners(this.value)" /></div>
+      <div id="sb-partners-lbl">3PL Partners</div>
+      <div id="sb-partners"></div>
+      <div id="sb-itf-section">
+        <div id="sb-itf-lbl">Integrations — <span id="sb-itf-partner"></span></div>
+        <div id="sb-itf-list"></div>
+      </div>
+      <div id="sb-footer">
+        <button class="sb-new" onclick="triggerNew()"><i class="ti ti-plus"></i> New 3PL Partner</button>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div id="main">
+      <div id="main-info"><i class="ti ti-layout-grid"></i><span id="main-info-txt"> 3PL Manager — select a starter kit to view or create integration requests.</span></div>
+      <div id="main-body">
+        <div id="empty-no-partner" class="empty-state">
+          <div class="empty-ico"></div>
+          <p class="title">No starter kit selected</p>
+          <p class="sub">Select a partner from the sidebar to begin.</p>
+        </div>
+        <div id="empty-no-itf" class="empty-state" style="display:none">
+          <div class="empty-ico"></div>
+          <p class="title">No integration selected</p>
+          <p class="sub">Select an integration from the left panel.</p>
+        </div>
+        <div id="detail-view">
+          <div class="dv-topbar">
+            <div>
+              <div class="dv-itf" id="dv-itf">—</div>
+              <div class="dv-meta" id="dv-meta">—</div>
+              <span class="dv-dir" id="dv-dir"></span>
+            </div>
+            <div class="dv-pct-wrap">
+              <div class="dv-pct" id="dv-pct">0% complete</div>
+              <div class="dv-pbar"><div class="dv-pfill" id="dv-pfill" style="width:0%"></div></div>
+            </div>
+          </div>
+          <div class="sec-tabs">
+            <div class="sec-tab active" id="tab-common"   onclick="switchTab('common')"  ><span class="tab-dot" id="dot-common"></span> Common</div>
+            <div class="sec-tab"        id="tab-solace"   onclick="switchTab('solace')"  ><span class="tab-dot" id="dot-solace"></span> Solace</div>
+            <div class="sec-tab"        id="tab-mulesoft" onclick="switchTab('mulesoft')"><span class="tab-dot" id="dot-mulesoft"></span> Mulesoft</div>
+            <div class="sec-tab"        id="tab-sap"      onclick="switchTab('sap')"     ><span class="tab-dot" id="dot-sap"></span> SAP BTP</div>
+          </div>
+          <!-- Common -->
+          <div class="tab-content active" id="content-common">
+            <div class="field-grid">
+              <div class="f" id="f-interfaceId"><div class="fl">Interface ID</div><div class="fv empty" id="v-interfaceId">—</div></div>
+              <div class="f" id="f-eaRef"><div class="fl">EA Reference</div><div class="fv empty" id="v-eaRef">not provided</div></div>
+              <div class="f" id="f-sourceApp"><div class="fl">Source application</div><div class="fv empty" id="v-sourceApp">not provided</div></div>
+              <div class="f" id="f-targetApp"><div class="fl">Target application</div><div class="fv empty" id="v-targetApp">not provided</div></div>
+              <div class="f" id="f-businessObj"><div class="fl">Business object</div><div class="fv empty" id="v-businessObj">not provided</div></div>
+              <div class="f" id="f-country"><div class="fl">Country / market</div><div class="fv empty" id="v-country">not provided</div></div>
+              <div class="f" id="f-sourceFormat"><div class="fl">Source format</div><div class="fv empty" id="v-sourceFormat">not provided</div></div>
+              <div class="f" id="f-srcIntType"><div class="fl">Source interface type</div><div class="fv empty" id="v-srcIntType">not provided</div></div>
+              <div class="f" id="f-targetFormat"><div class="fl">Target format</div><div class="fv empty" id="v-targetFormat">not provided</div></div>
+              <div class="f" id="f-tgtIntType"><div class="fl">Target interface type</div><div class="fv empty" id="v-tgtIntType">not provided</div></div>
+              <div class="f wide" id="f-funcDesc"><div class="fl">Functional description</div><div class="fv empty" id="v-funcDesc">not provided</div></div>
+              <div class="f" id="f-volume"><div class="fl">Volume (msgs / period)</div><div class="fv empty" id="v-volume">not provided</div></div>
+              <div class="f" id="f-sizePerMsg"><div class="fl">Size per message</div><div class="fv empty" id="v-sizePerMsg">not provided</div></div>
+              <div class="f wide" id="f-peakVolume"><div class="fl">Peak volume</div><div class="fv empty" id="v-peakVolume">not provided</div></div>
+              <div class="f" id="f-partnerID"><div class="fl">3PL Partner ID</div><div class="fv empty" id="v-partnerID">not provided</div></div>
+              <div class="f" id="f-navInstance"><div class="fl">1Nav Instance ID</div><div class="fv empty" id="v-navInstance">not provided</div></div>
+              <div class="f" id="f-countryCode"><div class="fl">Country code ISO</div><div class="fv empty" id="v-countryCode">not provided</div></div>
+              <div class="f" id="f-regionISO"><div class="fl">Region ISO</div><div class="fv empty" id="v-regionISO">not provided</div></div>
+              <div class="f wide" id="f-subRules"><div class="fl">Subscription rules</div><div class="fv empty" id="v-subRules">not provided</div></div>
+            </div>
+          </div>
+          <!-- Solace -->
+          <div class="tab-content" id="content-solace">
+            <div class="field-grid">
+              <div class="f wide" id="f-solace-brokerUrl"><div class="fl">Solace broker URL</div><div class="fv empty" id="v-solace-brokerUrl">not provided</div></div>
+              <div class="f" id="f-solace-msgVpn"><div class="fl">Message VPN</div><div class="fv empty" id="v-solace-msgVpn">not provided</div></div>
+              <div class="f" id="f-solace-clientUser"><div class="fl">Client username</div><div class="fv empty" id="v-solace-clientUser">not provided</div></div>
+              <div class="f" id="f-solace-clientPwd"><div class="fl">Client password</div><div class="fv empty" id="v-solace-clientPwd">not provided</div></div>
+              <div class="f" id="f-solace-queueNameUAT"><div class="fl">Queue name (UAT)</div><div class="fv empty" id="v-solace-queueNameUAT">not provided</div></div>
+              <div class="f" id="f-solace-queueNamePROD"><div class="fl">Queue name (PROD)</div><div class="fv empty" id="v-solace-queueNamePROD">not provided</div></div>
+              <div class="f" id="f-solace-topicSubscription"><div class="fl">Topic subscription</div><div class="fv empty" id="v-solace-topicSubscription">not provided</div></div>
+              <div class="f" id="f-solace-protocol"><div class="fl">Protocol</div><div class="fv empty" id="v-solace-protocol">not provided</div></div>
+              <div class="f" id="f-solace-portUAT"><div class="fl">Port (UAT)</div><div class="fv empty" id="v-solace-portUAT">not provided</div></div>
+              <div class="f" id="f-solace-portPROD"><div class="fl">Port (PROD)</div><div class="fv empty" id="v-solace-portPROD">not provided</div></div>
+              <div class="f" id="f-solace-sftpPathUAT"><div class="fl">SFTP path (UAT)</div><div class="fv empty" id="v-solace-sftpPathUAT">not provided</div></div>
+              <div class="f" id="f-solace-sftpFileUAT"><div class="fl">Filename scheme (UAT)</div><div class="fv empty" id="v-solace-sftpFileUAT">not provided</div></div>
+              <div class="f" id="f-solace-sftpPathPROD"><div class="fl">SFTP path (PROD)</div><div class="fv empty" id="v-solace-sftpPathPROD">not provided</div></div>
+              <div class="f" id="f-solace-sftpFilePROD"><div class="fl">Filename scheme (PROD)</div><div class="fv empty" id="v-solace-sftpFilePROD">not provided</div></div>
+            </div>
+          </div>
+          <!-- Mulesoft -->
+          <div class="tab-content" id="content-mulesoft">
+            <div class="field-grid">
+              <div class="f wide" id="f-mule-targetUrlUAT"><div class="fl">Target URL (UAT)</div><div class="fv empty" id="v-mule-targetUrlUAT">not provided</div></div>
+              <div class="f" id="f-mule-userUAT"><div class="fl">User (UAT)</div><div class="fv empty" id="v-mule-userUAT">not provided</div></div>
+              <div class="f wide" id="f-mule-targetUrlPROD"><div class="fl">Target URL (PROD)</div><div class="fv empty" id="v-mule-targetUrlPROD">not provided</div></div>
+              <div class="f" id="f-mule-userPROD"><div class="fl">User (PROD)</div><div class="fv empty" id="v-mule-userPROD">not provided</div></div>
+              <div class="f" id="f-mule-apiClientId"><div class="fl">API client ID</div><div class="fv empty" id="v-mule-apiClientId">not provided</div></div>
+              <div class="f" id="f-mule-apiClientSecret"><div class="fl">API client secret</div><div class="fv empty" id="v-mule-apiClientSecret">not provided</div></div>
+              <div class="f" id="f-mule-envUAT"><div class="fl">Anypoint env (UAT)</div><div class="fv empty" id="v-mule-envUAT">not provided</div></div>
+              <div class="f" id="f-mule-envPROD"><div class="fl">Anypoint env (PROD)</div><div class="fv empty" id="v-mule-envPROD">not provided</div></div>
+              <div class="f" id="f-mule-appName"><div class="fl">Application name</div><div class="fv empty" id="v-mule-appName">not provided</div></div>
+              <div class="f" id="f-mule-connectorType"><div class="fl">Connector type</div><div class="fv empty" id="v-mule-connectorType">not provided</div></div>
+              <div class="f wide" id="f-mule-sftpPathUAT"><div class="fl">SFTP path (UAT)</div><div class="fv empty" id="v-mule-sftpPathUAT">not provided</div></div>
+              <div class="f" id="f-mule-sftpFileUAT"><div class="fl">Filename scheme (UAT)</div><div class="fv empty" id="v-mule-sftpFileUAT">not provided</div></div>
+              <div class="f wide" id="f-mule-sftpPathPROD"><div class="fl">SFTP path (PROD)</div><div class="fv empty" id="v-mule-sftpPathPROD">not provided</div></div>
+              <div class="f" id="f-mule-sftpFilePROD"><div class="fl">Filename scheme (PROD)</div><div class="fv empty" id="v-mule-sftpFilePROD">not provided</div></div>
+            </div>
+          </div>
+          <!-- SAP BTP -->
+          <div class="tab-content" id="content-sap">
+            <div class="field-grid">
+              <div class="f wide" id="f-sap-targetUrlUAT"><div class="fl">Target URL (UAT)</div><div class="fv empty" id="v-sap-targetUrlUAT">not provided</div></div>
+              <div class="f" id="f-sap-userUAT"><div class="fl">User (UAT)</div><div class="fv empty" id="v-sap-userUAT">not provided</div></div>
+              <div class="f wide" id="f-sap-targetUrlPROD"><div class="fl">Target URL (PROD)</div><div class="fv empty" id="v-sap-targetUrlPROD">not provided</div></div>
+              <div class="f" id="f-sap-userPROD"><div class="fl">User (PROD)</div><div class="fv empty" id="v-sap-userPROD">not provided</div></div>
+              <div class="f" id="f-sap-iflowId"><div class="fl">iFlow ID</div><div class="fv empty" id="v-sap-iflowId">not provided</div></div>
+              <div class="f" id="f-sap-packageId"><div class="fl">Integration package ID</div><div class="fv empty" id="v-sap-packageId">not provided</div></div>
+              <div class="f" id="f-sap-tenantUAT"><div class="fl">Tenant ID (UAT)</div><div class="fv empty" id="v-sap-tenantUAT">not provided</div></div>
+              <div class="f" id="f-sap-tenantPROD"><div class="fl">Tenant ID (PROD)</div><div class="fv empty" id="v-sap-tenantPROD">not provided</div></div>
+              <div class="f" id="f-sap-oauthClientId"><div class="fl">OAuth client ID</div><div class="fv empty" id="v-sap-oauthClientId">not provided</div></div>
+              <div class="f" id="f-sap-oauthSecret"><div class="fl">OAuth client secret</div><div class="fv empty" id="v-sap-oauthSecret">not provided</div></div>
+              <div class="f wide" id="f-sap-tokenUrl"><div class="fl">Token URL</div><div class="fv empty" id="v-sap-tokenUrl">not provided</div></div>
+              <div class="f" id="f-sap-senderSystem"><div class="fl">Sender system</div><div class="fv empty" id="v-sap-senderSystem">not provided</div></div>
+              <div class="f" id="f-sap-receiverSystem"><div class="fl">Receiver system</div><div class="fv empty" id="v-sap-receiverSystem">not provided</div></div>
+              <div class="f wide" id="f-sap-sftpPathUAT"><div class="fl">SFTP path (UAT)</div><div class="fv empty" id="v-sap-sftpPathUAT">not provided</div></div>
+              <div class="f" id="f-sap-sftpFileUAT"><div class="fl">Filename scheme (UAT)</div><div class="fv empty" id="v-sap-sftpFileUAT">not provided</div></div>
+              <div class="f wide" id="f-sap-sftpPathPROD"><div class="fl">SFTP path (PROD)</div><div class="fv empty" id="v-sap-sftpPathPROD">not provided</div></div>
+              <div class="f" id="f-sap-sftpFilePROD"><div class="fl">Filename scheme (PROD)</div><div class="fv empty" id="v-sap-sftpFilePROD">not provided</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AGENT PANEL -->
+    <div id="agent">
+      <div id="ag-hdr">
+        <div id="ag-logo"><i class="ti ti-robot"></i></div>
+        <div><div id="ag-name">IHUB Agent</div><div id="ag-sub"><span class="gdot2"></span> 3PL Onboarding</div></div>
+        <button style="margin-left:auto;background:none;border:none;cursor:pointer;color:var(--color-text-tertiary);font-size:16px;display:flex;align-items:center" onclick="toggleAgent()"><i class="ti ti-x"></i></button>
+      </div>
+      <div id="ag-mode-tabs">
+        <div class="ag-mode-tab active" id="agtab-update"      onclick="pickMode('update')">     <i class="ti ti-edit"></i><span>Update interface</span></div>
+        <div class="ag-mode-tab"        id="agtab-new-itf"     onclick="pickMode('new-itf')">    <i class="ti ti-plus"></i><span>New interface</span></div>
+        <div class="ag-mode-tab"        id="agtab-new-partner" onclick="pickMode('new-partner')"><i class="ti ti-building-warehouse"></i><span>New 3PL partner</span></div>
+      </div>
+      <div id="ag-msgs"></div>
+      <div id="qr-bar"></div>
+      <div id="ag-inp-row">
+        <input id="ag-inp" type="text" placeholder="Type a response…" onkeydown="if(event.key==='Enter')send()" />
+        <button id="ag-send" onclick="send()"><i class="ti ti-send"></i></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- JSON MODAL -->
+<div id="json-overlay" onclick="if(event.target===this)closeModal()">
+  <div id="json-card">
+    <div id="json-card-hdr">
+      <div class="jc-icon"><i class="ti ti-file-code"></i></div>
+      <div>
+        <h3 id="modal-title">Solace Automation Config</h3>
+        <div class="jc-meta" id="modal-meta"></div>
+      </div>
+      <div id="copy-toast"><i class="ti ti-check"></i> Copied!</div>
+      <button class="jc-btn secondary" onclick="copyJSON()"><i class="ti ti-copy"></i> Copy</button>
+      <button class="jc-btn primary"   onclick="downloadJSON()"><i class="ti ti-download"></i> Download JSON</button>
+      <button class="jc-btn close-btn" onclick="closeModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="json-tabs">
+      <div class="json-tab active" onclick="switchJsonTab('info')">Summary</div>
+      <div class="json-tab"        onclick="switchJsonTab('uat')" >UAT Payload</div>
+      <div class="json-tab"        onclick="switchJsonTab('prod')">PROD Payload</div>
+      <div class="json-tab"        onclick="switchJsonTab('full')">Full Config</div>
+    </div>
+    <div id="json-body">
+      <div id="json-info" class="active">
+        <div class="info-grid" id="summary-cards"></div>
+        <div style="font-size:12px;font-weight:600;color:var(--color-text-primary);margin-bottom:8px;">Execution Plan</div>
+        <div class="step-list" id="step-list"></div>
+      </div>
+      <div id="json-pre-wrap">
+        <pre id="json-pre"></pre>
+      </div>
+    </div>
+    <div id="json-card-footer">
+      <div class="az-row">
+        <div class="az-env-sel">
+          <label class="az-env-opt"><input type="radio" name="az-env" value="dev" checked onchange="updateAzBtn()"><i class="ti ti-code"></i> DEV</label>
+          <label class="az-env-opt az-env-locked" title="Requires Solace service creation quota — not available in sandbox" style="opacity:.45;cursor:not-allowed"><input type="radio" name="az-env" value="uatprod" disabled onchange="updateAzBtn()"><i class="ti ti-layers"></i> UAT + PROD</label>
+        </div>
+        <div class="az-ep-display" id="az-ep-display">solace-main-orchestrator</div>
+        <button class="jc-btn primary" id="az-submit-btn" onclick="submitToAzure()" disabled>
+          <i class="ti ti-cloud-upload"></i> Submit to Azure
+        </button>
+      </div>
+      <div id="az-status"></div>
+      <span class="footer-note">
+        <strong>DEV</strong> — provisions queues &amp; ACLs on existing service <code style="font-size:10px;background:#f0f2f5;padding:1px 4px;border-radius:3px">ruj2y805m8u</code> (msgvpn-ruj2y805m8u). No new service creation. &nbsp;
+        <span style="color:#c0392b"><i class="ti ti-lock" style="font-size:10px"></i> UAT+PROD locked</span> — requires Solace enterprise service quota (unavailable in this sandbox).
+      </span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   DATA
+───────────────────────────────────────────────────────────── */
+const sectionFields = {
+  common:   ['interfaceId','eaRef','sourceApp','targetApp','businessObj','country','sourceFormat','srcIntType','targetFormat','tgtIntType','funcDesc','volume','sizePerMsg','peakVolume','partnerID','navInstance','countryCode','regionISO','subRules'],
+  solace:   ['solace-brokerUrl','solace-msgVpn','solace-clientUser','solace-clientPwd','solace-queueNameUAT','solace-queueNamePROD','solace-topicSubscription','solace-protocol','solace-portUAT','solace-portPROD','solace-sftpPathUAT','solace-sftpFileUAT','solace-sftpPathPROD','solace-sftpFilePROD'],
+  mulesoft: ['mule-targetUrlUAT','mule-userUAT','mule-targetUrlPROD','mule-userPROD','mule-apiClientId','mule-apiClientSecret','mule-envUAT','mule-envPROD','mule-appName','mule-connectorType','mule-sftpPathUAT','mule-sftpFileUAT','mule-sftpPathPROD','mule-sftpFilePROD'],
+  sap:      ['sap-targetUrlUAT','sap-userUAT','sap-targetUrlPROD','sap-userPROD','sap-iflowId','sap-packageId','sap-tenantUAT','sap-tenantPROD','sap-oauthClientId','sap-oauthSecret','sap-tokenUrl','sap-senderSystem','sap-receiverSystem','sap-sftpPathUAT','sap-sftpFileUAT','sap-sftpPathPROD','sap-sftpFilePROD']
+};
+const allFields = [...sectionFields.common, ...sectionFields.solace, ...sectionFields.mulesoft, ...sectionFields.sap];
+
+const qCommon = [
+  {k:'interfaceId',q:'What is the <strong>Interface ID</strong>? (e.g. ITF_WMS_010)',hints:[]},
+  {k:'eaRef',q:'<strong>EA Reference</strong>? (EAXXXX)',hints:[]},
+  {k:'sourceApp',q:'<strong>Source application</strong>?',hints:['1NAV','3PL']},
+  {k:'targetApp',q:'<strong>Target application</strong>?',hints:['3PL','1NAV']},
+  {k:'businessObj',q:'<strong>Business object</strong>?',hints:['stockMovement','materialMaster','dispatchDelivery','sourcingDelivery','returnDelivery']},
+  {k:'country',q:'<strong>Country / market</strong>?',hints:['Germany','Netherlands','India','UK']},
+  {k:'partnerID',q:'<strong>3PL Partner ID</strong>?',hints:[]},
+  {k:'navInstance',q:'<strong>1Nav Instance ID</strong>?',hints:[]},
+  {k:'countryCode',q:'<strong>Country code ISO</strong>?',hints:['DE','NL','IN','GB','US']},
+  {k:'regionISO',q:'<strong>Region ISO</strong>?',hints:['EU','APAC','NA','MEA']},
+  {k:'sourceFormat',q:'<strong>Source format</strong>?',hints:['xml','json','txt','flat-file']},
+  {k:'targetFormat',q:'<strong>Target format</strong>?',hints:['xml','json','idoc','txt']},
+  {k:'srcIntType',q:'<strong>Source interface type</strong>?',hints:['API','SFTP','IDoc','file']},
+  {k:'tgtIntType',q:'<strong>Target interface type</strong>?',hints:['API','SFTP','REST','SOAP']},
+  {k:'volume',q:'<strong>Volume</strong>?',hints:['<1000/day','1000–10000/day','>10000/day']},
+  {k:'sizePerMsg',q:'<strong>Size per message</strong>?',hints:['<1KB','1–10KB','>10KB']},
+  {k:'peakVolume',q:'<strong>Peak volume</strong>?',hints:[]},
+  {k:'subRules',q:'<strong>Subscription rules</strong>?',hints:['None','ByPartnerID','ByCountry']},
+  {k:'funcDesc',q:'Brief <strong>functional description</strong>?',hints:[]}
+];
+const qSolace = [
+  {k:'solace-brokerUrl',  q:'[Solace] <strong>Broker URL</strong>?',hints:[]},
+  {k:'solace-msgVpn',     q:'[Solace] <strong>Message VPN</strong>?',hints:[]},
+  {k:'solace-clientUser', q:'[Solace] <strong>Client username</strong>?',hints:[]},
+  {k:'solace-clientPwd',  q:'[Solace] <strong>Client password</strong>?',hints:[]},
+  {k:'solace-queueNameUAT',q:'[Solace] <strong>Queue name (UAT)</strong>?',hints:[]},
+  {k:'solace-queueNamePROD',q:'[Solace] <strong>Queue name (PROD)</strong>?',hints:[]},
+  {k:'solace-topicSubscription',q:'[Solace] <strong>Topic subscription</strong>?',hints:[]},
+  {k:'solace-protocol',   q:'[Solace] <strong>Protocol</strong>?',hints:['AMQP','MQTT','REST','SMF']},
+  {k:'solace-portUAT',    q:'[Solace] <strong>Port (UAT)</strong>?',hints:['5672','8883']},
+  {k:'solace-portPROD',   q:'[Solace] <strong>Port (PROD)</strong>?',hints:[]}
+];
+const qMule = [
+  {k:'mule-targetUrlUAT', q:'[Mulesoft] <strong>Target URL (UAT)</strong>?',hints:[]},
+  {k:'mule-userUAT',      q:'[Mulesoft] <strong>User (UAT)</strong>?',hints:[]},
+  {k:'mule-targetUrlPROD',q:'[Mulesoft] <strong>Target URL (PROD)</strong>?',hints:[]},
+  {k:'mule-userPROD',     q:'[Mulesoft] <strong>User (PROD)</strong>?',hints:[]},
+  {k:'mule-apiClientId',  q:'[Mulesoft] <strong>API client ID</strong>?',hints:[]},
+  {k:'mule-envUAT',       q:'[Mulesoft] <strong>Anypoint env (UAT)</strong>?',hints:['Sandbox','Development']},
+  {k:'mule-envPROD',      q:'[Mulesoft] <strong>Anypoint env (PROD)</strong>?',hints:['Production']},
+  {k:'mule-appName',      q:'[Mulesoft] <strong>App name</strong>?',hints:[]},
+  {k:'mule-connectorType',q:'[Mulesoft] <strong>Connector type</strong>?',hints:['HTTP','SFTP','JMS','DB']}
+];
+const qSAP = [
+  {k:'sap-targetUrlUAT',  q:'[SAP BTP] <strong>Target URL (UAT)</strong>?',hints:[]},
+  {k:'sap-userUAT',       q:'[SAP BTP] <strong>User (UAT)</strong>?',hints:[]},
+  {k:'sap-targetUrlPROD', q:'[SAP BTP] <strong>Target URL (PROD)</strong>?',hints:[]},
+  {k:'sap-userPROD',      q:'[SAP BTP] <strong>User (PROD)</strong>?',hints:[]},
+  {k:'sap-iflowId',       q:'[SAP BTP] <strong>iFlow ID</strong>?',hints:[]},
+  {k:'sap-packageId',     q:'[SAP BTP] <strong>Package ID</strong>?',hints:[]},
+  {k:'sap-tenantUAT',     q:'[SAP BTP] <strong>Tenant ID (UAT)</strong>?',hints:[]},
+  {k:'sap-tenantPROD',    q:'[SAP BTP] <strong>Tenant ID (PROD)</strong>?',hints:[]},
+  {k:'sap-oauthClientId', q:'[SAP BTP] <strong>OAuth client ID</strong>?',hints:[]},
+  {k:'sap-tokenUrl',      q:'[SAP BTP] <strong>Token URL</strong>?',hints:[]},
+  {k:'sap-senderSystem',  q:'[SAP BTP] <strong>Sender system</strong>?',hints:[]},
+  {k:'sap-receiverSystem',q:'[SAP BTP] <strong>Receiver system</strong>?',hints:[]}
+];
+const fullQ = [...qCommon,...qSolace,...qMule,...qSAP];
+
+let partners = {
+  'LogiCo GmbH':    {status:'partial', interfaces:{}, sharedData:{partnerID:'3PL-001',navInstance:'NAV-EU-02',countryCode:'DE',regionISO:'EU',country:'Germany',sourceFormat:'xml',targetFormat:'xml','solace-msgVpn':'logico-uat','solace-protocol':'AMQP'}},
+  'FastFulfill BV': {status:'done',    interfaces:{}, sharedData:{partnerID:'3PL-002',navInstance:'NAV-EU-01',countryCode:'NL',regionISO:'EU',country:'Netherlands',sourceFormat:'xml',targetFormat:'json',srcIntType:'SFTP',tgtIntType:'REST API',volume:'5000/day',sizePerMsg:'2KB',peakVolume:'15000/day',funcDesc:'Full WMS integration suite',subRules:'ByPartnerID','solace-brokerUrl':'mrp8hz8.messaging.solace.cloud:55443','solace-msgVpn':'fastfulfill-prod','solace-clientUser':'svc-3pl','solace-clientPwd':'<SOLACE_PASS>','solace-queueNameUAT':'Q/3PL/UAT/inbound','solace-queueNamePROD':'Q/3PL/PROD/inbound','solace-topicSubscription':'3pl/NL/3PL-002/>','solace-protocol':'AMQP','solace-portUAT':'5672','solace-portPROD':'5671','solace-sftpPathUAT':'/sftp/fastfulfill/uat','solace-sftpFileUAT':'{interfaceId}_{yyyyMMdd}.xml','solace-sftpPathPROD':'/sftp/fastfulfill/prod','solace-sftpFilePROD':'{interfaceId}_{yyyyMMdd}.xml','mule-targetUrlUAT':'https://uat-api.fastfulfill.nl/v1','mule-userUAT':'svc_mule_uat','mule-targetUrlPROD':'https://api.fastfulfill.nl/v1','mule-userPROD':'svc_mule_prod','mule-apiClientId':'cl-8823xxf','mule-envUAT':'Sandbox','mule-envPROD':'Production','mule-appName':'3pl-wms-integration','mule-connectorType':'HTTP','sap-targetUrlUAT':'https://uat.btp.fastfulfill.nl','sap-userUAT':'svc_sap_uat','sap-targetUrlPROD':'https://btp.fastfulfill.nl','sap-userPROD':'svc_sap_prod','sap-iflowId':'FF_WMS_001','sap-packageId':'FF_3PL_PKG','sap-tenantUAT':'fastfulfill-uat','sap-tenantPROD':'fastfulfill-prod','sap-oauthClientId':'oauth-ff-3pl','sap-tokenUrl':'https://fastfulfill.authentication.eu10.hana.ondemand.com/oauth/token','sap-senderSystem':'3PL_SYS','sap-receiverSystem':'1NAV_ERP'}},
+  'OmniLog India':  {status:'none',    interfaces:{}, sharedData:{}}
+};
+const defaultItfs = ['ITF_MST_009','ITF_PUR_028','ITF_SAL_006','ITF_SAL_007','ITF_WMS_002','ITF_WMS_003','ITF_INV_002','ITF_INV_004','ITF_INV_003','ITF_WMS_005','ITF_PUR_019','ITF_SAL_008','ITF_WMS_004','ITF_SAL_011'];
+const itfMeta = {
+  'ITF_MST_009':{src:'1NAV',tgt:'3PL',obj:'materialMaster',  dir:'out'},
+  'ITF_PUR_028':{src:'1NAV',tgt:'3PL',obj:'sourcingDelivery', dir:'out'},
+  'ITF_SAL_006':{src:'1NAV',tgt:'3PL',obj:'dispatchDelivery', dir:'out'},
+  'ITF_SAL_007':{src:'1NAV',tgt:'3PL',obj:'returnDelivery',   dir:'out'},
+  'ITF_WMS_002':{src:'1NAV',tgt:'3PL',obj:'dispatchDelivery', dir:'out'},
+  'ITF_WMS_003':{src:'1NAV',tgt:'3PL',obj:'sourcingDelivery', dir:'out'},
+  'ITF_INV_002':{src:'3PL',tgt:'1NAV',obj:'stockMovement',   dir:'in'},
+  'ITF_INV_004':{src:'3PL',tgt:'1NAV',obj:'stockMovement',   dir:'in'},
+  'ITF_INV_003':{src:'3PL',tgt:'1NAV',obj:'stockBalance',    dir:'in'},
+  'ITF_WMS_005':{src:'3PL',tgt:'1NAV',obj:'sourcingStock',   dir:'in'},
+  'ITF_PUR_019':{src:'3PL',tgt:'1NAV',obj:'sourcingStock',   dir:'in'},
+  'ITF_SAL_008':{src:'3PL',tgt:'1NAV',obj:'despatchStock',   dir:'in'},
+  'ITF_WMS_004':{src:'3PL',tgt:'1NAV',obj:'despatchStock',   dir:'in'},
+  'ITF_SAL_011':{src:'3PL',tgt:'1NAV',obj:'returnStock',     dir:'in'}
+};
+defaultItfs.forEach(id => {
+  partners['LogiCo GmbH'].interfaces[id]    = {};
+  partners['FastFulfill BV'].interfaces[id] = {};
+  partners['OmniLog India'].interfaces[id]  = {};
+});
+
+let activePartner = null, activeItfId = null, activeTab = 'common';
+let agentMode = 'update';
+let agentQueue = [], pendingQ = null, tempItfId = null, tempItfData = {};
+let generatedJSON = null;
+
+/* ─────────────────────────────────────────────────────────────
+   HELPERS
+───────────────────────────────────────────────────────────── */
+function ts() { return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''); }
+function extractHost(url) {
+  if (!url) return '';
+  try { return new URL(url.startsWith('http') ? url : 'https://' + url).hostname; } catch(e) { return url.split('/')[0]; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PARTNER LIST
+───────────────────────────────────────────────────────────── */
+function renderPartners(filter) {
+  const names = Object.keys(partners).filter(n => !filter || n.toLowerCase().includes(filter.toLowerCase()));
+  document.getElementById('sb-partners').innerHTML = names.map(name => {
+    const s = partners[name].status;
+    return `<div class="sbp ${activePartner===name?'active':''}" onclick="openPartner('${name}')">
+      <i class="ti ti-truck"></i>${name}<span class="sbd ${s==='done'?'done':s==='partial'?'partial':''}"></span>
+    </div>`;
+  }).join('');
+}
+function filterPartners(v) { renderPartners(v); }
+
+function openPartner(name) {
+  activePartner = name; activeItfId = null;
+  renderPartners();
+  document.getElementById('sb-itf-partner').textContent = name;
+  document.getElementById('main-info-txt').textContent = ` 3PL Manager — ${name} / Integration onboarding`;
+  document.getElementById('sb-itf-section').style.display = 'flex';
+  renderItfList(name);
+  showEmpty('no-itf');
+  updateGenBtn();
+  if (agentMode === 'update' && document.getElementById('agent').classList.contains('visible'))
+    botMsg(`<strong>${name}</strong> selected. Click an interface on the left to edit.`);
+  if (agentMode === 'new-itf' && document.getElementById('agent').classList.contains('visible') && !tempItfId)
+    startNewItfFlow();
+}
+
+function renderItfList(pname) {
+  const p = partners[pname]; if (!p) return;
+  document.getElementById('sb-itf-list').innerHTML = Object.keys(p.interfaces).map(id => {
+    const d = Object.assign({}, p.sharedData, p.interfaces[id] || {});
+    const filled = allFields.filter(k => d[k]).length;
+    const dotCls = filled === allFields.length && filled > 0 ? 'done' : filled > 0 ? 'partial' : '';
+    const m = itfMeta[id] || {dir:'in'};
+    return `<div class="sbi ${activeItfId===id?'active':''}" onclick="clickItf('${id}')">
+      <span class="sbi-dot ${dotCls}"></span>
+      <span class="sbi-id">${id}</span>
+      <span class="sbi-dir ${m.dir}">${m.dir==='in'?'IN':'OUT'}</span>
+    </div>`;
+  }).join('');
+}
+
+function clickItf(id) {
+  activeItfId = id;
+  renderItfList(activePartner);
+  showDetailForItf(id);
+  updateGenBtn();
+  if (agentMode === 'update' && document.getElementById('agent').classList.contains('visible'))
+    botMsg(`Editing <strong>${id}</strong> for <strong>${activePartner}</strong>. Which field? or say "fill all fields".`);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DETAIL VIEW
+───────────────────────────────────────────────────────────── */
+function showDetailForItf(id) {
+  const m = itfMeta[id] || {src:'?', tgt:'?', obj:'?', dir:'in'};
+  document.getElementById('dv-itf').textContent  = id;
+  document.getElementById('dv-meta').textContent = `${m.src} → ${m.tgt} · ${m.obj}`;
+  const dirEl = document.getElementById('dv-dir');
+  dirEl.textContent = m.dir === 'in' ? 'Inbound (3PL → 1NAV)' : 'Outbound (1NAV → 3PL)';
+  dirEl.className   = 'dv-dir ' + (m.dir === 'in' ? 'in' : 'out');
+  showEmpty(null);
+  document.getElementById('detail-view').style.display = 'block';
+  switchTab('common');
+  refreshDetailFields(id);
+}
+
+function showBlankDetail(label) {
+  document.getElementById('dv-itf').textContent  = label || 'New Interface';
+  document.getElementById('dv-meta').textContent = 'Pending';
+  document.getElementById('dv-dir').textContent  = '';
+  showEmpty(null);
+  document.getElementById('detail-view').style.display = 'block';
+  allFields.forEach(k => {
+    const v = document.getElementById('v-'+k), f = document.getElementById('f-'+k);
+    if (v) { v.textContent = 'not provided'; v.className = 'fv empty'; }
+    if (f) f.classList.remove('filled','asking');
+  });
+  document.getElementById('dv-pfill').style.width = '0%';
+  document.getElementById('dv-pct').textContent   = '0% complete';
+  ['common','solace','mulesoft','sap'].forEach(s => { const d = document.getElementById('dot-'+s); if(d) d.className='tab-dot'; });
+  switchTab('common');
+}
+
+function refreshDetailFields(id) {
+  const p = partners[activePartner]; if (!p) return;
+  const d = Object.assign({}, p.sharedData, p.interfaces[id] || {});
+  const m = itfMeta[id];
+  if (m) { liveSetFieldUI('interfaceId',id); liveSetFieldUI('sourceApp',m.src); liveSetFieldUI('targetApp',m.tgt); liveSetFieldUI('businessObj',m.obj); }
+  allFields.forEach(k => {
+    const v = document.getElementById('v-'+k), f = document.getElementById('f-'+k);
+    if (!v || !f) return;
+    const val = d[k] || '';
+    if (v.tagName === 'INPUT') v.value = val;
+    else v.textContent = val || 'not provided';
+    v.className = val ? 'fv-input' : 'fv-input empty';
+    f.classList.toggle('filled', !!val);
+    f.classList.remove('asking');
+  });
+  recalcProgress(d);
+}
+
+function liveSetFieldUI(k, val) {
+  const v = document.getElementById('v-'+k), f = document.getElementById('f-'+k);
+  if (v) {
+    if (v.tagName === 'INPUT') v.value = val || '';
+    else v.textContent = val;
+    v.className = val ? 'fv-input' : 'fv-input empty';
+  }
+  if (f) { f.classList.add('filled'); f.classList.remove('asking'); }
+}
+
+function liveSetField(k, val) {
+  liveSetFieldUI(k, val);
+  autoSwitchTab(k);
+  if (activePartner && activeItfId) {
+    if (!partners[activePartner].interfaces[activeItfId]) partners[activePartner].interfaces[activeItfId] = {};
+    partners[activePartner].interfaces[activeItfId][k] = val;
+    const d = Object.assign({}, partners[activePartner].sharedData, partners[activePartner].interfaces[activeItfId]);
+    recalcProgress(d); renderItfList(activePartner);
+  }
+  if (tempItfId) { tempItfData[k] = val; recalcProgress(tempItfData); }
+  updateGenBtn();
+}
+
+function recalcProgress(d) {
+  const filled = allFields.filter(k => d && d[k]).length;
+  const pct = Math.round(filled / allFields.length * 100);
+  document.getElementById('dv-pfill').style.width = pct + '%';
+  document.getElementById('dv-pct').textContent   = pct + '% complete';
+  updateTabDots(d);
+}
+
+function updateTabDots(d) {
+  ['common','solace','mulesoft','sap'].forEach(sec => {
+    const keys = sectionFields[sec], filled = keys.filter(k => d && d[k]).length;
+    const dot = document.getElementById('dot-'+sec);
+    if (dot) dot.className = 'tab-dot ' + (filled===keys.length&&keys.length>0?'done':filled>0?'partial':'');
+  });
+}
+
+function highlightField(k) {
+  document.querySelectorAll('.f').forEach(el => el.classList.remove('asking'));
+  const el = document.getElementById('f-'+k);
+  if (el && !el.classList.contains('filled')) el.classList.add('asking');
+}
+
+function autoSwitchTab(k) {
+  if (sectionFields.solace.includes(k))    switchTab('solace');
+  else if (sectionFields.mulesoft.includes(k)) switchTab('mulesoft');
+  else if (sectionFields.sap.includes(k))  switchTab('sap');
+  else switchTab('common');
+}
+
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.sec-tab').forEach(t => t.classList.toggle('active', t.id==='tab-'+tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='content-'+tab));
+}
+
+function showEmpty(which) {
+  document.getElementById('empty-no-partner').style.display = which==='no-partner' ? 'flex' : 'none';
+  document.getElementById('empty-no-itf').style.display     = which==='no-itf'     ? 'flex' : 'none';
+  if (which) document.getElementById('detail-view').style.display = 'none';
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GENERATE CONFIG BUTTON
+───────────────────────────────────────────────────────────── */
+function updateGenBtn() {
+  const btn = document.getElementById('tb-gen-btn');
+  if (!activePartner) { btn.disabled = true; btn.title = 'Select a partner first'; return; }
+  const d = partners[activePartner].sharedData;
+  const hasCore = d.partnerID && d.countryCode && d['solace-msgVpn'];
+  btn.disabled = !hasCore;
+  btn.title = hasCore
+    ? `Generate Solace config for ${activePartner}`
+    : 'Fill Partner ID, Country Code and Message VPN to enable generation';
+}
+
+/* ─────────────────────────────────────────────────────────────
+   JSON GENERATION
+───────────────────────────────────────────────────────────── */
+function generateConfig() {
+  if (!activePartner) return;
+  const p  = partners[activePartner];
+  const sd = p.sharedData;
+  const partnerID  = sd.partnerID  || 'PARTNER';
+  const countryCode= sd.countryCode|| 'XX';
+  const ns = `3pl/${countryCode}/${partnerID}`;
+  const partnerSlug = slug(activePartner);
+
+  // ── unique queues (by businessObject+direction) ──────────────
+  const queueMap = {};
+  Object.keys(p.interfaces).forEach(id => {
+    const m = itfMeta[id]; if (!m) return;
+    const key = `${m.obj}/${m.dir}`;
+    if (!queueMap[key]) queueMap[key] = { obj: m.obj, dir: m.dir, interfaces: [] };
+    queueMap[key].interfaces.push(id);
+  });
+  const uniqueQueues = Object.values(queueMap);
+  const inboundQ  = uniqueQueues.filter(q => q.dir === 'in');
+  const outboundQ = uniqueQueues.filter(q => q.dir === 'out');
+
+  // ── Event Portal ─────────────────────────────────────────────
+  const schemas = [...new Set(uniqueQueues.map(q => q.obj))].map(obj => ({
+    name: `${cap(obj)}Schema`, type: 'jsonSchema', version: '1.0.0',
+    description: `${obj} payload for ${activePartner}`,
+    usedByInterfaces: queueMap[Object.keys(queueMap).find(k=>k.startsWith(obj+'/'))] ?.interfaces || []
+  }));
+
+  const events = uniqueQueues.map(({obj, dir, interfaces}) => ({
+    name: `${cap(obj)}${dir==='out'?'Outbound':'Inbound'}`,
+    version: '1.0.0',
+    topic: `${ns}/${obj}/${dir}/{correlationId}`,
+    schemaRef: `${cap(obj)}Schema`,
+    direction: dir,
+    interfaces
+  }));
+
+  const outEvNames = events.filter(e=>e.direction==='out').map(e=>e.name);
+  const inEvNames  = events.filter(e=>e.direction==='in' ).map(e=>e.name);
+  const applications = [
+    { name: `1NAV-${sd.navInstance||'NAV'}`, type:'standard', version:'1.0.0',
+      produces: outEvNames, consumes: inEvNames },
+    { name: `3PL-${activePartner.replace(/\s+/g,'-')}`, type:'standard', version:'1.0.0',
+      produces: inEvNames,  consumes: outEvNames }
+  ];
+
+  // ── Cluster builder ──────────────────────────────────────────
+  const buildCluster = (env) => {
+    const e   = env.toLowerCase();
+    const vpn = env==='UAT'
+      ? (sd['solace-msgVpn']||'').replace(/-prod$/i,'-uat') || `${partnerSlug}-uat`
+      : sd['solace-msgVpn'] || `${partnerSlug}-prod`;
+    const cpName  = `cp-${partnerSlug}-${e}`;
+    const aclName = `acl-${partnerSlug}-${e}`;
+    const uName   = `${sd['solace-clientUser']||'svc-3pl'}-${e}`;
+    const rdpName = `rdp-${partnerSlug}-${e}`;
+    const muleUrl = env==='UAT' ? sd['mule-targetUrlUAT'] : sd['mule-targetUrlPROD'];
+    const muleHost= extractHost(muleUrl);
+
+    const queues = uniqueQueues.map(({obj, dir}) => ({
+      name: `Q/3PL/${partnerID}/${env}/${obj}/${dir}`,
+      accessType: obj==='stockBalance' ? 'exclusive' : 'non-exclusive',
+      subscriptions: [`${ns}/${obj}/${dir}/>`]
+    }));
+
+    const rdps = muleHost ? [{
+      name: rdpName, clientProfile: cpName, enabled: true,
+      consumers: [{
+        name: `rest-consumer-mulesoft-${e}`, host: muleHost, port: 443,
+        tlsEnabled: true, httpMethod: 'post', httpRequestTarget: '/api/v1/events'
+      }],
+      queueBindings: outboundQ.map(({obj}) => `Q/3PL/${partnerID}/${env}/${obj}/out`)
+    }] : [];
+
+    return {
+      vpnName: vpn,
+      clientProfiles: [{ name: cpName }],
+      aclProfiles: [{
+        name: aclName,
+        publishDefault: 'disallow', subscribeDefault: 'disallow',
+        publishExceptions:  inboundQ .map(({obj}) => `${ns}/${obj}/in/>`),
+        subscribeExceptions: outboundQ.map(({obj}) => `${ns}/${obj}/out/>`)
+      }],
+      clientUsernames: [{
+        name: uName,
+        password: env==='UAT' ? (sd['solace-clientPwd']||'<UAT_PASSWORD>') : '<PROD_PASSWORD>',
+        clientProfile: cpName, aclProfile: aclName, enabled: true
+      }],
+      queues,
+      restDeliveryPoints: rdps
+    };
+  };
+
+  const uatCluster  = buildCluster('UAT');
+  const prodCluster = buildCluster('PROD');
+
+  // ── Interfaces list ──────────────────────────────────────────
+  const interfaceList = Object.keys(p.interfaces).map(id => {
+    const m   = itfMeta[id] || {src:'?',tgt:'?',obj:'?',dir:'in'};
+    const itfd= Object.assign({}, sd, p.interfaces[id]||{});
+    return {
+      interfaceId: id,
+      sourceApp: m.src, targetApp: m.tgt,
+      businessObject: m.obj, direction: m.dir,
+      sourceFormat: itfd.sourceFormat||'', targetFormat: itfd.targetFormat||'',
+      srcIntType: itfd.srcIntType||'',     tgtIntType: itfd.tgtIntType||'',
+      volume: itfd.volume||'', sizePerMsg: itfd.sizePerMsg||'', peakVolume: itfd.peakVolume||'',
+      topicPattern: `${ns}/${m.obj}/${m.dir}/{correlationId}`,
+      queueUAT:  `Q/3PL/${partnerID}/UAT/${m.obj}/${m.dir}`,
+      queuePROD: `Q/3PL/${partnerID}/PROD/${m.obj}/${m.dir}`,
+      eventPortalEvent: `${cap(m.obj)}${m.dir==='out'?'Outbound':'Inbound'}`,
+      sftp: {
+        uat:  { path: sd['solace-sftpPathUAT']  || `/sftp/${partnerSlug}/uat`,  filenameScheme: sd['solace-sftpFileUAT']  || `${id}_{yyyyMMdd_HHmmss}` },
+        prod: { path: sd['solace-sftpPathPROD'] || `/sftp/${partnerSlug}/prod`, filenameScheme: sd['solace-sftpFilePROD'] || `${id}_{yyyyMMdd_HHmmss}` }
+      }
+    };
+  });
+
+  // ── Service ──────────────────────────────────────────────────
+  const service = {
+    serviceId: '', name: `3pl-automation-${partnerSlug}`,
+    datacenterId: 'aks-westeurope', serviceTypeId: 'enterprise', serviceClassId: 'enterprise-250-nano'
+  };
+  const epConfig = { domainName: `3PL-${partnerID}-${countryCode}`, domainDescription: `3PL integration domain for ${activePartner} (${countryCode})`, schemas, events, applications };
+
+  // ── Full config ──────────────────────────────────────────────
+  const config = {
+    _metadata: {
+      schemaVersion: '3.0.0', schemaType: '3pl-solace-onboarding',
+      generatedFrom: 'Integration Hub — 3PL Onboarding UI v8',
+      generatedAt: new Date().toISOString(), partnerRef: activePartner
+    },
+    partner: {
+      partnerID, partnerName: activePartner,
+      country: sd.country||'', countryCode, regionISO: sd.regionISO||'',
+      navInstance: sd.navInstance||'', subscriptionRules: sd.subRules||'',
+      topicNamespace: ns
+    },
+    service,
+    eventPortal: epConfig,
+    clusterManagement: { uat: uatCluster, prod: prodCluster },
+    interfaces: interfaceList,
+    orchestrationPayloads: {
+      phase1_uatRun: {
+        _submitTo: 'wf-solace-automation-main-orchestrator',
+        _description: 'Phase 1 — service + Event Portal + UAT cluster',
+        config: { service, eventPortal: { ...epConfig, schemas: schemas.map(s=>({name:s.name,type:s.type,version:s.version})), events: events.map(e=>({name:e.name,version:e.version,topic:e.topic,schemaRef:e.schemaRef})) }, clusterManagement: uatCluster },
+        skipEventPortal: false, skipCluster: false
+      },
+      phase2_prodRun: {
+        _submitTo: 'wf-solace-automation-main-orchestrator',
+        _description: 'Phase 2 — PROD cluster only (Event Portal already created)',
+        config: { service: { serviceId: '<SERVICE_ID_FROM_PHASE1>', name: service.name }, clusterManagement: prodCluster },
+        skipEventPortal: true, skipCluster: false
+      }
+    },
+    executionPlan: {
+      logicAppEndpoints: {
+        mainOrchestrator:       'wf-solace-automation-main-orchestrator',
+        dispatcher:             'wf-solace-automation-main-dispatcher',
+        clusterManagement:      'wf-solace-automation-cluster-management',
+        credentialsInit:        'wf-solace-automation-credentials-init',
+        serviceProvisioning:    'wf-solace-automation-service-provisioning',
+        eventPortalProvisioning:'wf-solace-automation-event-portal-provisioning',
+        exportClone:            'wf-solace-automation-export-clone'
+      },
+      phases: [
+        { phase:1, name:'UAT Full Provision',    endpoint:'mainOrchestrator', body:'orchestrationPayloads.phase1_uatRun',  estimatedDuration:'10–15 min' },
+        { phase:2, name:'PROD Cluster Provision', endpoint:'mainOrchestrator', body:'orchestrationPayloads.phase2_prodRun', estimatedDuration:'3–5 min', prerequisite:'Phase 1 completed' }
+      ]
+    }
+  };
+
+  generatedJSON = config;
+  showModal(config, partnerID, countryCode, uniqueQueues.length, schemas.length, events.length);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MODAL
+───────────────────────────────────────────────────────────── */
+let currentJsonTab = 'info';
+
+function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
+  document.getElementById('modal-title').textContent = `Solace Config — ${activePartner}`;
+  document.getElementById('modal-meta').textContent  = `${partnerID} · ${countryCode} · ${new Date().toLocaleDateString()}`;
+
+  // Summary cards
+  document.getElementById('summary-cards').innerHTML = [
+    { label:'Interfaces',   val: Object.keys(partners[activePartner].interfaces).length, sub:'14 standard WMS' },
+    { label:'Unique Queues',val: qCount*2, sub:`${qCount} UAT + ${qCount} PROD` },
+    { label:'EP Schemas',   val: sCount,   sub:'one per business object' },
+    { label:'EP Events',    val: eCount,   sub:'topic-mapped events' }
+  ].map(c=>`
+    <div class="info-card">
+      <div class="ic-label">${c.label}</div>
+      <div class="ic-val">${c.val}</div>
+      <div class="ic-sub">${c.sub}</div>
+    </div>`).join('');
+
+  // Step list
+  document.getElementById('step-list').innerHTML = [
+    { num:1, title:'UAT Full Provision', desc:`POST <code>orchestrationPayloads.phase1_uatRun</code> to <strong>wf-solace-automation-main-orchestrator</strong>. Creates: Solace Cloud service → credentials init → Event Portal (domain + ${sCount} schemas + ${eCount} events + 2 apps) → UAT cluster (client profile, ACL, username, ${qCount} queues + subscriptions, RDP).`, dur:'~10–15 minutes' },
+    { num:2, title:'PROD Cluster Provision', desc:`POST <code>orchestrationPayloads.phase2_prodRun</code> to main-orchestrator. Replace <code>&lt;SERVICE_ID_FROM_PHASE1&gt;</code> first. Event Portal skipped. Creates: PROD client profile, ACL, username, ${qCount} queues + subscriptions, RDP → <strong>${extractHost(partners[activePartner].sharedData['mule-targetUrlPROD'])||'partner endpoint'}</strong>.`, dur:'~3–5 minutes' },
+    { num:3, title:'Validate & hand off', desc:`Verify all ${qCount*2} queues are live using the <strong>list queue</strong> operation. Deliver broker URL, VPN names, usernames, passwords, and topic prefix to the partner.`, dur:'Manual step' }
+  ].map(s=>`
+    <div class="step-item">
+      <div class="step-num">${s.num}</div>
+      <div class="step-content">
+        <div class="step-title">${s.title}</div>
+        <div class="step-desc">${s.desc}</div>
+        <div class="step-dur">${s.dur}</div>
+      </div>
+    </div>`).join('');
+
+  // Pre-fill JSON views
+  document.getElementById('json-pre').textContent = JSON.stringify(config, null, 2);
+
+  switchJsonTab('info');
+  document.getElementById('json-overlay').classList.add('open');
+  // Reset Azure status and re-evaluate submit button
+  showAzStatus('', '');
+  updateAzBtn();
+}
+
+function switchJsonTab(tab) {
+  currentJsonTab = tab;
+  document.querySelectorAll('.json-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['info','uat','prod','full'][i] === tab);
+  });
+  const infoEl = document.getElementById('json-info');
+  const preEl  = document.getElementById('json-pre-wrap');
+  if (tab === 'info') {
+    infoEl.classList.add('active'); preEl.classList.remove('active');
+  } else {
+    infoEl.classList.remove('active'); preEl.classList.add('active');
+    const payload = tab==='uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
+                  : tab==='prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+                  : generatedJSON;
+    document.getElementById('json-pre').textContent = JSON.stringify(payload, null, 2);
+  }
+}
+
+function closeModal() { document.getElementById('json-overlay').classList.remove('open'); }
+
+function copyJSON() {
+  const txt = JSON.stringify(
+    currentJsonTab==='uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
+    : currentJsonTab==='prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+    : generatedJSON, null, 2);
+  navigator.clipboard.writeText(txt).then(() => {
+    const t = document.getElementById('copy-toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  });
+}
+
+function downloadJSON() {
+  const payload = currentJsonTab==='uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
+                : currentJsonTab==='prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+                : generatedJSON;
+  const suffix = currentJsonTab==='uat' ? '-uat-payload' : currentJsonTab==='prod' ? '-prod-payload' : '-onboarding';
+  const fname  = `${slug(activePartner)}${suffix}.json`;
+  const blob   = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:fname});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AGENT
+───────────────────────────────────────────────────────────── */
+function toggleAgent() {
+  const ag = document.getElementById('agent'), btn = document.getElementById('tb-agent-btn');
+  const open = ag.classList.toggle('visible'); btn.classList.toggle('open', open);
+  if (open && !document.getElementById('ag-msgs').children.length) {
+    agentMode = 'update';
+    botMsg('Select a tab above — <strong>Update interface</strong>, <strong>New interface</strong>, or <strong>New 3PL partner</strong>.');
+  }
+}
+
+function pickMode(mode) {
+  agentMode = mode; agentQueue = []; pendingQ = null; tempItfId = null; tempItfData = {};
+  document.querySelectorAll('.ag-mode-tab').forEach(t => t.classList.toggle('active', t.id==='agtab-'+mode));
+  document.getElementById('ag-msgs').innerHTML = '';
+  document.getElementById('qr-bar').innerHTML  = '';
+  if (mode==='update') {
+    botMsg('Select a <strong>3PL partner</strong> from the sidebar, then click the <strong>interface</strong> you want to update.');
+  } else if (mode==='new-itf') {
+    activePartner ? startNewItfFlow() : botMsg('First select the <strong>3PL partner</strong> from the sidebar.');
+  } else if (mode==='new-partner') {
+    botMsg('What is the <strong>name</strong> of the new 3PL partner?');
+  }
+}
+
+function startNewItfFlow() {
+  tempItfId = 'NEW_PENDING'; tempItfData = {};
+  showBlankDetail('New Interface');
+  agentQueue = [...fullQ]; pendingQ = agentQueue.shift();
+  botMsg(`Creating a new interface for <strong>${activePartner}</strong>. ${pendingQ.q}`);
+  highlightField(pendingQ.k); autoSwitchTab(pendingQ.k);
+  if (pendingQ.hints && pendingQ.hints.length) setQR(pendingQ.hints);
+}
+
+function botMsg(txt) {
+  const c = document.getElementById('ag-msgs'), d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = `<div class="bbl">${txt}</div><div class="mtime">${ts()}</div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function usrMsg(txt) {
+  const c = document.getElementById('ag-msgs'), d = document.createElement('div');
+  d.className = 'msg usr';
+  d.innerHTML = `<div class="bbl">${txt}</div><div class="mtime">${ts()}</div>`;
+  c.appendChild(d); c.scrollTop = c.scrollHeight;
+}
+function setQR(opts) { document.getElementById('qr-bar').innerHTML = opts.map(o=>`<button class="qr" onclick="qrClick('${o}')">${o}</button>`).join(''); }
+function qrClick(v)  { document.getElementById('ag-inp').value = v; send(); }
+
+function send() {
+  const inp = document.getElementById('ag-inp'), v = inp.value.trim(); if (!v) return;
+  usrMsg(v); inp.value = ''; document.getElementById('qr-bar').innerHTML = '';
+  setTimeout(() => handleReply(v), 250);
+}
+
+function handleReply(v) {
+  /* ── UPDATE mode ── */
+  if (agentMode === 'update') {
+    if (!activePartner) { botMsg('Please select a <strong>3PL partner</strong> first.'); return; }
+    if (!activeItfId)   { botMsg(`<strong>${activePartner}</strong> selected. Now click an <strong>interface</strong> on the left.`); return; }
+    if (pendingQ) {
+      liveSetField(pendingQ.k, v); pendingQ = null;
+      if (agentQueue.length > 0) {
+        const next = agentQueue.shift(); pendingQ = next;
+        highlightField(next.k); autoSwitchTab(next.k);
+        botMsg(next.q); if (next.hints&&next.hints.length) setQR(next.hints);
+      } else { botMsg('All done! Want to update another field?'); }
+      return;
+    }
+    const lv = v.toLowerCase();
+    if (lv.includes('fill all')) { agentQueue=[...fullQ]; pendingQ=agentQueue.shift(); highlightField(pendingQ.k); autoSwitchTab(pendingQ.k); botMsg(pendingQ.q); if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints); return; }
+    botMsg('Which field? e.g. "source format", "broker URL", "UAT URL". Or say "fill all fields".');
+    return;
+  }
+
+  /* ── NEW INTERFACE mode ── */
+  if (agentMode === 'new-itf') {
+    if (!activePartner) { botMsg('Select a partner from the sidebar first.'); return; }
+    if (!tempItfId) { startNewItfFlow(); return; }
+    if (pendingQ) {
+      const k = pendingQ.k;
+      if (k==='interfaceId') {
+        itfMeta[v] = { src:tempItfData.sourceApp||'?', tgt:tempItfData.targetApp||'?', obj:tempItfData.businessObj||'?', dir:'in' };
+        partners[activePartner].interfaces[v] = {}; activeItfId = v; tempItfId = v;
+        document.getElementById('dv-itf').textContent = v; renderItfList(activePartner);
+      }
+      if (['sourceApp','targetApp','businessObj'].includes(k) && tempItfId && tempItfId!=='NEW_PENDING') {
+        itfMeta[tempItfId] = itfMeta[tempItfId]||{};
+        if(k==='sourceApp')  itfMeta[tempItfId].src=v;
+        if(k==='targetApp')  itfMeta[tempItfId].tgt=v;
+        if(k==='businessObj')itfMeta[tempItfId].obj=v;
+        document.getElementById('dv-meta').textContent = `${itfMeta[tempItfId].src||'?'} → ${itfMeta[tempItfId].tgt||'?'} · ${itfMeta[tempItfId].obj||'?'}`;
+      }
+      liveSetField(k,v); tempItfData[k]=v;
+      if (activeItfId&&activeItfId!=='NEW_PENDING') partners[activePartner].interfaces[activeItfId][k]=v;
+      pendingQ=null;
+      if (agentQueue.length>0) {
+        const next=agentQueue.shift(); pendingQ=next; highlightField(next.k); autoSwitchTab(next.k); botMsg(next.q); if(next.hints&&next.hints.length)setQR(next.hints);
+      } else {
+        partners[activePartner].status='partial'; renderPartners(); renderItfList(activePartner);
+        botMsg(`Interface <strong>${tempItfId}</strong> created! Add another?`);
+        setQR(['Add another interface','Done']);
+        tempItfId=null;tempItfData={};pendingQ=null;
+      }
+    } else {
+      if(v.toLowerCase().includes('add')||v.toLowerCase().includes('another'))startNewItfFlow();
+      else botMsg('Interface saved. Switch tabs to continue.');
+    }
+    return;
+  }
+
+  /* ── NEW PARTNER mode ── */
+  if (agentMode === 'new-partner') {
+    if (!activePartner || !partners[activePartner] || Object.keys(partners[activePartner].interfaces).length===0) {
+      const pname = v;
+      partners[pname] = {status:'none', interfaces:{}, sharedData:{}};
+      activePartner = pname; renderPartners(); openPartner(pname);
+      tempItfId='NEW_PENDING'; tempItfData={};
+      showBlankDetail('New Interface');
+      agentQueue=[...fullQ]; pendingQ=agentQueue.shift();
+      botMsg(`<strong>${pname}</strong> added! Let's set up the first interface. ${pendingQ.q}`);
+      highlightField(pendingQ.k); autoSwitchTab(pendingQ.k);
+      if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints);
+      return;
+    }
+    if (pendingQ) {
+      const k=pendingQ.k;
+      if(k==='interfaceId'){
+        const newId=v;
+        itfMeta[newId]={src:tempItfData.sourceApp||'?',tgt:tempItfData.targetApp||'?',obj:tempItfData.businessObj||'?',dir:'in'};
+        partners[activePartner].interfaces[newId]={}; activeItfId=newId; tempItfId=newId;
+        document.getElementById('dv-itf').textContent=newId; renderItfList(activePartner);
+      }
+      if(['sourceApp','targetApp','businessObj'].includes(k)&&tempItfId&&tempItfId!=='NEW_PENDING'){
+        itfMeta[tempItfId]=itfMeta[tempItfId]||{};
+        if(k==='sourceApp')  itfMeta[tempItfId].src=v;
+        if(k==='targetApp')  itfMeta[tempItfId].tgt=v;
+        if(k==='businessObj')itfMeta[tempItfId].obj=v;
+        document.getElementById('dv-meta').textContent=`${itfMeta[tempItfId].src||'?'} → ${itfMeta[tempItfId].tgt||'?'} · ${itfMeta[tempItfId].obj||'?'}`;
+      }
+      liveSetField(k,v); tempItfData[k]=v;
+      if(activeItfId&&activeItfId!=='NEW_PENDING')partners[activePartner].interfaces[activeItfId][k]=v;
+      pendingQ=null;
+      if(agentQueue.length>0){
+        const next=agentQueue.shift();pendingQ=next;highlightField(next.k);autoSwitchTab(next.k);botMsg(next.q);if(next.hints&&next.hints.length)setQR(next.hints);
+      } else {
+        partners[activePartner].status='partial';renderPartners();renderItfList(activePartner);
+        botMsg(`Interface <strong>${tempItfId}</strong> done. Add another for <strong>${activePartner}</strong>?`);
+        setQR(['Add another interface','Finish onboarding']);
+        tempItfId=null;tempItfData={};pendingQ=null;
+      }
+    } else {
+      if(v.toLowerCase().includes('add')||v.toLowerCase().includes('another')){
+        tempItfId='NEW_PENDING';tempItfData={};showBlankDetail('New Interface');
+        agentQueue=[...fullQ];pendingQ=agentQueue.shift();
+        botMsg(`Next interface. ${pendingQ.q}`);highlightField(pendingQ.k);autoSwitchTab(pendingQ.k);
+        if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints);
+      } else {
+        partners[activePartner].status='partial';renderPartners();
+        botMsg(`Onboarding for <strong>${activePartner}</strong> saved. Use the <strong>Generate Config</strong> button to export the JSON.`);
+        pendingQ=null; updateGenBtn();
+      }
+    }
+  }
+}
+
+function triggerNew() {
+  const ag=document.getElementById('agent'),btn=document.getElementById('tb-agent-btn');
+  if(!ag.classList.contains('visible')){ag.classList.add('visible');btn.classList.add('open');}
+  pickMode('new-partner');
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AZURE SUBMIT — endpoints hardcoded from deployed-urls.json
+───────────────────────────────────────────────────────────── */
+const AZ_ENDPOINTS = {
+  dev:     'https://prod-93.eastus.logic.azure.com:443/workflows/a3aa7415cd0b4fc8afc868d94da85829/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HRkUVHs2ehOjNVrvj6eKdmr0rnT_Tr21BHRG86KBv3Q',
+  uatprod: 'https://prod-73.eastus.logic.azure.com:443/workflows/ce419f64db0e4ccfa7908f109c4f6d7d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jP8jl9pfkizKUeiTa5_wo75Z5JQBY3JhSEdwle9N1uQ'
+};
+
+function getSelectedEnv() {
+  const el = document.querySelector('input[name="az-env"]:checked');
+  return el ? el.value : 'dev';
+}
+
+function updateAzBtn() {
+  const env = getSelectedEnv();
+  const disp = document.getElementById('az-ep-display');
+  if (disp) disp.textContent = env === 'dev' ? 'solace-main-orchestrator (DEV)' : 'wf-solace-automation-blob-upload (UAT+PROD)';
+  const btn = document.getElementById('az-submit-btn');
+  if (btn) btn.disabled = !generatedJSON;
+}
+
+function showAzStatus(state, html) {
+  const el = document.getElementById('az-status');
+  el.className = state; el.innerHTML = html;
+}
+
+function buildDevPayload(cfg) {
+  const uatCluster = cfg.orchestrationPayloads.phase1_uatRun.config.clusterManagement;
+  return {
+    config: {
+      // Use the existing DEV service — no new service creation needed
+      service: {
+        serviceId:     'ruj2y805m8u',
+        name:          '3pl-automation-dev',
+        datacenterId:  'aks-australiaeast',
+        serviceTypeId: 'developer',
+        serviceClassId:'developer'
+      },
+      // Event Portal objects already exist for DEV — skip to avoid duplicates
+      eventPortal: cfg.orchestrationPayloads.phase1_uatRun.config.eventPortal,
+      clusterManagement: {
+        vpnName:         'msgvpn-ruj2y805m8u',
+        clientProfiles:  uatCluster.clientProfiles,
+        aclProfiles:     uatCluster.aclProfiles,
+        clientUsernames: uatCluster.clientUsernames,
+        queues: uatCluster.queues.map(q => ({
+          ...q, name: q.name.replace('/UAT/', '/DEV/')
+        })),
+        restDeliveryPoints: []
+      }
+    },
+    skipEventPortal: true,   // EP already configured for DEV service
+    skipCluster: false
+  };
+}
+
+function submitToAzure() {
+  if (!generatedJSON) { showAzStatus('error', '<i class="ti ti-alert-triangle"></i> Generate the config first.'); return; }
+  const env = getSelectedEnv();
+
+  // Always route through blob-upload so the browser gets 202 immediately.
+  // blob-trigger branches on config.runMode: "dev" = single-phase DEV, otherwise UAT+PROD.
+  let configToSend = generatedJSON;
+  if (env === 'dev') {
+    configToSend = Object.assign({}, generatedJSON, {
+      runMode: 'dev',
+      orchestrationPayloads: Object.assign({}, generatedJSON.orchestrationPayloads, {
+        devRun: buildDevPayload(generatedJSON)
+      })
+    });
+  }
+
+  const btn = document.getElementById('az-submit-btn');
+  btn.disabled = true;
+  showAzStatus('loading', `<div class="az-spinner"></div> Submitting to Azure (${env === 'dev' ? 'DEV — single phase' : 'UAT+PROD pipeline'})…`);
+
+  const pid = (generatedJSON._metadata && generatedJSON._metadata.partnerID)
+    || (generatedJSON.partner && generatedJSON.partner.id)
+    || (activePartner ? activePartner.replace(/\s+/g,'-').toUpperCase() : 'unknown');
+
+  fetch(AZ_ENDPOINTS.uatprod, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config: configToSend, partnerID: pid })
+  })
+  .then(r => {
+    if (!r.ok) return r.text().then(t => { throw new Error(`HTTP ${r.status} — ${t.slice(0,140)}`); });
+    return r.json().catch(() => ({}));
+  })
+  .then(data => {
+    const blob = data.blobPath || 'solace-onboarding/…';
+    showAzStatus('success',
+      `<i class="ti ti-circle-check"></i>&nbsp;<span>Accepted. Blob: <span class="blob-path">${blob}</span>. Pipeline running in background.</span>`);
+    btn.disabled = false;
+  })
+  .catch(err => {
+    showAzStatus('error', `<i class="ti ti-alert-triangle"></i>&nbsp;<strong>Failed:</strong> ${err.message}`);
+    btn.disabled = false;
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   DIRECT FIELD EDITING
+───────────────────────────────────────────────────────────── */
+const sharedFieldKeys = new Set([
+  'partnerID','navInstance','countryCode','regionISO','country','subRules',
+  'sourceFormat','srcIntType','targetFormat','tgtIntType',
+  'solace-brokerUrl','solace-msgVpn','solace-clientUser','solace-clientPwd',
+  'solace-protocol','solace-portUAT','solace-portPROD'
+]);
+
+function onDirectEdit(el) {
+  const k = el.id.slice(2), v = el.value;
+  if (!activePartner) return;
+  if (sharedFieldKeys.has(k)) {
+    partners[activePartner].sharedData[k] = v;
+  } else if (activeItfId && activeItfId !== 'NEW_PENDING') {
+    if (!partners[activePartner].interfaces[activeItfId]) partners[activePartner].interfaces[activeItfId] = {};
+    partners[activePartner].interfaces[activeItfId][k] = v;
+  }
+  const f = document.getElementById('f-'+k);
+  if (f) f.classList.toggle('filled', !!v.trim());
+  const merged = Object.assign({},
+    partners[activePartner].sharedData,
+    activeItfId && activeItfId !== 'NEW_PENDING' ? (partners[activePartner].interfaces[activeItfId] || {}) : {}
+  );
+  recalcProgress(merged); renderItfList(activePartner); updateGenBtn();
+}
+
+function initEditableFields() {
+  document.querySelectorAll('[id^="v-"]').forEach(el => {
+    if (el.tagName !== 'DIV') return;
+    const k = el.id.slice(2);
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.id = el.id; inp.className = 'fv-input empty';
+    inp.placeholder = '—';
+    if (k === 'interfaceId') { inp.readOnly = true; }
+    else { inp.addEventListener('input', function() { onDirectEdit(this); }); }
+    el.parentNode.replaceChild(inp, el);
+  });
+}
+
+/* ── INIT ── */
+renderPartners();
+showEmpty('no-partner');
+initEditableFields();
+updateAzBtn();
+</script>
+</body>
+</html>

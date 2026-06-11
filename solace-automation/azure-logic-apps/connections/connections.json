@@ -24,5 +24,12 @@
                 "id": "/serviceProviders/AzureCosmosDB"
             }
         }
+    },
+    "blobStorageViaRestApi": {
+        "_comment": "Blob upload/download uses direct REST API calls (PUT/GET) authenticated with a SAS token — no managed API connection needed.",
+        "_appsettings": {
+            "BLOB_STORAGE_URL": "https://<storageAccount>.blob.core.windows.net/<container>",
+            "BLOB_SAS_TOKEN": "sv=2023-01-03&ss=b&srt=o&sp=rwdlacuptfx&se=...&spr=https&sig=..."
+        }
     }
 }

@@ -1,0 +1,1689 @@
+{
+  "_metadata": {
+    "schemaVersion": "3.0.0",
+    "schemaType": "3pl-solace-onboarding",
+    "generatedFrom": "Integration Hub — 3PL Onboarding UI v8",
+    "description": "End-to-end Solace automation config for FastFulfill BV (NL). Single source of truth that drives all Logic App provisioning: Solace Cloud service, Event Portal domain/schemas/events/apps, and full broker cluster config for UAT + PROD (client profiles, ACL profiles, client usernames, 9 queues × 2 envs, topic subscriptions, REST Delivery Points). No custom code — all operations executed via Azure Logic App HTTP endpoints.",
+    "createdDate": "2026-06-11",
+    "createdBy": "3PL Manager",
+    "partnerRef": "FastFulfill BV — NL"
+  },
+
+  "_instructions": {
+    "overview": "Two-phase Logic App execution provisions the full partner topology. Passwords marked <REPLACE_ME> must be substituted before submission.",
+    "phase1_uat": "HTTP POST orchestrationPayloads.uatRun → executionPlan.logicAppEndpoints.mainOrchestrator. Creates: Solace service (or reuses existing), Event Portal domain + all schemas/events/applications, UAT client profile + ACL + client username + 9 queues + subscriptions + RDP.",
+    "phase2_prod": "HTTP POST orchestrationPayloads.prodRun → executionPlan.logicAppEndpoints.mainOrchestrator. Skips Event Portal (already created). Provisions PROD cluster resources only.",
+    "day2_crud": "Use operationsCatalog entries with executionPlan.logicAppEndpoints.dispatcher for individual updates (add subscription, rotate password, update RDP host, disable username, etc.).",
+    "credentials_init": "Call executionPlan.logicAppEndpoints.credentialsInit with serviceId before cluster provisioning if using an existing service. The workflow fetches SEMP credentials and stores them in Logic App app settings."
+  },
+
+  "uiFormData": {
+    "_comment": "All field values captured from Integration Hub 3PL Onboarding UI — FastFulfill BV",
+    "common": {
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObjects": "materialMaster, sourcingDelivery, dispatchDelivery, returnDelivery, stockMovement, stockBalance, sourcingStock, despatchStock, returnStock",
+      "country": "Netherlands",
+      "partnerID": "3PL-002",
+      "navInstance": "NAV-EU-01",
+      "countryCode": "NL",
+      "regionISO": "EU",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "SFTP",
+      "tgtIntType": "REST API",
+      "volume": "5000/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "15000/day",
+      "funcDesc": "Full WMS integration suite — FastFulfill BV Netherlands. Covers 14 interfaces: master data, sourcing, dispatch, return deliveries (outbound) and stock movements, balances, confirmations (inbound).",
+      "subRules": "ByPartnerID"
+    },
+    "solace": {
+      "brokerUrl": "mrp8hz8.messaging.solace.cloud:55443",
+      "msgVpn": "fastfulfill-prod",
+      "clientUsername": "svc-3pl",
+      "clientPassword": "<SOLACE_3PL_002_PASS>",
+      "queueNameUAT": "Q/3PL/UAT/inbound",
+      "queueNamePROD": "Q/3PL/PROD/inbound",
+      "topicSubscription": "3pl/NL/3PL-002/>",
+      "protocol": "AMQP",
+      "portUAT": "5672",
+      "portPROD": "5671",
+      "sftpPathUAT": "/sftp/fastfulfill/uat/3pl",
+      "sftpFilenameSchemeUAT": "{interfaceId}_{yyyyMMdd_HHmmss}.xml",
+      "sftpPathPROD": "/sftp/fastfulfill/prod/3pl",
+      "sftpFilenameSchemeePROD": "{interfaceId}_{yyyyMMdd_HHmmss}.xml"
+    }
+  },
+
+  "partner": {
+    "partnerID": "3PL-002",
+    "partnerName": "FastFulfill BV",
+    "country": "Netherlands",
+    "countryCode": "NL",
+    "regionISO": "EU",
+    "navInstance": "NAV-EU-01",
+    "subscriptionRules": "ByPartnerID",
+    "topicNamespace": "3pl/NL/3PL-002",
+    "connectionDetails": {
+      "brokerHostname": "mrp8hz8.messaging.solace.cloud",
+      "protocol": "AMQP",
+      "uat": { "port": 5672, "vpn": "fastfulfill-uat", "clientUsername": "svc-3pl-002-uat" },
+      "prod": { "port": 5671, "vpn": "fastfulfill-prod", "clientUsername": "svc-3pl-002-prod" }
+    }
+  },
+
+  "service": {
+    "_comment": "Solace Cloud service. Leave serviceId empty to provision new; set it to reuse an existing service (skips creation, runs credentials-init instead).",
+    "serviceId": "",
+    "name": "3pl-automation-fastfulfill-nl",
+    "datacenterId": "aks-westeurope",
+    "serviceTypeId": "enterprise",
+    "serviceClassId": "enterprise-250-nano"
+  },
+
+  "eventPortal": {
+    "domainName": "3PL-FastFulfill-NL",
+    "domainDescription": "3PL integration domain for FastFulfill BV (NL) — 14 WMS interfaces between 1NAV (NAV-EU-01) and the FastFulfill warehouse management system. Covers outbound deliveries (materialMaster, sourcingDelivery, dispatchDelivery, returnDelivery) and inbound stock confirmations (stockMovement, stockBalance, sourcingStock, despatchStock, returnStock).",
+
+    "schemas": [
+      {
+        "name": "MaterialMasterSchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Material master data sync 1NAV→3PL. Used by ITF_MST_009.",
+        "usedByInterfaces": ["ITF_MST_009"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "eventType", "timestamp", "materialNumber"],
+          "properties": {
+            "partnerID":           { "type": "string", "description": "3PL partner ID (3PL-002)" },
+            "interfaceId":         { "type": "string", "const": "ITF_MST_009" },
+            "eventType":           { "type": "string", "enum": ["CREATE", "UPDATE", "DELETE"] },
+            "timestamp":           { "type": "string", "format": "date-time" },
+            "correlationId":       { "type": "string" },
+            "materialNumber":      { "type": "string" },
+            "materialDescription": { "type": "string" },
+            "baseUnit":            { "type": "string" },
+            "materialGroup":       { "type": "string" },
+            "plantCode":           { "type": "string" },
+            "storageLocation":     { "type": "string" },
+            "grossWeight":         { "type": "number" },
+            "weightUnit":          { "type": "string" },
+            "navInstance":         { "type": "string" },
+            "payload":             { "type": "object", "description": "Full material record" }
+          }
+        }
+      },
+      {
+        "name": "SourcingDeliverySchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Sourcing / purchase delivery order 1NAV→3PL. Used by ITF_PUR_028 and ITF_WMS_003.",
+        "usedByInterfaces": ["ITF_PUR_028", "ITF_WMS_003"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "deliveryId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":     { "type": "string" },
+            "interfaceId":   { "type": "string", "enum": ["ITF_PUR_028", "ITF_WMS_003"] },
+            "deliveryId":    { "type": "string" },
+            "eventType":     { "type": "string", "enum": ["CREATE", "UPDATE", "CANCEL", "CONFIRM"] },
+            "timestamp":     { "type": "string", "format": "date-time" },
+            "correlationId": { "type": "string" },
+            "purchaseOrder": { "type": "string" },
+            "vendor":        { "type": "string" },
+            "plannedDate":   { "type": "string", "format": "date" },
+            "warehouseCode": { "type": "string" },
+            "navInstance":   { "type": "string" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lineNumber":      { "type": "integer" },
+                  "materialNumber":  { "type": "string" },
+                  "quantity":        { "type": "number" },
+                  "unit":            { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "DispatchDeliverySchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Dispatch / outbound delivery order 1NAV→3PL. Used by ITF_SAL_006 and ITF_WMS_002.",
+        "usedByInterfaces": ["ITF_SAL_006", "ITF_WMS_002"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "deliveryId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":       { "type": "string" },
+            "interfaceId":     { "type": "string", "enum": ["ITF_SAL_006", "ITF_WMS_002"] },
+            "deliveryId":      { "type": "string" },
+            "eventType":       { "type": "string", "enum": ["CREATE", "UPDATE", "CANCEL", "SHIP"] },
+            "timestamp":       { "type": "string", "format": "date-time" },
+            "correlationId":   { "type": "string" },
+            "salesOrder":      { "type": "string" },
+            "customer":        { "type": "string" },
+            "requestedDate":   { "type": "string", "format": "date" },
+            "navInstance":     { "type": "string" },
+            "shippingAddress": {
+              "type": "object",
+              "properties": {
+                "name":     { "type": "string" },
+                "street":   { "type": "string" },
+                "city":     { "type": "string" },
+                "postCode": { "type": "string" },
+                "country":  { "type": "string" }
+              }
+            },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lineNumber":     { "type": "integer" },
+                  "materialNumber": { "type": "string" },
+                  "quantity":       { "type": "number" },
+                  "unit":           { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "ReturnDeliverySchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Return delivery instruction 1NAV→3PL. Used by ITF_SAL_007.",
+        "usedByInterfaces": ["ITF_SAL_007"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "returnId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":      { "type": "string" },
+            "interfaceId":    { "type": "string", "const": "ITF_SAL_007" },
+            "returnId":       { "type": "string" },
+            "eventType":      { "type": "string", "enum": ["CREATE", "UPDATE", "CANCEL"] },
+            "timestamp":      { "type": "string", "format": "date-time" },
+            "correlationId":  { "type": "string" },
+            "originalOrder":  { "type": "string" },
+            "returnReason":   { "type": "string" },
+            "navInstance":    { "type": "string" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lineNumber":     { "type": "integer" },
+                  "materialNumber": { "type": "string" },
+                  "quantity":       { "type": "number" },
+                  "unit":           { "type": "string" },
+                  "reason":         { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "StockMovementSchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Stock movement confirmation 3PL→1NAV. Used by ITF_INV_002 and ITF_INV_004.",
+        "usedByInterfaces": ["ITF_INV_002", "ITF_INV_004"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "movementId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":       { "type": "string" },
+            "interfaceId":     { "type": "string", "enum": ["ITF_INV_002", "ITF_INV_004"] },
+            "movementId":      { "type": "string" },
+            "eventType":       { "type": "string", "enum": ["GOODS_RECEIPT", "GOODS_ISSUE", "TRANSFER_ORDER"] },
+            "timestamp":       { "type": "string", "format": "date-time" },
+            "correlationId":   { "type": "string" },
+            "materialNumber":  { "type": "string" },
+            "quantity":        { "type": "number" },
+            "unit":            { "type": "string" },
+            "storageLocation": { "type": "string" },
+            "plantCode":       { "type": "string" },
+            "referenceDoc":    { "type": "string" },
+            "postingDate":     { "type": "string", "format": "date" },
+            "navInstance":     { "type": "string" },
+            "payload":         { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "StockBalanceSchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Periodic stock balance snapshot 3PL→1NAV. Used by ITF_INV_003.",
+        "usedByInterfaces": ["ITF_INV_003"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "snapshotId", "timestamp"],
+          "properties": {
+            "partnerID":     { "type": "string" },
+            "interfaceId":   { "type": "string", "const": "ITF_INV_003" },
+            "snapshotId":    { "type": "string" },
+            "timestamp":     { "type": "string", "format": "date-time" },
+            "correlationId": { "type": "string" },
+            "warehouseCode": { "type": "string" },
+            "navInstance":   { "type": "string" },
+            "lines": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["materialNumber"],
+                "properties": {
+                  "materialNumber":     { "type": "string" },
+                  "storageLocation":    { "type": "string" },
+                  "unrestricted":       { "type": "number" },
+                  "qualityInspection":  { "type": "number" },
+                  "blocked":            { "type": "number" },
+                  "unit":               { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "SourcingStockSchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Inbound putaway confirmation 3PL→1NAV. Used by ITF_WMS_005 and ITF_PUR_019.",
+        "usedByInterfaces": ["ITF_WMS_005", "ITF_PUR_019"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "confirmationId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":      { "type": "string" },
+            "interfaceId":    { "type": "string", "enum": ["ITF_WMS_005", "ITF_PUR_019"] },
+            "confirmationId": { "type": "string" },
+            "eventType":      { "type": "string", "enum": ["PUTAWAY_STARTED", "PUTAWAY_COMPLETE", "PARTIAL_RECEIPT"] },
+            "timestamp":      { "type": "string", "format": "date-time" },
+            "correlationId":  { "type": "string" },
+            "purchaseOrder":  { "type": "string" },
+            "navInstance":    { "type": "string" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lineNumber":      { "type": "integer" },
+                  "materialNumber":  { "type": "string" },
+                  "quantityConfirmed": { "type": "number" },
+                  "storageLocation": { "type": "string" },
+                  "unit":            { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "DespatchStockSchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Despatch / shipping confirmation 3PL→1NAV. Used by ITF_SAL_008 and ITF_WMS_004.",
+        "usedByInterfaces": ["ITF_SAL_008", "ITF_WMS_004"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "despatchId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":   { "type": "string" },
+            "interfaceId": { "type": "string", "enum": ["ITF_SAL_008", "ITF_WMS_004"] },
+            "despatchId":  { "type": "string" },
+            "eventType":   { "type": "string", "enum": ["PICKED", "PACKED", "SHIPPED", "PARTIAL_SHIPMENT"] },
+            "timestamp":   { "type": "string", "format": "date-time" },
+            "correlationId": { "type": "string" },
+            "salesOrder":  { "type": "string" },
+            "trackingId":  { "type": "string" },
+            "carrier":     { "type": "string" },
+            "navInstance": { "type": "string" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lineNumber":         { "type": "integer" },
+                  "materialNumber":     { "type": "string" },
+                  "quantityDespatched": { "type": "number" },
+                  "unit":               { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      },
+      {
+        "name": "ReturnStockSchema",
+        "type": "jsonSchema",
+        "version": "1.0.0",
+        "description": "Return receipt confirmation 3PL→1NAV. Used by ITF_SAL_011.",
+        "usedByInterfaces": ["ITF_SAL_011"],
+        "content": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "required": ["partnerID", "interfaceId", "returnId", "eventType", "timestamp"],
+          "properties": {
+            "partnerID":      { "type": "string" },
+            "interfaceId":    { "type": "string", "const": "ITF_SAL_011" },
+            "returnId":       { "type": "string" },
+            "eventType":      { "type": "string", "enum": ["RECEIVED", "INSPECTED", "RESTOCKED", "DISPOSED"] },
+            "timestamp":      { "type": "string", "format": "date-time" },
+            "correlationId":  { "type": "string" },
+            "originalOrder":  { "type": "string" },
+            "dispositionCode":{ "type": "string" },
+            "navInstance":    { "type": "string" },
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "lineNumber":      { "type": "integer" },
+                  "materialNumber":  { "type": "string" },
+                  "quantityReturned":{ "type": "number" },
+                  "condition":       { "type": "string", "enum": ["GOOD", "DAMAGED", "EXPIRED"] },
+                  "unit":            { "type": "string" }
+                }
+              }
+            },
+            "payload": { "type": "object" }
+          }
+        }
+      }
+    ],
+
+    "events": [
+      {
+        "name": "MaterialMasterOutbound",
+        "version": "1.0.0",
+        "description": "Material master data pushed from 1NAV to 3PL warehouse",
+        "topic": "3pl/NL/3PL-002/materialMaster/out/{materialNumber}",
+        "schemaRef": "MaterialMasterSchema",
+        "direction": "out",
+        "interfaces": ["ITF_MST_009"]
+      },
+      {
+        "name": "SourcingDeliveryOutbound",
+        "version": "1.0.0",
+        "description": "Purchase / sourcing delivery order from 1NAV to 3PL",
+        "topic": "3pl/NL/3PL-002/sourcingDelivery/out/{deliveryId}",
+        "schemaRef": "SourcingDeliverySchema",
+        "direction": "out",
+        "interfaces": ["ITF_PUR_028", "ITF_WMS_003"]
+      },
+      {
+        "name": "DispatchDeliveryOutbound",
+        "version": "1.0.0",
+        "description": "Dispatch / outbound delivery order from 1NAV to 3PL",
+        "topic": "3pl/NL/3PL-002/dispatchDelivery/out/{deliveryId}",
+        "schemaRef": "DispatchDeliverySchema",
+        "direction": "out",
+        "interfaces": ["ITF_SAL_006", "ITF_WMS_002"]
+      },
+      {
+        "name": "ReturnDeliveryOutbound",
+        "version": "1.0.0",
+        "description": "Return delivery instruction from 1NAV to 3PL",
+        "topic": "3pl/NL/3PL-002/returnDelivery/out/{returnId}",
+        "schemaRef": "ReturnDeliverySchema",
+        "direction": "out",
+        "interfaces": ["ITF_SAL_007"]
+      },
+      {
+        "name": "StockMovementInbound",
+        "version": "1.0.0",
+        "description": "Stock movement confirmation published by 3PL to 1NAV",
+        "topic": "3pl/NL/3PL-002/stockMovement/in/{movementId}",
+        "schemaRef": "StockMovementSchema",
+        "direction": "in",
+        "interfaces": ["ITF_INV_002", "ITF_INV_004"]
+      },
+      {
+        "name": "StockBalanceInbound",
+        "version": "1.0.0",
+        "description": "Periodic stock balance snapshot from 3PL to 1NAV",
+        "topic": "3pl/NL/3PL-002/stockBalance/in/{snapshotId}",
+        "schemaRef": "StockBalanceSchema",
+        "direction": "in",
+        "interfaces": ["ITF_INV_003"]
+      },
+      {
+        "name": "SourcingStockInbound",
+        "version": "1.0.0",
+        "description": "Inbound putaway confirmation from 3PL to 1NAV",
+        "topic": "3pl/NL/3PL-002/sourcingStock/in/{confirmationId}",
+        "schemaRef": "SourcingStockSchema",
+        "direction": "in",
+        "interfaces": ["ITF_WMS_005", "ITF_PUR_019"]
+      },
+      {
+        "name": "DespatchStockInbound",
+        "version": "1.0.0",
+        "description": "Despatch / shipping confirmation from 3PL to 1NAV",
+        "topic": "3pl/NL/3PL-002/despatchStock/in/{despatchId}",
+        "schemaRef": "DespatchStockSchema",
+        "direction": "in",
+        "interfaces": ["ITF_SAL_008", "ITF_WMS_004"]
+      },
+      {
+        "name": "ReturnStockInbound",
+        "version": "1.0.0",
+        "description": "Return receipt confirmation from 3PL to 1NAV",
+        "topic": "3pl/NL/3PL-002/returnStock/in/{returnId}",
+        "schemaRef": "ReturnStockSchema",
+        "direction": "in",
+        "interfaces": ["ITF_SAL_011"]
+      }
+    ],
+
+    "applications": [
+      {
+        "name": "1NAV-NAV-EU-01",
+        "type": "standard",
+        "version": "1.0.0",
+        "description": "1NAV ERP system — NAV-EU-01 instance. Publishes outbound deliveries and material master; consumes all inbound stock confirmations from 3PL.",
+        "produces": ["MaterialMasterOutbound", "SourcingDeliveryOutbound", "DispatchDeliveryOutbound", "ReturnDeliveryOutbound"],
+        "consumes": ["StockMovementInbound", "StockBalanceInbound", "SourcingStockInbound", "DespatchStockInbound", "ReturnStockInbound"]
+      },
+      {
+        "name": "3PL-FastFulfill-NL",
+        "type": "standard",
+        "version": "1.0.0",
+        "description": "FastFulfill BV WMS — Netherlands. Consumes delivery orders from 1NAV; publishes all stock confirmations back.",
+        "produces": ["StockMovementInbound", "StockBalanceInbound", "SourcingStockInbound", "DespatchStockInbound", "ReturnStockInbound"],
+        "consumes": ["MaterialMasterOutbound", "SourcingDeliveryOutbound", "DispatchDeliveryOutbound", "ReturnDeliveryOutbound"]
+      }
+    ]
+  },
+
+  "clusterManagement": {
+    "_comment": "Broker-level SEMP v2 config. uat and prod are submitted as separate cluster provision calls. Each creates: 1 client profile, 1 ACL profile (with direction-specific topic exceptions), 1 client username, 9 queues with subscriptions, 1 RDP with consumer + 4 outbound queue bindings.",
+
+    "uat": {
+      "vpnName": "fastfulfill-uat",
+
+      "clientProfiles": [
+        {
+          "name": "cp-3pl-002-uat",
+          "allowGuaranteedMsgSendEnabled": true,
+          "allowGuaranteedMsgReceiveEnabled": true,
+          "allowTransactedSessionsEnabled": true,
+          "allowBridgeConnectionsEnabled": false,
+          "maxConnectionCountPerClientUsername": 10,
+          "maxEgressFlowCount": 200,
+          "maxIngressFlowCount": 200,
+          "maxSubscriptionCount": 50
+        }
+      ],
+
+      "aclProfiles": [
+        {
+          "name": "acl-3pl-002-uat",
+          "clientConnectDefaultAction": "allow",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "_comment_publish": "3PL publishes inbound stock events only",
+          "publishExceptions": [
+            "3pl/NL/3PL-002/stockMovement/in/>",
+            "3pl/NL/3PL-002/stockBalance/in/>",
+            "3pl/NL/3PL-002/sourcingStock/in/>",
+            "3pl/NL/3PL-002/despatchStock/in/>",
+            "3pl/NL/3PL-002/returnStock/in/>"
+          ],
+          "_comment_subscribe": "3PL subscribes to outbound delivery events from 1NAV",
+          "subscribeExceptions": [
+            "3pl/NL/3PL-002/materialMaster/out/>",
+            "3pl/NL/3PL-002/sourcingDelivery/out/>",
+            "3pl/NL/3PL-002/dispatchDelivery/out/>",
+            "3pl/NL/3PL-002/returnDelivery/out/>"
+          ]
+        }
+      ],
+
+      "clientUsernames": [
+        {
+          "name": "svc-3pl-002-uat",
+          "password": "<SOLACE_3PL_002_UAT_PASS>",
+          "clientProfile": "cp-3pl-002-uat",
+          "aclProfile": "acl-3pl-002-uat",
+          "enabled": true
+        }
+      ],
+
+      "queues": [
+        {
+          "name": "Q/3PL/3PL-002/UAT/materialMaster/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 1500,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/materialMaster/out/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/sourcingDelivery/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 1500,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/sourcingDelivery/out/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/dispatchDelivery/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 1500,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/dispatchDelivery/out/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/returnDelivery/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 500,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/returnDelivery/out/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/stockMovement/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 2000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/stockMovement/in/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/stockBalance/in",
+          "accessType": "exclusive",
+          "maxMsgSpoolUsage": 500,
+          "maxMsgSize": 102400,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/stockBalance/in/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/sourcingStock/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 1500,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/sourcingStock/in/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/despatchStock/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 2000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/despatchStock/in/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/3PL-002/UAT/returnStock/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 500,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+          "subscriptions": [
+            "3pl/NL/3PL-002/returnStock/in/>"
+          ]
+        }
+      ],
+
+      "restDeliveryPoints": [
+        {
+          "name": "rdp-3pl-002-uat",
+          "clientProfile": "cp-3pl-002-uat",
+          "enabled": true,
+          "_comment": "Delivers all outbound queue messages to FastFulfill UAT Mulesoft endpoint",
+          "consumers": [
+            {
+              "name": "rest-consumer-mulesoft-uat",
+              "host": "uat-api.fastfulfill.nl",
+              "port": 443,
+              "tlsEnabled": true,
+              "httpMethod": "post",
+              "httpRequestTarget": "/api/v1/events",
+              "outgoingConnectionCount": 3,
+              "maxPostWaitTime": 30,
+              "retryDelay": 5,
+              "requestHeaders": [
+                { "name": "X-Partner-ID",   "value": "3PL-002" },
+                { "name": "X-Environment",  "value": "UAT" },
+                { "name": "Content-Type",   "value": "application/json" }
+              ]
+            }
+          ],
+          "queueBindings": [
+            "Q/3PL/3PL-002/UAT/materialMaster/out",
+            "Q/3PL/3PL-002/UAT/sourcingDelivery/out",
+            "Q/3PL/3PL-002/UAT/dispatchDelivery/out",
+            "Q/3PL/3PL-002/UAT/returnDelivery/out"
+          ]
+        }
+      ]
+    },
+
+    "prod": {
+      "vpnName": "fastfulfill-prod",
+
+      "clientProfiles": [
+        {
+          "name": "cp-3pl-002-prod",
+          "allowGuaranteedMsgSendEnabled": true,
+          "allowGuaranteedMsgReceiveEnabled": true,
+          "allowTransactedSessionsEnabled": true,
+          "allowBridgeConnectionsEnabled": false,
+          "maxConnectionCountPerClientUsername": 10,
+          "maxEgressFlowCount": 500,
+          "maxIngressFlowCount": 500,
+          "maxSubscriptionCount": 50
+        }
+      ],
+
+      "aclProfiles": [
+        {
+          "name": "acl-3pl-002-prod",
+          "clientConnectDefaultAction": "allow",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "publishExceptions": [
+            "3pl/NL/3PL-002/stockMovement/in/>",
+            "3pl/NL/3PL-002/stockBalance/in/>",
+            "3pl/NL/3PL-002/sourcingStock/in/>",
+            "3pl/NL/3PL-002/despatchStock/in/>",
+            "3pl/NL/3PL-002/returnStock/in/>"
+          ],
+          "subscribeExceptions": [
+            "3pl/NL/3PL-002/materialMaster/out/>",
+            "3pl/NL/3PL-002/sourcingDelivery/out/>",
+            "3pl/NL/3PL-002/dispatchDelivery/out/>",
+            "3pl/NL/3PL-002/returnDelivery/out/>"
+          ]
+        }
+      ],
+
+      "clientUsernames": [
+        {
+          "name": "svc-3pl-002-prod",
+          "password": "<SOLACE_3PL_002_PROD_PASS>",
+          "clientProfile": "cp-3pl-002-prod",
+          "aclProfile": "acl-3pl-002-prod",
+          "enabled": true
+        }
+      ],
+
+      "queues": [
+        {
+          "name": "Q/3PL/3PL-002/PROD/materialMaster/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 5000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/materialMaster/out/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/sourcingDelivery/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 5000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/sourcingDelivery/out/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/dispatchDelivery/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 5000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/dispatchDelivery/out/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/returnDelivery/out",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 2000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/returnDelivery/out/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/stockMovement/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 5000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/stockMovement/in/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/stockBalance/in",
+          "accessType": "exclusive",
+          "maxMsgSpoolUsage": 2000,
+          "maxMsgSize": 102400,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/stockBalance/in/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/sourcingStock/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 5000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/sourcingStock/in/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/despatchStock/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 5000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/despatchStock/in/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-002/PROD/returnStock/in",
+          "accessType": "non-exclusive",
+          "maxMsgSpoolUsage": 2000,
+          "maxMsgSize": 10240,
+          "respectTtlEnabled": true,
+          "deadMsgQueue": "DMQ/3PL/3PL-002/PROD",
+          "subscriptions": ["3pl/NL/3PL-002/returnStock/in/>"]
+        }
+      ],
+
+      "restDeliveryPoints": [
+        {
+          "name": "rdp-3pl-002-prod",
+          "clientProfile": "cp-3pl-002-prod",
+          "enabled": true,
+          "_comment": "Delivers all outbound queue messages to FastFulfill PROD Mulesoft endpoint",
+          "consumers": [
+            {
+              "name": "rest-consumer-mulesoft-prod",
+              "host": "api.fastfulfill.nl",
+              "port": 443,
+              "tlsEnabled": true,
+              "httpMethod": "post",
+              "httpRequestTarget": "/api/v1/events",
+              "outgoingConnectionCount": 10,
+              "maxPostWaitTime": 30,
+              "retryDelay": 3,
+              "requestHeaders": [
+                { "name": "X-Partner-ID",   "value": "3PL-002" },
+                { "name": "X-Environment",  "value": "PROD" },
+                { "name": "Content-Type",   "value": "application/json" }
+              ]
+            }
+          ],
+          "queueBindings": [
+            "Q/3PL/3PL-002/PROD/materialMaster/out",
+            "Q/3PL/3PL-002/PROD/sourcingDelivery/out",
+            "Q/3PL/3PL-002/PROD/dispatchDelivery/out",
+            "Q/3PL/3PL-002/PROD/returnDelivery/out"
+          ]
+        }
+      ]
+    }
+  },
+
+  "interfaces": [
+    {
+      "interfaceId": "ITF_MST_009",
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObject": "materialMaster",
+      "direction": "out",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "API",
+      "tgtIntType": "REST API",
+      "volume": "500/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "1500/day",
+      "funcDesc": "Synchronises material master records from 1NAV to FastFulfill WMS. Triggers on CREATE, UPDATE and DELETE events in 1NAV.",
+      "topicPattern": "3pl/NL/3PL-002/materialMaster/out/{materialNumber}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/materialMaster/out",
+      "queuePROD": "Q/3PL/3PL-002/PROD/materialMaster/out",
+      "eventPortalEvent": "MaterialMasterOutbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/materialMaster",  "filenameScheme": "ITF_MST_009_{yyyyMMdd_HHmmss}.xml" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/materialMaster", "filenameScheme": "ITF_MST_009_{yyyyMMdd_HHmmss}.xml" }
+      }
+    },
+    {
+      "interfaceId": "ITF_PUR_028",
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObject": "sourcingDelivery",
+      "direction": "out",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "API",
+      "tgtIntType": "REST API",
+      "volume": "800/day",
+      "sizePerMsg": "3KB",
+      "peakVolume": "2500/day",
+      "funcDesc": "Sends purchase / sourcing delivery orders from 1NAV to FastFulfill WMS for inbound goods receipt.",
+      "topicPattern": "3pl/NL/3PL-002/sourcingDelivery/out/{deliveryId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/sourcingDelivery/out",
+      "queuePROD": "Q/3PL/3PL-002/PROD/sourcingDelivery/out",
+      "eventPortalEvent": "SourcingDeliveryOutbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/sourcingDelivery",  "filenameScheme": "ITF_PUR_028_{yyyyMMdd_HHmmss}.xml" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/sourcingDelivery", "filenameScheme": "ITF_PUR_028_{yyyyMMdd_HHmmss}.xml" }
+      }
+    },
+    {
+      "interfaceId": "ITF_SAL_006",
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObject": "dispatchDelivery",
+      "direction": "out",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "API",
+      "tgtIntType": "REST API",
+      "volume": "1200/day",
+      "sizePerMsg": "4KB",
+      "peakVolume": "4000/day",
+      "funcDesc": "Sends outbound dispatch delivery orders from 1NAV sales module to FastFulfill WMS for pick, pack and ship.",
+      "topicPattern": "3pl/NL/3PL-002/dispatchDelivery/out/{deliveryId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/dispatchDelivery/out",
+      "queuePROD": "Q/3PL/3PL-002/PROD/dispatchDelivery/out",
+      "eventPortalEvent": "DispatchDeliveryOutbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/dispatchDelivery",  "filenameScheme": "ITF_SAL_006_{yyyyMMdd_HHmmss}.xml" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/dispatchDelivery", "filenameScheme": "ITF_SAL_006_{yyyyMMdd_HHmmss}.xml" }
+      }
+    },
+    {
+      "interfaceId": "ITF_SAL_007",
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObject": "returnDelivery",
+      "direction": "out",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "API",
+      "tgtIntType": "REST API",
+      "volume": "150/day",
+      "sizePerMsg": "3KB",
+      "peakVolume": "500/day",
+      "funcDesc": "Sends return delivery authorisation from 1NAV to FastFulfill WMS to receive and process returned goods.",
+      "topicPattern": "3pl/NL/3PL-002/returnDelivery/out/{returnId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/returnDelivery/out",
+      "queuePROD": "Q/3PL/3PL-002/PROD/returnDelivery/out",
+      "eventPortalEvent": "ReturnDeliveryOutbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/returnDelivery",  "filenameScheme": "ITF_SAL_007_{yyyyMMdd_HHmmss}.xml" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/returnDelivery", "filenameScheme": "ITF_SAL_007_{yyyyMMdd_HHmmss}.xml" }
+      }
+    },
+    {
+      "interfaceId": "ITF_WMS_002",
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObject": "dispatchDelivery",
+      "direction": "out",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "API",
+      "tgtIntType": "REST API",
+      "volume": "900/day",
+      "sizePerMsg": "4KB",
+      "peakVolume": "3000/day",
+      "funcDesc": "Sends WMS-originated dispatch delivery orders from 1NAV to FastFulfill. Complements ITF_SAL_006 for direct WMS dispatch flows.",
+      "topicPattern": "3pl/NL/3PL-002/dispatchDelivery/out/{deliveryId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/dispatchDelivery/out",
+      "queuePROD": "Q/3PL/3PL-002/PROD/dispatchDelivery/out",
+      "eventPortalEvent": "DispatchDeliveryOutbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/dispatchDelivery",  "filenameScheme": "ITF_WMS_002_{yyyyMMdd_HHmmss}.xml" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/dispatchDelivery", "filenameScheme": "ITF_WMS_002_{yyyyMMdd_HHmmss}.xml" }
+      }
+    },
+    {
+      "interfaceId": "ITF_WMS_003",
+      "eaRef": "EA2024",
+      "sourceApp": "1NAV",
+      "targetApp": "3PL",
+      "businessObject": "sourcingDelivery",
+      "direction": "out",
+      "sourceFormat": "xml",
+      "targetFormat": "json",
+      "srcIntType": "API",
+      "tgtIntType": "REST API",
+      "volume": "600/day",
+      "sizePerMsg": "3KB",
+      "peakVolume": "2000/day",
+      "funcDesc": "Sends WMS-originated sourcing delivery orders from 1NAV to FastFulfill. Complements ITF_PUR_028 for direct WMS inbound flows.",
+      "topicPattern": "3pl/NL/3PL-002/sourcingDelivery/out/{deliveryId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/sourcingDelivery/out",
+      "queuePROD": "Q/3PL/3PL-002/PROD/sourcingDelivery/out",
+      "eventPortalEvent": "SourcingDeliveryOutbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/sourcingDelivery",  "filenameScheme": "ITF_WMS_003_{yyyyMMdd_HHmmss}.xml" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/sourcingDelivery", "filenameScheme": "ITF_WMS_003_{yyyyMMdd_HHmmss}.xml" }
+      }
+    },
+    {
+      "interfaceId": "ITF_INV_002",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "stockMovement",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "1500/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "5000/day",
+      "funcDesc": "FastFulfill WMS publishes goods receipt stock movements back to 1NAV inventory module.",
+      "topicPattern": "3pl/NL/3PL-002/stockMovement/in/{movementId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/stockMovement/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/stockMovement/in",
+      "eventPortalEvent": "StockMovementInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/stockMovement",  "filenameScheme": "ITF_INV_002_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/stockMovement", "filenameScheme": "ITF_INV_002_{yyyyMMdd_HHmmss}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_INV_004",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "stockMovement",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "1200/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "4000/day",
+      "funcDesc": "FastFulfill WMS publishes goods issue (outbound pick confirmation) stock movements back to 1NAV.",
+      "topicPattern": "3pl/NL/3PL-002/stockMovement/in/{movementId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/stockMovement/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/stockMovement/in",
+      "eventPortalEvent": "StockMovementInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/stockMovement",  "filenameScheme": "ITF_INV_004_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/stockMovement", "filenameScheme": "ITF_INV_004_{yyyyMMdd_HHmmss}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_INV_003",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "stockBalance",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "SFTP",
+      "tgtIntType": "API",
+      "volume": "24/day",
+      "sizePerMsg": "50KB",
+      "peakVolume": "48/day",
+      "funcDesc": "FastFulfill WMS sends hourly full stock balance snapshots to 1NAV for inventory reconciliation.",
+      "topicPattern": "3pl/NL/3PL-002/stockBalance/in/{snapshotId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/stockBalance/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/stockBalance/in",
+      "eventPortalEvent": "StockBalanceInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/stockBalance",  "filenameScheme": "ITF_INV_003_{yyyyMMdd_HH}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/stockBalance", "filenameScheme": "ITF_INV_003_{yyyyMMdd_HH}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_WMS_005",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "sourcingStock",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "700/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "2500/day",
+      "funcDesc": "FastFulfill confirms putaway completion back to 1NAV WMS module after goods receipt at the warehouse.",
+      "topicPattern": "3pl/NL/3PL-002/sourcingStock/in/{confirmationId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/sourcingStock/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/sourcingStock/in",
+      "eventPortalEvent": "SourcingStockInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/sourcingStock",  "filenameScheme": "ITF_WMS_005_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/sourcingStock", "filenameScheme": "ITF_WMS_005_{yyyyMMdd_HHmmss}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_PUR_019",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "sourcingStock",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "500/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "1500/day",
+      "funcDesc": "FastFulfill confirms inbound purchase order receipt to 1NAV procurement module.",
+      "topicPattern": "3pl/NL/3PL-002/sourcingStock/in/{confirmationId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/sourcingStock/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/sourcingStock/in",
+      "eventPortalEvent": "SourcingStockInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/sourcingStock",  "filenameScheme": "ITF_PUR_019_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/sourcingStock", "filenameScheme": "ITF_PUR_019_{yyyyMMdd_HHmmss}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_SAL_008",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "despatchStock",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "1000/day",
+      "sizePerMsg": "3KB",
+      "peakVolume": "3500/day",
+      "funcDesc": "FastFulfill confirms despatch of goods to 1NAV sales module after pick, pack and ship completion.",
+      "topicPattern": "3pl/NL/3PL-002/despatchStock/in/{despatchId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/despatchStock/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/despatchStock/in",
+      "eventPortalEvent": "DespatchStockInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/despatchStock",  "filenameScheme": "ITF_SAL_008_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/despatchStock", "filenameScheme": "ITF_SAL_008_{yyyyMMdd_HHmmss}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_WMS_004",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "despatchStock",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "900/day",
+      "sizePerMsg": "3KB",
+      "peakVolume": "3000/day",
+      "funcDesc": "FastFulfill confirms despatch to 1NAV WMS module. Complements ITF_SAL_008 for WMS-originated despatch confirmations.",
+      "topicPattern": "3pl/NL/3PL-002/despatchStock/in/{despatchId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/despatchStock/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/despatchStock/in",
+      "eventPortalEvent": "DespatchStockInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/despatchStock",  "filenameScheme": "ITF_WMS_004_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/despatchStock", "filenameScheme": "ITF_WMS_004_{yyyyMMdd_HHmmss}.json" }
+      }
+    },
+    {
+      "interfaceId": "ITF_SAL_011",
+      "eaRef": "EA2024",
+      "sourceApp": "3PL",
+      "targetApp": "1NAV",
+      "businessObject": "returnStock",
+      "direction": "in",
+      "sourceFormat": "json",
+      "targetFormat": "xml",
+      "srcIntType": "REST API",
+      "tgtIntType": "API",
+      "volume": "120/day",
+      "sizePerMsg": "2KB",
+      "peakVolume": "400/day",
+      "funcDesc": "FastFulfill publishes return receipt and disposition confirmation to 1NAV sales module after processing returned goods.",
+      "topicPattern": "3pl/NL/3PL-002/returnStock/in/{returnId}",
+      "queueUAT": "Q/3PL/3PL-002/UAT/returnStock/in",
+      "queuePROD": "Q/3PL/3PL-002/PROD/returnStock/in",
+      "eventPortalEvent": "ReturnStockInbound",
+      "sftp": {
+        "uat":  { "path": "/sftp/fastfulfill/uat/3pl/returnStock",  "filenameScheme": "ITF_SAL_011_{yyyyMMdd_HHmmss}.json" },
+        "prod": { "path": "/sftp/fastfulfill/prod/3pl/returnStock", "filenameScheme": "ITF_SAL_011_{yyyyMMdd_HHmmss}.json" }
+      }
+    }
+  ],
+
+  "orchestrationPayloads": {
+    "_comment": "Ready-to-submit HTTP request bodies. Replace all <REPLACE_ME> tokens before POST.",
+
+    "phase1_uatRun": {
+      "_submitTo": "executionPlan.logicAppEndpoints.mainOrchestrator",
+      "_description": "Phase 1 — Full UAT provisioning: Solace Cloud service + Event Portal (domain, 9 schemas, 9 events, 2 apps) + UAT broker cluster (1 client profile, 1 ACL, 1 client username, 9 queues, 9 topic subscriptions, 1 RDP with 4 queue bindings).",
+      "config": {
+        "service": {
+          "serviceId": "",
+          "name": "3pl-automation-fastfulfill-nl",
+          "datacenterId": "aks-westeurope",
+          "serviceTypeId": "enterprise",
+          "serviceClassId": "enterprise-250-nano"
+        },
+        "eventPortal": {
+          "domainName": "3PL-FastFulfill-NL",
+          "domainDescription": "3PL integration domain for FastFulfill BV (NL) — 14 WMS interfaces",
+          "schemas": [
+            { "name": "MaterialMasterSchema",   "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "SourcingDeliverySchema",  "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "DispatchDeliverySchema",  "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "ReturnDeliverySchema",    "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "StockMovementSchema",     "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "StockBalanceSchema",      "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "SourcingStockSchema",     "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "DespatchStockSchema",     "type": "jsonSchema", "version": "1.0.0" },
+            { "name": "ReturnStockSchema",       "type": "jsonSchema", "version": "1.0.0" }
+          ],
+          "events": [
+            { "name": "MaterialMasterOutbound",  "version": "1.0.0", "topic": "3pl/NL/3PL-002/materialMaster/out/{materialNumber}",    "schemaRef": "MaterialMasterSchema"  },
+            { "name": "SourcingDeliveryOutbound","version": "1.0.0", "topic": "3pl/NL/3PL-002/sourcingDelivery/out/{deliveryId}",      "schemaRef": "SourcingDeliverySchema" },
+            { "name": "DispatchDeliveryOutbound","version": "1.0.0", "topic": "3pl/NL/3PL-002/dispatchDelivery/out/{deliveryId}",      "schemaRef": "DispatchDeliverySchema" },
+            { "name": "ReturnDeliveryOutbound",  "version": "1.0.0", "topic": "3pl/NL/3PL-002/returnDelivery/out/{returnId}",          "schemaRef": "ReturnDeliverySchema"  },
+            { "name": "StockMovementInbound",    "version": "1.0.0", "topic": "3pl/NL/3PL-002/stockMovement/in/{movementId}",          "schemaRef": "StockMovementSchema"   },
+            { "name": "StockBalanceInbound",     "version": "1.0.0", "topic": "3pl/NL/3PL-002/stockBalance/in/{snapshotId}",           "schemaRef": "StockBalanceSchema"    },
+            { "name": "SourcingStockInbound",    "version": "1.0.0", "topic": "3pl/NL/3PL-002/sourcingStock/in/{confirmationId}",      "schemaRef": "SourcingStockSchema"   },
+            { "name": "DespatchStockInbound",    "version": "1.0.0", "topic": "3pl/NL/3PL-002/despatchStock/in/{despatchId}",          "schemaRef": "DespatchStockSchema"   },
+            { "name": "ReturnStockInbound",      "version": "1.0.0", "topic": "3pl/NL/3PL-002/returnStock/in/{returnId}",              "schemaRef": "ReturnStockSchema"     }
+          ],
+          "applications": [
+            {
+              "name": "1NAV-NAV-EU-01", "type": "standard", "version": "1.0.0",
+              "produces": ["MaterialMasterOutbound","SourcingDeliveryOutbound","DispatchDeliveryOutbound","ReturnDeliveryOutbound"],
+              "consumes": ["StockMovementInbound","StockBalanceInbound","SourcingStockInbound","DespatchStockInbound","ReturnStockInbound"]
+            },
+            {
+              "name": "3PL-FastFulfill-NL", "type": "standard", "version": "1.0.0",
+              "produces": ["StockMovementInbound","StockBalanceInbound","SourcingStockInbound","DespatchStockInbound","ReturnStockInbound"],
+              "consumes": ["MaterialMasterOutbound","SourcingDeliveryOutbound","DispatchDeliveryOutbound","ReturnDeliveryOutbound"]
+            }
+          ]
+        },
+        "clusterManagement": {
+          "vpnName": "fastfulfill-uat",
+          "clientProfiles": [
+            { "name": "cp-3pl-002-uat" }
+          ],
+          "aclProfiles": [
+            {
+              "name": "acl-3pl-002-uat",
+              "publishDefault": "disallow",
+              "subscribeDefault": "disallow",
+              "publishExceptions":  ["3pl/NL/3PL-002/stockMovement/in/>","3pl/NL/3PL-002/stockBalance/in/>","3pl/NL/3PL-002/sourcingStock/in/>","3pl/NL/3PL-002/despatchStock/in/>","3pl/NL/3PL-002/returnStock/in/>"],
+              "subscribeExceptions": ["3pl/NL/3PL-002/materialMaster/out/>","3pl/NL/3PL-002/sourcingDelivery/out/>","3pl/NL/3PL-002/dispatchDelivery/out/>","3pl/NL/3PL-002/returnDelivery/out/>"]
+            }
+          ],
+          "clientUsernames": [
+            { "name": "svc-3pl-002-uat", "password": "<SOLACE_3PL_002_UAT_PASS>", "clientProfile": "cp-3pl-002-uat", "aclProfile": "acl-3pl-002-uat", "enabled": true }
+          ],
+          "queues": [
+            { "name": "Q/3PL/3PL-002/UAT/materialMaster/out",  "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/materialMaster/out/>"]  },
+            { "name": "Q/3PL/3PL-002/UAT/sourcingDelivery/out","accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/sourcingDelivery/out/>"] },
+            { "name": "Q/3PL/3PL-002/UAT/dispatchDelivery/out","accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/dispatchDelivery/out/>"] },
+            { "name": "Q/3PL/3PL-002/UAT/returnDelivery/out",  "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/returnDelivery/out/>"]  },
+            { "name": "Q/3PL/3PL-002/UAT/stockMovement/in",    "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/stockMovement/in/>"]    },
+            { "name": "Q/3PL/3PL-002/UAT/stockBalance/in",     "accessType": "exclusive",     "subscriptions": ["3pl/NL/3PL-002/stockBalance/in/>"]     },
+            { "name": "Q/3PL/3PL-002/UAT/sourcingStock/in",    "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/sourcingStock/in/>"]    },
+            { "name": "Q/3PL/3PL-002/UAT/despatchStock/in",    "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/despatchStock/in/>"]    },
+            { "name": "Q/3PL/3PL-002/UAT/returnStock/in",      "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/returnStock/in/>"]      }
+          ],
+          "restDeliveryPoints": [
+            {
+              "name": "rdp-3pl-002-uat",
+              "clientProfile": "cp-3pl-002-uat",
+              "enabled": true,
+              "consumers": [
+                { "name": "rest-consumer-mulesoft-uat", "host": "uat-api.fastfulfill.nl", "port": 443, "tlsEnabled": true, "httpMethod": "post", "httpRequestTarget": "/api/v1/events" }
+              ],
+              "queueBindings": [
+                "Q/3PL/3PL-002/UAT/materialMaster/out",
+                "Q/3PL/3PL-002/UAT/sourcingDelivery/out",
+                "Q/3PL/3PL-002/UAT/dispatchDelivery/out",
+                "Q/3PL/3PL-002/UAT/returnDelivery/out"
+              ]
+            }
+          ]
+        }
+      },
+      "skipEventPortal": false,
+      "skipCluster": false
+    },
+
+    "phase2_prodRun": {
+      "_submitTo": "executionPlan.logicAppEndpoints.mainOrchestrator",
+      "_description": "Phase 2 — PROD cluster only. Event Portal is already provisioned. Set serviceId to the value returned by phase 1.",
+      "config": {
+        "service": {
+          "serviceId": "<SERVICE_ID_FROM_PHASE1>",
+          "name": "3pl-automation-fastfulfill-nl"
+        },
+        "clusterManagement": {
+          "vpnName": "fastfulfill-prod",
+          "clientProfiles": [
+            { "name": "cp-3pl-002-prod" }
+          ],
+          "aclProfiles": [
+            {
+              "name": "acl-3pl-002-prod",
+              "publishDefault": "disallow",
+              "subscribeDefault": "disallow",
+              "publishExceptions":  ["3pl/NL/3PL-002/stockMovement/in/>","3pl/NL/3PL-002/stockBalance/in/>","3pl/NL/3PL-002/sourcingStock/in/>","3pl/NL/3PL-002/despatchStock/in/>","3pl/NL/3PL-002/returnStock/in/>"],
+              "subscribeExceptions": ["3pl/NL/3PL-002/materialMaster/out/>","3pl/NL/3PL-002/sourcingDelivery/out/>","3pl/NL/3PL-002/dispatchDelivery/out/>","3pl/NL/3PL-002/returnDelivery/out/>"]
+            }
+          ],
+          "clientUsernames": [
+            { "name": "svc-3pl-002-prod", "password": "<SOLACE_3PL_002_PROD_PASS>", "clientProfile": "cp-3pl-002-prod", "aclProfile": "acl-3pl-002-prod", "enabled": true }
+          ],
+          "queues": [
+            { "name": "Q/3PL/3PL-002/PROD/materialMaster/out",  "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/materialMaster/out/>"]  },
+            { "name": "Q/3PL/3PL-002/PROD/sourcingDelivery/out","accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/sourcingDelivery/out/>"] },
+            { "name": "Q/3PL/3PL-002/PROD/dispatchDelivery/out","accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/dispatchDelivery/out/>"] },
+            { "name": "Q/3PL/3PL-002/PROD/returnDelivery/out",  "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/returnDelivery/out/>"]  },
+            { "name": "Q/3PL/3PL-002/PROD/stockMovement/in",    "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/stockMovement/in/>"]    },
+            { "name": "Q/3PL/3PL-002/PROD/stockBalance/in",     "accessType": "exclusive",     "subscriptions": ["3pl/NL/3PL-002/stockBalance/in/>"]     },
+            { "name": "Q/3PL/3PL-002/PROD/sourcingStock/in",    "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/sourcingStock/in/>"]    },
+            { "name": "Q/3PL/3PL-002/PROD/despatchStock/in",    "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/despatchStock/in/>"]    },
+            { "name": "Q/3PL/3PL-002/PROD/returnStock/in",      "accessType": "non-exclusive", "subscriptions": ["3pl/NL/3PL-002/returnStock/in/>"]      }
+          ],
+          "restDeliveryPoints": [
+            {
+              "name": "rdp-3pl-002-prod",
+              "clientProfile": "cp-3pl-002-prod",
+              "enabled": true,
+              "consumers": [
+                { "name": "rest-consumer-mulesoft-prod", "host": "api.fastfulfill.nl", "port": 443, "tlsEnabled": true, "httpMethod": "post", "httpRequestTarget": "/api/v1/events" }
+              ],
+              "queueBindings": [
+                "Q/3PL/3PL-002/PROD/materialMaster/out",
+                "Q/3PL/3PL-002/PROD/sourcingDelivery/out",
+                "Q/3PL/3PL-002/PROD/dispatchDelivery/out",
+                "Q/3PL/3PL-002/PROD/returnDelivery/out"
+              ]
+            }
+          ]
+        }
+      },
+      "skipEventPortal": true,
+      "skipCluster": false
+    }
+  },
+
+  "operationsCatalog": {
+    "_description": "Day-2 individual CRUD operations. POST each entry body to executionPlan.logicAppEndpoints.dispatcher (or the target child workflow). All operations are idempotent — re-running create operations on existing resources returns 200/409 and the workflow continues.",
+
+    "operations": [
+      {
+        "id": "op-01",
+        "name": "Add queue subscription",
+        "description": "Adds a new topic subscription to an existing queue (e.g. when a new business object is introduced).",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "add",
+          "subResource": "queueSubscription",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "queueName": "Q/3PL/3PL-002/UAT/materialMaster/out",
+            "subscriptionTopic": "3pl/NL/3PL-002/materialMaster/out/*/UPDATE"
+          }
+        }
+      },
+      {
+        "id": "op-02",
+        "name": "Rotate client username password — UAT",
+        "description": "Rotates the 3PL partner's UAT credential without disrupting existing sessions.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "update",
+          "subResource": "clientUsername",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "clientUsername": "svc-3pl-002-uat",
+            "password": "<NEW_UAT_PASSWORD>"
+          }
+        }
+      },
+      {
+        "id": "op-03",
+        "name": "Rotate client username password — PROD",
+        "description": "Rotates the 3PL partner's PROD credential.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "update",
+          "subResource": "clientUsername",
+          "payload": {
+            "vpnName": "fastfulfill-prod",
+            "clientUsername": "svc-3pl-002-prod",
+            "password": "<NEW_PROD_PASSWORD>"
+          }
+        }
+      },
+      {
+        "id": "op-04",
+        "name": "Disable partner access — emergency",
+        "description": "Immediately disables the partner's client username to block all connections.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "update",
+          "subResource": "clientUsername",
+          "payload": {
+            "vpnName": "fastfulfill-prod",
+            "clientUsername": "svc-3pl-002-prod",
+            "enabled": false
+          }
+        }
+      },
+      {
+        "id": "op-05",
+        "name": "Add ACL publish exception",
+        "description": "Grants the 3PL partner publish rights on a new topic namespace.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "add",
+          "subResource": "publishException",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "aclProfileName": "acl-3pl-002-uat",
+            "topicSyntax": "smf",
+            "publishExceptionTopic": "3pl/NL/3PL-002/newBusinessObject/in/>"
+          }
+        }
+      },
+      {
+        "id": "op-06",
+        "name": "Add ACL subscribe exception",
+        "description": "Grants the 3PL partner subscribe rights on a new topic namespace.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "add",
+          "subResource": "subscribeException",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "aclProfileName": "acl-3pl-002-uat",
+            "topicSyntax": "smf",
+            "subscribeExceptionTopic": "3pl/NL/3PL-002/newBusinessObject/out/>"
+          }
+        }
+      },
+      {
+        "id": "op-07",
+        "name": "Create new queue (new interface)",
+        "description": "Creates a new queue for an additional business object not in the original set.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "create",
+          "subResource": "queue",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "queueName": "Q/3PL/3PL-002/UAT/newBusinessObject/out",
+            "accessType": "non-exclusive",
+            "maxMsgSpoolUsage": 1000,
+            "deadMsgQueue": "DMQ/3PL/3PL-002/UAT",
+            "subscriptions": ["3pl/NL/3PL-002/newBusinessObject/out/>"]
+          }
+        }
+      },
+      {
+        "id": "op-08",
+        "name": "Update RDP consumer host — failover",
+        "description": "Updates the REST consumer target host for disaster recovery or endpoint migration.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "update",
+          "subResource": "restConsumer",
+          "payload": {
+            "vpnName": "fastfulfill-prod",
+            "rdpName": "rdp-3pl-002-prod",
+            "restConsumerName": "rest-consumer-mulesoft-prod",
+            "host": "api-dr.fastfulfill.nl",
+            "port": 443
+          }
+        }
+      },
+      {
+        "id": "op-09",
+        "name": "Add queue binding to RDP",
+        "description": "Binds a new outbound queue to the existing RDP so messages are delivered to the 3PL endpoint.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "add",
+          "subResource": "queueBinding",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "rdpName": "rdp-3pl-002-uat",
+            "queueBindingName": "Q/3PL/3PL-002/UAT/newBusinessObject/out"
+          }
+        }
+      },
+      {
+        "id": "op-10",
+        "name": "Delete queue (decommission interface)",
+        "description": "Removes a queue when an interface is retired. Drain the queue before calling.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "delete",
+          "subResource": "queue",
+          "payload": {
+            "vpnName": "fastfulfill-uat",
+            "queueName": "Q/3PL/3PL-002/UAT/returnDelivery/out"
+          }
+        }
+      },
+      {
+        "id": "op-11",
+        "name": "Get service status",
+        "description": "Returns the current state of the Solace Cloud service.",
+        "endpoint": "serviceManagement",
+        "body": {
+          "action": "get",
+          "payload": { "serviceId": "<SERVICE_ID>" }
+        }
+      },
+      {
+        "id": "op-12",
+        "name": "List all queues",
+        "description": "Returns all queues configured on the UAT VPN for audit or troubleshooting.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "list",
+          "subResource": "queue",
+          "payload": { "vpnName": "fastfulfill-uat" }
+        }
+      },
+      {
+        "id": "op-13",
+        "name": "Get client username details",
+        "description": "Returns configuration and status of the 3PL partner's PROD credential.",
+        "endpoint": "clusterManagement",
+        "body": {
+          "action": "get",
+          "subResource": "clientUsername",
+          "payload": {
+            "vpnName": "fastfulfill-prod",
+            "clientUsername": "svc-3pl-002-prod"
+          }
+        }
+      },
+      {
+        "id": "op-14",
+        "name": "Export current config (clone baseline)",
+        "description": "Exports the live service config to JSON for auditing or cloning to a new country/region.",
+        "endpoint": "exportClone",
+        "body": {
+          "action": "export",
+          "payload": {
+            "serviceId": "<SERVICE_ID>",
+            "outputBlobContainer": "solace-exports",
+            "outputBlobName": "fastfulfill-nl-export-{timestamp}.json"
+          }
+        }
+      }
+    ]
+  },
+
+  "executionPlan": {
+    "_description": "Step-by-step provisioning guide. Each phase maps to a Logic App HTTP POST. Phases run sequentially — wait for each phase to return HTTP 200 before proceeding.",
+
+    "logicAppEndpoints": {
+      "_comment": "Deployed Azure Logic App trigger URLs — from solace-automation/azure-logic-apps/deployed-urls.json",
+      "mainOrchestrator":      "wf-solace-automation-main-orchestrator",
+      "dispatcher":            "wf-solace-automation-main-dispatcher",
+      "serviceProvisioning":   "wf-solace-automation-service-provisioning",
+      "serviceManagement":     "wf-solace-automation-service-management",
+      "eventPortalProvisioning":"wf-solace-automation-event-portal-provisioning",
+      "eventPortalManagement": "wf-solace-automation-event-portal-management",
+      "clusterManagement":     "wf-solace-automation-cluster-management",
+      "credentialsInit":       "wf-solace-automation-credentials-init",
+      "exportClone":           "wf-solace-automation-export-clone"
+    },
+
+    "phases": [
+      {
+        "phase": 0,
+        "name": "Credentials Init (existing service only)",
+        "description": "Skip if provisioning a new service — the main-orchestrator handles this automatically. Run only when onboarding onto an existing Solace Cloud service.",
+        "endpoint": "credentialsInit",
+        "method": "POST",
+        "body": { "serviceId": "<EXISTING_SERVICE_ID>" },
+        "expectedResponse": { "status": "success", "sempBaseUrl": "...", "vpnName": "..." },
+        "runIf": "serviceId is already known"
+      },
+      {
+        "phase": 1,
+        "name": "UAT Full Provision",
+        "description": "Submits orchestrationPayloads.phase1_uatRun to the main-orchestrator. Internally the orchestrator runs: (1a) Service create + poll ready, (1b) SEMP credentials init, (1c) Event Portal domain + schemas + events + apps, (1d) UAT cluster — client profile, ACL profile, client username, 9 queues with subscriptions, RDP with consumer + 4 queue bindings.",
+        "endpoint": "mainOrchestrator",
+        "method": "POST",
+        "body": "orchestrationPayloads.phase1_uatRun",
+        "expectedResponse": { "status": "success", "serviceId": "...", "domainId": "..." },
+        "estimatedDuration": "10–15 minutes",
+        "outputs": ["serviceId → store for phase 2", "domainId → record for EP management"]
+      },
+      {
+        "phase": 2,
+        "name": "PROD Cluster Provision",
+        "description": "Submits orchestrationPayloads.phase2_prodRun. Replace <SERVICE_ID_FROM_PHASE1> with the serviceId from phase 1 response. Event Portal is skipped. Creates PROD client profile, ACL profile, client username, 9 PROD queues with subscriptions, PROD RDP.",
+        "endpoint": "mainOrchestrator",
+        "method": "POST",
+        "body": "orchestrationPayloads.phase2_prodRun",
+        "expectedResponse": { "status": "success" },
+        "estimatedDuration": "3–5 minutes",
+        "prerequisite": "phase 1 completed successfully"
+      },
+      {
+        "phase": 3,
+        "name": "Validation — UAT",
+        "description": "Verify all UAT resources are correctly provisioned. Check queues, ACL, and RDP status.",
+        "checks": [
+          { "op": "op-12", "expect": "9 queues returned for vpn fastfulfill-uat" },
+          { "op": "op-13", "expect": "svc-3pl-002-uat enabled=true" },
+          { "op": "op-11", "expect": "service state=running" }
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Validation — PROD",
+        "description": "Verify all PROD resources are provisioned correctly before handing connection details to the partner.",
+        "checks": [
+          { "description": "List PROD queues", "body": { "action": "list", "subResource": "queue", "payload": { "vpnName": "fastfulfill-prod" } }, "expect": "9 queues" },
+          { "description": "Check PROD client username", "body": { "action": "get", "subResource": "clientUsername", "payload": { "vpnName": "fastfulfill-prod", "clientUsername": "svc-3pl-002-prod" } }, "expect": "enabled=true" }
+        ]
+      },
+      {
+        "phase": 5,
+        "name": "Hand-off — deliver connection details to partner",
+        "description": "Provide FastFulfill with the broker URL, VPN names, client usernames, passwords, and topic/queue reference. No Logic App call — manual step.",
+        "deliverables": {
+          "brokerUrl": "mrp8hz8.messaging.solace.cloud",
+          "protocol": "AMQP",
+          "uat": {
+            "port": 5672,
+            "vpn": "fastfulfill-uat",
+            "username": "svc-3pl-002-uat",
+            "password": "from <SOLACE_3PL_002_UAT_PASS>",
+            "publishTopicPrefix": "3pl/NL/3PL-002/*/in/",
+            "subscribeTopicPrefix": "3pl/NL/3PL-002/*/out/"
+          },
+          "prod": {
+            "port": 5671,
+            "vpn": "fastfulfill-prod",
+            "username": "svc-3pl-002-prod",
+            "password": "from <SOLACE_3PL_002_PROD_PASS>",
+            "publishTopicPrefix": "3pl/NL/3PL-002/*/in/",
+            "subscribeTopicPrefix": "3pl/NL/3PL-002/*/out/"
+          }
+        }
+      }
+    ]
+  }
+}
