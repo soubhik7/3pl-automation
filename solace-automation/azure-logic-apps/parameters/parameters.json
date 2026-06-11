@@ -9,45 +9,50 @@
     },
     "serviceProvisioningUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-79.eastus.logic.azure.com:443/workflows/9d12346144514880b2891f088b04ca46/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=3PSSse6OrrsPtLcBZ6UHQVdlbjPC0Puuq4FFji0vrOw"
     },
     "eventPortalUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-06.eastus.logic.azure.com:443/workflows/be7b525c985b468b9c0f801d9f93ab06/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2a3TtAu83bS1FFxJJcsxChMCU5MPk-m7HNx9LlwwZ0s"
     },
     "clusterManagementUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-26.eastus.logic.azure.com:443/workflows/54f2fc71887142f88f0c86266b1cc3aa/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=WcRazY6cPs8HY_kEColjpym-AcZB61ZTV_s3-eqDmcU"
     },
     "serviceManagementUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-83.eastus.logic.azure.com:443/workflows/451c419caaf942eb9820ce5afadd4ba7/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ku9NCZHpDaszfxYM3oEJKjmYkaGStpHO3bjHfrk8bsA"
     },
     "eventPortalManagementUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-94.eastus.logic.azure.com:443/workflows/0736864df3bf4dccba1bf5766c90cd6e/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=nd1QH3XrYKuTQbnlXTl6Mbs_K_5M1hpnsLpPMvn0wWg"
     },
     "solace-mainOrchestratorUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-46.eastus.logic.azure.com:443/workflows/47f0ac2e7b964abdaae593ea94a223a7/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cxrzYM8fCqkasUaH-JwG_U6zIanPulSWexh2QKAi28k"
     },
     "exportCloneUrl": {
         "type": "String",
-        "value": ""
+        "value": "https://prod-52.eastus.logic.azure.com:443/workflows/2356ee25df2b4464bc8a1e88bc7a86d4/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=b5sQL5rL3R-osfere8xnXAaSI03HIf7AbYc-Y6D-XpY"
     },
     "blobUploadUrl": {
         "type": "String",
         "value": "https://prod-73.eastus.logic.azure.com:443/workflows/ce419f64db0e4ccfa7908f109c4f6d7d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jP8jl9pfkizKUeiTa5_wo75Z5JQBY3JhSEdwle9N1uQ",
-        "description": "HTTP trigger URL for wf-solace-automation-blob-upload — used by 3PL Onboarding UI"
+        "description": "HTTP trigger URL for wf-solace-automation-blob-upload"
     },
     "blobTriggerUrl": {
         "type": "String",
         "value": "https://prod-37.eastus.logic.azure.com:443/workflows/10aea9f528f743388ad0c5d9ed9246e2/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=mTgpPNzNROsg5qKFVUONBXMVDtKP2t35H8Rh8GOjiJ8",
-        "description": "HTTP trigger URL for wf-solace-automation-blob-trigger — called by blob-upload after writing the blob"
+        "description": "HTTP trigger URL for wf-solace-automation-blob-trigger"
     },
     "mainOrchestratorUrl": {
         "type": "String",
-        "value": "https://prod-93.eastus.logic.azure.com:443/workflows/a3aa7415cd0b4fc8afc868d94da85829/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=HRkUVHs2ehOjNVrvj6eKdmr0rnT_Tr21BHRG86KBv3Q",
-        "description": "HTTP trigger URL for wf-solace-automation-main-orchestrator — called by blob-trigger for UAT and PROD runs"
+        "value": "https://prod-46.eastus.logic.azure.com:443/workflows/47f0ac2e7b964abdaae593ea94a223a7/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cxrzYM8fCqkasUaH-JwG_U6zIanPulSWexh2QKAi28k",
+        "description": "HTTP trigger URL for wf-solace-automation-main-orchestrator"
+    },
+    "credentialsInitUrl": {
+        "type": "String",
+        "value": "https://prod-86.eastus.logic.azure.com:443/workflows/fee8fb2027544a919bbe8c8fcc191bf1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=JBp1ljcl8aH6D4I6nU-iijmHsqZ63z4IVT3XyWrkVL8",
+        "description": "HTTP trigger URL for wf-solace-automation-credentials-init"
     }
 }
