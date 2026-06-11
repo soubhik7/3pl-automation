@@ -94,129 +94,217 @@
         }
       },
 
-      "Scope_UAT_Provisioning": {
-        "type": "Scope",
-        "actions": {
-          "Invoke_Orchestrator_UAT": {
-            "type": "Http",
-            "inputs": {
-              "method": "POST",
-              "uri": "@parameters('mainOrchestratorUrl')",
-              "headers": {
-                "Content-Type": "application/json"
-              },
-              "body": "@triggerBody()?['config']?['orchestrationPayloads']?['phase1_uatRun']"
-            },
-            "runAfter": {}
-          },
-          "Set_ServiceId_From_UAT": {
-            "type": "SetVariable",
-            "inputs": {
-              "name": "serviceId",
-              "value": "@{coalesce(body('Invoke_Orchestrator_UAT')?['serviceId'], '')}"
-            },
-            "runAfter": {
-              "Invoke_Orchestrator_UAT": ["Succeeded"]
+      "Check_IsDEV": {
+        "type": "If",
+        "expression": {
+          "and": [
+            {
+              "equals": [
+                "@coalesce(triggerBody()?['config']?['runMode'], '')",
+                "dev"
+              ]
             }
-          },
-          "Set_DomainId_From_UAT": {
-            "type": "SetVariable",
-            "inputs": {
-              "name": "domainId",
-              "value": "@{coalesce(body('Invoke_Orchestrator_UAT')?['domainId'], '')}"
-            },
-            "runAfter": {
-              "Set_ServiceId_From_UAT": ["Succeeded"]
-            }
-          },
-          "Set_UAT_Status_Success": {
-            "type": "SetVariable",
-            "inputs": {
-              "name": "uatStatus",
-              "value": "success"
-            },
-            "runAfter": {
-              "Set_DomainId_From_UAT": ["Succeeded"]
-            }
-          }
+          ]
         },
         "runAfter": {
           "Initialize_prodStatus": ["Succeeded"]
-        }
-      },
-
-      "Set_UAT_Status_Failed": {
-        "type": "SetVariable",
-        "inputs": {
-          "name": "uatStatus",
-          "value": "failed"
         },
-        "runAfter": {
-          "Scope_UAT_Provisioning": ["Failed", "TimedOut", "Skipped"]
-        }
-      },
-
-      "Build_PROD_Payload": {
-        "type": "Compose",
-        "inputs": {
-          "config": {
-            "service": {
-              "serviceId": "@variables('serviceId')",
-              "name": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['name']}",
-              "datacenterId": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['datacenterId']}",
-              "serviceTypeId": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['serviceTypeId']}",
-              "serviceClassId": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['serviceClassId']}"
-            },
-            "clusterManagement": "@triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['clusterManagement']"
-          },
-          "skipEventPortal": true,
-          "skipCluster": false
-        },
-        "runAfter": {
-          "Scope_UAT_Provisioning": ["Succeeded"],
-          "Set_UAT_Status_Failed": ["Skipped"]
-        }
-      },
-
-      "Scope_PROD_Provisioning": {
-        "type": "Scope",
         "actions": {
-          "Invoke_Orchestrator_PROD": {
-            "type": "Http",
-            "inputs": {
-              "method": "POST",
-              "uri": "@parameters('mainOrchestratorUrl')",
-              "headers": {
-                "Content-Type": "application/json"
+          "Scope_DEV_Provisioning": {
+            "type": "Scope",
+            "runAfter": {},
+            "actions": {
+              "Invoke_Orchestrator_DEV": {
+                "type": "Http",
+                "runAfter": {},
+                "inputs": {
+                  "method": "POST",
+                  "uri": "@parameters('mainOrchestratorUrl')",
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()?['config']?['orchestrationPayloads']?['devRun']"
+                }
               },
-              "body": "@outputs('Build_PROD_Payload')"
-            },
-            "runAfter": {}
+              "Set_ServiceId_DEV": {
+                "type": "SetVariable",
+                "runAfter": {
+                  "Invoke_Orchestrator_DEV": ["Succeeded"]
+                },
+                "inputs": {
+                  "name": "serviceId",
+                  "value": "@{coalesce(body('Invoke_Orchestrator_DEV')?['serviceId'], '')}"
+                }
+              },
+              "Set_DomainId_DEV": {
+                "type": "SetVariable",
+                "runAfter": {
+                  "Set_ServiceId_DEV": ["Succeeded"]
+                },
+                "inputs": {
+                  "name": "domainId",
+                  "value": "@{coalesce(body('Invoke_Orchestrator_DEV')?['domainId'], '')}"
+                }
+              },
+              "Set_UAT_Status_DEV_Success": {
+                "type": "SetVariable",
+                "runAfter": {
+                  "Set_DomainId_DEV": ["Succeeded"]
+                },
+                "inputs": {
+                  "name": "uatStatus",
+                  "value": "success-dev"
+                }
+              },
+              "Set_PROD_Status_DEV_Skipped": {
+                "type": "SetVariable",
+                "runAfter": {
+                  "Set_UAT_Status_DEV_Success": ["Succeeded"]
+                },
+                "inputs": {
+                  "name": "prodStatus",
+                  "value": "skipped-dev"
+                }
+              }
+            }
           },
-          "Set_PROD_Status_Success": {
+          "Set_DEV_Status_Failed": {
             "type": "SetVariable",
-            "inputs": {
-              "name": "prodStatus",
-              "value": "success"
-            },
             "runAfter": {
-              "Invoke_Orchestrator_PROD": ["Succeeded"]
+              "Scope_DEV_Provisioning": ["Failed", "TimedOut", "Skipped"]
+            },
+            "inputs": {
+              "name": "uatStatus",
+              "value": "failed-dev"
             }
           }
         },
-        "runAfter": {
-          "Build_PROD_Payload": ["Succeeded"]
-        }
-      },
+        "else": {
+          "actions": {
+            "Scope_UAT_Provisioning": {
+              "type": "Scope",
+              "runAfter": {},
+              "actions": {
+                "Invoke_Orchestrator_UAT": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('mainOrchestratorUrl')",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": "@triggerBody()?['config']?['orchestrationPayloads']?['phase1_uatRun']"
+                  },
+                  "runAfter": {}
+                },
+                "Set_ServiceId_From_UAT": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "serviceId",
+                    "value": "@{coalesce(body('Invoke_Orchestrator_UAT')?['serviceId'], '')}"
+                  },
+                  "runAfter": {
+                    "Invoke_Orchestrator_UAT": ["Succeeded"]
+                  }
+                },
+                "Set_DomainId_From_UAT": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "domainId",
+                    "value": "@{coalesce(body('Invoke_Orchestrator_UAT')?['domainId'], '')}"
+                  },
+                  "runAfter": {
+                    "Set_ServiceId_From_UAT": ["Succeeded"]
+                  }
+                },
+                "Set_UAT_Status_Success": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "uatStatus",
+                    "value": "success"
+                  },
+                  "runAfter": {
+                    "Set_DomainId_From_UAT": ["Succeeded"]
+                  }
+                }
+              }
+            },
 
-      "Set_PROD_Status_Failed": {
-        "type": "SetVariable",
-        "inputs": {
-          "name": "prodStatus",
-          "value": "failed"
-        },
-        "runAfter": {
-          "Scope_PROD_Provisioning": ["Failed", "TimedOut", "Skipped"]
+            "Set_UAT_Status_Failed": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "uatStatus",
+                "value": "failed"
+              },
+              "runAfter": {
+                "Scope_UAT_Provisioning": ["Failed", "TimedOut", "Skipped"]
+              }
+            },
+
+            "Build_PROD_Payload": {
+              "type": "Compose",
+              "inputs": {
+                "config": {
+                  "service": {
+                    "serviceId": "@variables('serviceId')",
+                    "name": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['name']}",
+                    "datacenterId": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['datacenterId']}",
+                    "serviceTypeId": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['serviceTypeId']}",
+                    "serviceClassId": "@{triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['service']?['serviceClassId']}"
+                  },
+                  "clusterManagement": "@triggerBody()?['config']?['orchestrationPayloads']?['phase2_prodRun']?['config']?['clusterManagement']"
+                },
+                "skipEventPortal": true,
+                "skipCluster": false
+              },
+              "runAfter": {
+                "Scope_UAT_Provisioning": ["Succeeded"],
+                "Set_UAT_Status_Failed": ["Skipped"]
+              }
+            },
+
+            "Scope_PROD_Provisioning": {
+              "type": "Scope",
+              "actions": {
+                "Invoke_Orchestrator_PROD": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('mainOrchestratorUrl')",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": "@outputs('Build_PROD_Payload')"
+                  },
+                  "runAfter": {}
+                },
+                "Set_PROD_Status_Success": {
+                  "type": "SetVariable",
+                  "inputs": {
+                    "name": "prodStatus",
+                    "value": "success"
+                  },
+                  "runAfter": {
+                    "Invoke_Orchestrator_PROD": ["Succeeded"]
+                  }
+                }
+              },
+              "runAfter": {
+                "Build_PROD_Payload": ["Succeeded"]
+              }
+            },
+
+            "Set_PROD_Status_Failed": {
+              "type": "SetVariable",
+              "inputs": {
+                "name": "prodStatus",
+                "value": "failed"
+              },
+              "runAfter": {
+                "Scope_PROD_Provisioning": ["Failed", "TimedOut", "Skipped"]
+              }
+            }
+          }
         }
       },
 
@@ -232,6 +320,7 @@
           "body": {
             "partnerID": "@triggerBody()?['partnerID']",
             "sourceBlobName": "@triggerBody()?['blobName']",
+            "runMode": "@coalesce(triggerBody()?['config']?['runMode'], 'uatprod')",
             "completedAt": "@utcNow()",
             "serviceId": "@variables('serviceId')",
             "domainId": "@variables('domainId')",
@@ -240,8 +329,7 @@
           }
         },
         "runAfter": {
-          "Scope_PROD_Provisioning": ["Succeeded", "Failed", "TimedOut", "Skipped"],
-          "Set_PROD_Status_Failed": ["Succeeded", "Skipped"]
+          "Check_IsDEV": ["Succeeded"]
         }
       },
 
@@ -257,6 +345,7 @@
             "status": "completed",
             "partnerID": "@triggerBody()?['partnerID']",
             "sourceBlobName": "@triggerBody()?['blobName']",
+            "runMode": "@coalesce(triggerBody()?['config']?['runMode'], 'uatprod')",
             "completedAt": "@utcNow()",
             "serviceId": "@variables('serviceId')",
             "domainId": "@variables('domainId')",
