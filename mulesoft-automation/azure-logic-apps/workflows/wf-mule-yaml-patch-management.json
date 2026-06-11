@@ -20,21 +20,44 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["onboardingInput"],
+            "required": [
+              "onboardingInput"
+            ],
             "properties": {
               "onboardingInput": {
                 "type": "object",
-                "description": "Full 3PL OnboardingInput — same schema as POST /api/run body",
-                "required": ["country_key", "country_code", "nav", "translation"],
+                "description": "Full 3PL OnboardingInput \u2014 same schema as POST /api/run body",
+                "required": [
+                  "country_key",
+                  "country_code",
+                  "nav",
+                  "translation"
+                ],
                 "properties": {
-                  "partner_comment": { "type": "string" },
-                  "country_key":     { "type": "string" },
-                  "country_code":    { "type": "string" },
-                  "created_by":      { "type": "string" },
-                  "nav":             { "type": "object" },
-                  "nav_tst":         { "type": "object" },
-                  "nav_prod":        { "type": "object" },
-                  "translation":     { "type": "object" }
+                  "partner_comment": {
+                    "type": "string"
+                  },
+                  "country_key": {
+                    "type": "string"
+                  },
+                  "country_code": {
+                    "type": "string"
+                  },
+                  "created_by": {
+                    "type": "string"
+                  },
+                  "nav": {
+                    "type": "object"
+                  },
+                  "nav_tst": {
+                    "type": "object"
+                  },
+                  "nav_prod": {
+                    "type": "object"
+                  },
+                  "translation": {
+                    "type": "object"
+                  }
                 }
               },
               "muleWebAppUrl": {
@@ -43,17 +66,44 @@
               },
               "githubConfig": {
                 "type": "object",
-                "description": "GitHub config for committing patched YAMLs — omit to skip GitHub commit",
+                "description": "GitHub config for committing patched YAMLs \u2014 omit to skip GitHub commit",
                 "properties": {
-                  "pat":          { "type": "string", "description": "GitHub Personal Access Token" },
-                  "owner":        { "type": "string", "description": "GitHub org/user owning the MuleSoft repo" },
-                  "repo":         { "type": "string", "description": "MuleSoft config repository name" },
-                  "branchName":   { "type": "string", "description": "Feature branch to commit to" },
-                  "appYamlPath":  { "type": "string", "description": "Path to app.yaml in repo e.g. src/main/resources/app.yaml" },
-                  "devYamlPath":  { "type": "string", "description": "Path to dev.yaml in repo" },
-                  "tstYamlPath":  { "type": "string", "description": "Path to tst.yaml in repo" },
-                  "prodYamlPath": { "type": "string", "description": "Path to prod.yaml in repo" },
-                  "commitMessage":{ "type": "string", "description": "Optional commit message override" }
+                  "pat": {
+                    "type": "string",
+                    "description": "GitHub Personal Access Token"
+                  },
+                  "owner": {
+                    "type": "string",
+                    "description": "GitHub org/user owning the MuleSoft repo"
+                  },
+                  "repo": {
+                    "type": "string",
+                    "description": "MuleSoft config repository name"
+                  },
+                  "branchName": {
+                    "type": "string",
+                    "description": "Feature branch to commit to"
+                  },
+                  "appYamlPath": {
+                    "type": "string",
+                    "description": "Path to app.yaml in repo e.g. src/main/resources/app.yaml"
+                  },
+                  "devYamlPath": {
+                    "type": "string",
+                    "description": "Path to dev.yaml in repo"
+                  },
+                  "tstYamlPath": {
+                    "type": "string",
+                    "description": "Path to tst.yaml in repo"
+                  },
+                  "prodYamlPath": {
+                    "type": "string",
+                    "description": "Path to prod.yaml in repo"
+                  },
+                  "commitMessage": {
+                    "type": "string",
+                    "description": "Optional commit message override"
+                  }
                 }
               }
             }
@@ -62,53 +112,85 @@
       }
     },
     "actions": {
-
       "Initialize_runId": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "runId", "type": "string", "value": "" }] },
+        "inputs": {
+          "variables": [
+            {
+              "name": "runId",
+              "type": "string",
+              "value": ""
+            }
+          ]
+        },
         "runAfter": {}
       },
       "Initialize_webAppBaseUrl": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "webAppBaseUrl",
-            "type": "string",
-            "value": "@{coalesce(triggerBody()?['muleWebAppUrl'], parameters('muleWebAppUrl'))}"
-          }]
+          "variables": [
+            {
+              "name": "webAppBaseUrl",
+              "type": "string",
+              "value": "@{coalesce(triggerBody()?['muleWebAppUrl'], parameters('muleWebAppUrl'))}"
+            }
+          ]
         },
-        "runAfter": { "Initialize_runId": ["Succeeded"] }
+        "runAfter": {
+          "Initialize_runId": [
+            "Succeeded"
+          ]
+        }
       },
       "Initialize_commitMessage": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "commitMessage",
-            "type": "string",
-            "value": "@{coalesce(triggerBody()?['githubConfig']?['commitMessage'], concat('feat: add ', triggerBody()?['onboardingInput']?['country_key'], ' nav config for 3PL onboarding'))}"
-          }]
+          "variables": [
+            {
+              "name": "commitMessage",
+              "type": "string",
+              "value": "@{coalesce(triggerBody()?['githubConfig']?['commitMessage'], concat('feat: add ', triggerBody()?['onboardingInput']?['country_key'], ' nav config for 3PL onboarding'))}"
+            }
+          ]
         },
-        "runAfter": { "Initialize_webAppBaseUrl": ["Succeeded"] }
+        "runAfter": {
+          "Initialize_webAppBaseUrl": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Invoke_YAML_Patch_WebApp": {
         "type": "Http",
         "inputs": {
           "method": "POST",
           "uri": "@{concat(variables('webAppBaseUrl'), '/api/tools/yaml-patch')}",
-          "headers": { "Content-Type": "application/json" },
-          "body": "@triggerBody()?['onboardingInput']"
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "@triggerBody()?['onboardingInput']",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
-        "runAfter": { "Initialize_commitMessage": ["Succeeded"] }
+        "runAfter": {
+          "Initialize_commitMessage": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Check_Patch_Success": {
         "type": "If",
         "expression": {
-          "and": [{ "equals": ["@outputs('Invoke_YAML_Patch_WebApp')['statusCode']", 200] }]
+          "and": [
+            {
+              "equals": [
+                "@outputs('Invoke_YAML_Patch_WebApp')['statusCode']",
+                200
+              ]
+            }
+          ]
         },
         "actions": {
-
           "Set_runId": {
             "type": "SetVariable",
             "inputs": {
@@ -117,22 +199,37 @@
             },
             "runAfter": {}
           },
-
           "Check_GitHub_Commit_Requested": {
             "type": "If",
             "expression": {
               "and": [
-                { "not": { "equals": ["@coalesce(triggerBody()?['githubConfig']?['pat'], '')", ""] } },
-                { "not": { "equals": ["@coalesce(triggerBody()?['githubConfig']?['branchName'], '')", ""] } }
+                {
+                  "not": {
+                    "equals": [
+                      "@coalesce(triggerBody()?['githubConfig']?['pat'], '')",
+                      ""
+                    ]
+                  }
+                },
+                {
+                  "not": {
+                    "equals": [
+                      "@coalesce(triggerBody()?['githubConfig']?['branchName'], '')",
+                      ""
+                    ]
+                  }
+                }
               ]
             },
             "actions": {
-
               "Download_App_YAML": {
                 "type": "Http",
                 "inputs": {
                   "method": "GET",
-                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/app-yaml')}"
+                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/app-yaml')}",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -140,7 +237,10 @@
                 "type": "Http",
                 "inputs": {
                   "method": "GET",
-                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/yaml')}"
+                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/yaml')}",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -148,7 +248,10 @@
                 "type": "Http",
                 "inputs": {
                   "method": "GET",
-                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/tst-yaml')}"
+                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/tst-yaml')}",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
@@ -156,11 +259,13 @@
                 "type": "Http",
                 "inputs": {
                   "method": "GET",
-                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/prod-yaml')}"
+                  "uri": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/prod-yaml')}",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
-
               "Get_App_YAML_SHA": {
                 "type": "Http",
                 "inputs": {
@@ -171,9 +276,16 @@
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
                     "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
-                "runAfter": { "Download_App_YAML": ["Succeeded"] }
+                "runAfter": {
+                  "Download_App_YAML": [
+                    "Succeeded"
+                  ]
+                }
               },
               "Commit_App_YAML": {
                 "type": "Http",
@@ -190,13 +302,19 @@
                   "body": {
                     "message": "@{concat(variables('commitMessage'), ' [app.yaml]')}",
                     "content": "@{base64(body('Download_App_YAML'))}",
-                    "branch":  "@{triggerBody()?['githubConfig']?['branchName']}",
-                    "sha":     "@{body('Get_App_YAML_SHA')?['sha']}"
+                    "branch": "@{triggerBody()?['githubConfig']?['branchName']}",
+                    "sha": "@{body('Get_App_YAML_SHA')?['sha']}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
-                "runAfter": { "Get_App_YAML_SHA": ["Succeeded"] }
+                "runAfter": {
+                  "Get_App_YAML_SHA": [
+                    "Succeeded"
+                  ]
+                }
               },
-
               "Get_Dev_YAML_SHA": {
                 "type": "Http",
                 "inputs": {
@@ -207,9 +325,16 @@
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
                     "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
-                "runAfter": { "Download_Dev_YAML": ["Succeeded"] }
+                "runAfter": {
+                  "Download_Dev_YAML": [
+                    "Succeeded"
+                  ]
+                }
               },
               "Commit_Dev_YAML": {
                 "type": "Http",
@@ -226,17 +351,30 @@
                   "body": {
                     "message": "@{concat(variables('commitMessage'), ' [dev.yaml]')}",
                     "content": "@{base64(body('Download_Dev_YAML'))}",
-                    "branch":  "@{triggerBody()?['githubConfig']?['branchName']}",
-                    "sha":     "@{body('Get_Dev_YAML_SHA')?['sha']}"
+                    "branch": "@{triggerBody()?['githubConfig']?['branchName']}",
+                    "sha": "@{body('Get_Dev_YAML_SHA')?['sha']}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
-                "runAfter": { "Get_Dev_YAML_SHA": ["Succeeded"] }
+                "runAfter": {
+                  "Get_Dev_YAML_SHA": [
+                    "Succeeded"
+                  ]
+                }
               },
-
               "Check_TST_Download_OK": {
                 "type": "If",
                 "expression": {
-                  "and": [{ "equals": ["@outputs('Download_TST_YAML')['statusCode']", 200] }]
+                  "and": [
+                    {
+                      "equals": [
+                        "@outputs('Download_TST_YAML')['statusCode']",
+                        200
+                      ]
+                    }
+                  ]
                 },
                 "actions": {
                   "Get_TST_YAML_SHA": {
@@ -249,6 +387,9 @@
                         "Accept": "application/vnd.github+json",
                         "X-GitHub-Api-Version": "2022-11-28",
                         "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
                     "runAfter": {}
@@ -268,20 +409,38 @@
                       "body": {
                         "message": "@{concat(variables('commitMessage'), ' [tst.yaml]')}",
                         "content": "@{base64(body('Download_TST_YAML'))}",
-                        "branch":  "@{triggerBody()?['githubConfig']?['branchName']}",
-                        "sha":     "@{body('Get_TST_YAML_SHA')?['sha']}"
+                        "branch": "@{triggerBody()?['githubConfig']?['branchName']}",
+                        "sha": "@{body('Get_TST_YAML_SHA')?['sha']}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
-                    "runAfter": { "Get_TST_YAML_SHA": ["Succeeded"] }
+                    "runAfter": {
+                      "Get_TST_YAML_SHA": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 },
-                "runAfter": { "Download_TST_YAML": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Download_TST_YAML": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               },
-
               "Check_PROD_Download_OK": {
                 "type": "If",
                 "expression": {
-                  "and": [{ "equals": ["@outputs('Download_PROD_YAML')['statusCode']", 200] }]
+                  "and": [
+                    {
+                      "equals": [
+                        "@outputs('Download_PROD_YAML')['statusCode']",
+                        200
+                      ]
+                    }
+                  ]
                 },
                 "actions": {
                   "Get_PROD_YAML_SHA": {
@@ -294,6 +453,9 @@
                         "Accept": "application/vnd.github+json",
                         "X-GitHub-Api-Version": "2022-11-28",
                         "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
                     "runAfter": {}
@@ -313,26 +475,42 @@
                       "body": {
                         "message": "@{concat(variables('commitMessage'), ' [prod.yaml]')}",
                         "content": "@{base64(body('Download_PROD_YAML'))}",
-                        "branch":  "@{triggerBody()?['githubConfig']?['branchName']}",
-                        "sha":     "@{body('Get_PROD_YAML_SHA')?['sha']}"
+                        "branch": "@{triggerBody()?['githubConfig']?['branchName']}",
+                        "sha": "@{body('Get_PROD_YAML_SHA')?['sha']}"
+                      },
+                      "retryPolicy": {
+                        "type": "none"
                       }
                     },
-                    "runAfter": { "Get_PROD_YAML_SHA": ["Succeeded"] }
+                    "runAfter": {
+                      "Get_PROD_YAML_SHA": [
+                        "Succeeded"
+                      ]
+                    }
                   }
                 },
-                "runAfter": { "Download_PROD_YAML": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Download_PROD_YAML": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
-
             },
-            "runAfter": { "Set_runId": ["Succeeded"] }
+            "runAfter": {
+              "Set_runId": [
+                "Succeeded"
+              ]
+            }
           },
-
           "Response_Success": {
             "type": "Response",
             "kind": "Http",
             "inputs": {
               "statusCode": 200,
-              "headers": { "Content-Type": "application/json" },
+              "headers": {
+                "Content-Type": "application/json"
+              },
               "body": {
                 "step": 7,
                 "stepKey": "yaml-patch",
@@ -340,19 +518,28 @@
                 "run_id": "@{variables('runId')}",
                 "country_key": "@{triggerBody()?['onboardingInput']?['country_key']}",
                 "country_code": "@{triggerBody()?['onboardingInput']?['country_code']}",
-                "filesPatched": ["app.yaml", "dev.yaml", "tst.yaml (if nav_tst provided)", "prod.yaml (if nav_prod provided)"],
+                "filesPatched": [
+                  "app.yaml",
+                  "dev.yaml",
+                  "tst.yaml (if nav_tst provided)",
+                  "prod.yaml (if nav_prod provided)"
+                ],
                 "downloadUrls": {
-                  "appYaml":   "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/app-yaml')}",
-                  "devYaml":   "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/yaml')}",
-                  "tstYaml":   "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/tst-yaml')}",
-                  "prodYaml":  "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/prod-yaml')}"
+                  "appYaml": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/app-yaml')}",
+                  "devYaml": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/yaml')}",
+                  "tstYaml": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/tst-yaml')}",
+                  "prodYaml": "@{concat(variables('webAppBaseUrl'), '/api/download/', variables('runId'), '/prod-yaml')}"
                 },
                 "githubCommitted": "@{not(equals(coalesce(triggerBody()?['githubConfig']?['pat'], ''), ''))}"
               }
             },
-            "runAfter": { "Check_GitHub_Commit_Requested": ["Succeeded", "Failed"] }
+            "runAfter": {
+              "Check_GitHub_Commit_Requested": [
+                "Succeeded",
+                "Failed"
+              ]
+            }
           }
-
         },
         "else": {
           "actions": {
@@ -361,7 +548,9 @@
               "kind": "Http",
               "inputs": {
                 "statusCode": "@{outputs('Invoke_YAML_Patch_WebApp')['statusCode']}",
-                "headers": { "Content-Type": "application/json" },
+                "headers": {
+                  "Content-Type": "application/json"
+                },
                 "body": {
                   "step": 7,
                   "stepKey": "yaml-patch",
@@ -375,9 +564,13 @@
             }
           }
         },
-        "runAfter": { "Invoke_YAML_Patch_WebApp": ["Succeeded", "Failed"] }
+        "runAfter": {
+          "Invoke_YAML_Patch_WebApp": [
+            "Succeeded",
+            "Failed"
+          ]
+        }
       }
-
     },
     "outputs": {}
   },

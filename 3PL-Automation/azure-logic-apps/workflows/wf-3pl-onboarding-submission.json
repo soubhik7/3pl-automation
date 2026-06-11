@@ -11,12 +11,27 @@
           "method": "POST",
           "schema": {
             "type": "object",
-            "required": ["config", "partnerID"],
+            "required": [
+              "config",
+              "partnerID"
+            ],
             "properties": {
-              "config":      { "type": "object",  "description": "Full generated onboarding config JSON" },
-              "partnerID":   { "type": "string",  "description": "e.g. 3PL-002" },
-              "partnerName": { "type": "string",  "description": "e.g. FastFulfill BV" },
-              "submittedBy": { "type": "string",  "description": "User display name or email" }
+              "config": {
+                "type": "object",
+                "description": "Full generated onboarding config JSON"
+              },
+              "partnerID": {
+                "type": "string",
+                "description": "e.g. 3PL-002"
+              },
+              "partnerName": {
+                "type": "string",
+                "description": "e.g. FastFulfill BV"
+              },
+              "submittedBy": {
+                "type": "string",
+                "description": "User display name or email"
+              }
             }
           }
         }
@@ -40,36 +55,44 @@
           ]
         },
         "runAfter": {
-          "Compose_SubmissionId": ["Succeeded"]
+          "Compose_SubmissionId": [
+            "Succeeded"
+          ]
         }
       },
       "Compose_BlobPath": {
         "type": "Compose",
         "inputs": "3pl-onboarding/pending/@{variables('submissionId')}.json",
         "runAfter": {
-          "Initialize_SubmissionId": ["Succeeded"]
+          "Initialize_SubmissionId": [
+            "Succeeded"
+          ]
         }
       },
       "Compose_StatusBlobPath": {
         "type": "Compose",
         "inputs": "3pl-onboarding/status/@{variables('submissionId')}-status.json",
         "runAfter": {
-          "Compose_BlobPath": ["Succeeded"]
+          "Compose_BlobPath": [
+            "Succeeded"
+          ]
         }
       },
       "Compose_ConfigBlob": {
         "type": "Compose",
         "inputs": {
-          "submissionId":   "@{variables('submissionId')}",
-          "partnerID":      "@{triggerBody()?['partnerID']}",
-          "partnerName":    "@{triggerBody()?['partnerName']}",
-          "submittedBy":    "@{coalesce(triggerBody()?['submittedBy'], '3PL Manager')}",
-          "submittedAt":    "@{utcNow()}",
+          "submissionId": "@{variables('submissionId')}",
+          "partnerID": "@{triggerBody()?['partnerID']}",
+          "partnerName": "@{triggerBody()?['partnerName']}",
+          "submittedBy": "@{coalesce(triggerBody()?['submittedBy'], '3PL Manager')}",
+          "submittedAt": "@{utcNow()}",
           "approvalStatus": "pending_approval",
-          "config":         "@triggerBody()?['config']"
+          "config": "@triggerBody()?['config']"
         },
         "runAfter": {
-          "Compose_StatusBlobPath": ["Succeeded"]
+          "Compose_StatusBlobPath": [
+            "Succeeded"
+          ]
         }
       },
       "Write_Config_Blob": {
@@ -81,29 +104,45 @@
             "x-ms-blob-type": "BlockBlob",
             "Content-Type": "application/json"
           },
-          "body": "@outputs('Compose_ConfigBlob')"
+          "body": "@outputs('Compose_ConfigBlob')",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
         "runAfter": {
-          "Compose_ConfigBlob": ["Succeeded"]
+          "Compose_ConfigBlob": [
+            "Succeeded"
+          ]
         }
       },
       "Compose_InitialStatus": {
         "type": "Compose",
         "inputs": {
           "submissionId": "@{variables('submissionId')}",
-          "partnerID":    "@{triggerBody()?['partnerID']}",
-          "partnerName":  "@{triggerBody()?['partnerName']}",
-          "submittedAt":  "@{utcNow()}",
-          "status":       "pending_approval",
-          "blobPath":     "@{outputs('Compose_BlobPath')}",
+          "partnerID": "@{triggerBody()?['partnerID']}",
+          "partnerName": "@{triggerBody()?['partnerName']}",
+          "submittedAt": "@{utcNow()}",
+          "status": "pending_approval",
+          "blobPath": "@{outputs('Compose_BlobPath')}",
           "services": {
-            "solace":    { "status": "pending",  "message": "Awaiting approval" },
-            "mulesoft":  { "status": "pending",  "message": "Awaiting approval" },
-            "btp":       { "status": "pending",  "message": "Awaiting approval" }
+            "solace": {
+              "status": "pending",
+              "message": "Awaiting approval"
+            },
+            "mulesoft": {
+              "status": "pending",
+              "message": "Awaiting approval"
+            },
+            "btp": {
+              "status": "pending",
+              "message": "Awaiting approval"
+            }
           }
         },
         "runAfter": {
-          "Write_Config_Blob": ["Succeeded"]
+          "Write_Config_Blob": [
+            "Succeeded"
+          ]
         }
       },
       "Write_Status_Blob": {
@@ -115,10 +154,15 @@
             "x-ms-blob-type": "BlockBlob",
             "Content-Type": "application/json"
           },
-          "body": "@outputs('Compose_InitialStatus')"
+          "body": "@outputs('Compose_InitialStatus')",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
         "runAfter": {
-          "Compose_InitialStatus": ["Succeeded"]
+          "Compose_InitialStatus": [
+            "Succeeded"
+          ]
         }
       },
       "Response_Success": {
@@ -126,18 +170,22 @@
         "kind": "Http",
         "inputs": {
           "statusCode": 200,
-          "headers": { "Content-Type": "application/json" },
+          "headers": {
+            "Content-Type": "application/json"
+          },
           "body": {
-            "status":       "pending_approval",
+            "status": "pending_approval",
             "submissionId": "@{variables('submissionId')}",
-            "blobPath":     "@{outputs('Compose_BlobPath')}",
-            "statusPath":   "@{outputs('Compose_StatusBlobPath')}",
-            "submittedAt":  "@{utcNow()}",
-            "message":      "Submission saved. Awaiting architect approval."
+            "blobPath": "@{outputs('Compose_BlobPath')}",
+            "statusPath": "@{outputs('Compose_StatusBlobPath')}",
+            "submittedAt": "@{utcNow()}",
+            "message": "Submission saved. Awaiting architect approval."
           }
         },
         "runAfter": {
-          "Write_Status_Blob": ["Succeeded"]
+          "Write_Status_Blob": [
+            "Succeeded"
+          ]
         }
       },
       "Response_Error": {
@@ -145,14 +193,20 @@
         "kind": "Http",
         "inputs": {
           "statusCode": 500,
-          "headers": { "Content-Type": "application/json" },
+          "headers": {
+            "Content-Type": "application/json"
+          },
           "body": {
-            "status":  "error",
-            "message": "Failed to save submission to blob storage — check Logic App run history"
+            "status": "error",
+            "message": "Failed to save submission to blob storage \u2014 check Logic App run history"
           }
         },
         "runAfter": {
-          "Write_Status_Blob": ["Failed", "TimedOut", "Skipped"]
+          "Write_Status_Blob": [
+            "Failed",
+            "TimedOut",
+            "Skipped"
+          ]
         }
       }
     },

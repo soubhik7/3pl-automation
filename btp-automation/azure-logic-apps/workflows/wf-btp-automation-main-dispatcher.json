@@ -3,12 +3,30 @@
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-      "subaccountManagementUrl":    { "type": "String", "defaultValue": "" },
-      "entitlementsManagementUrl":  { "type": "String", "defaultValue": "" },
-      "provisioningManagementUrl":  { "type": "String", "defaultValue": "" },
-      "authorizationManagementUrl": { "type": "String", "defaultValue": "" },
-      "destinationsManagementUrl":  { "type": "String", "defaultValue": "" },
-      "btp-mainOrchestratorUrl":        { "type": "String", "defaultValue": "" }
+      "subaccountManagementUrl": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "entitlementsManagementUrl": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "provisioningManagementUrl": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "authorizationManagementUrl": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "destinationsManagementUrl": {
+        "type": "String",
+        "defaultValue": ""
+      },
+      "btp-mainOrchestratorUrl": {
+        "type": "String",
+        "defaultValue": ""
+      }
     },
     "triggers": {
       "manual": {
@@ -17,7 +35,10 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["resource", "action"],
+            "required": [
+              "resource",
+              "action"
+            ],
             "properties": {
               "resource": {
                 "type": "string",
@@ -35,56 +56,100 @@
                 "type": "object",
                 "description": "Required for accounts, entitlements, provisioning",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  }
                 }
               },
               "xsuaaCredentials": {
                 "type": "object",
                 "description": "Required for authorization",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" },
-                  "baseUrl":      { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "baseUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "destinationCredentials": {
                 "type": "object",
                 "description": "Required for destinations",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" },
-                  "baseUrl":      { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "baseUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "btpConfig": {
                 "type": "object",
                 "description": "BTP account context",
                 "properties": {
-                  "globalAccountGuid":       { "type": "string" },
-                  "globalAccountSubdomain":  { "type": "string" },
-                  "subaccountGuid":          { "type": "string" },
-                  "subaccountSubdomain":     { "type": "string" },
-                  "region":                  { "type": "string" },
-                  "accountsServiceUrl":      { "type": "string" },
-                  "entitlementsServiceUrl":  { "type": "string" },
-                  "provisioningServiceUrl":  { "type": "string" }
+                  "globalAccountGuid": {
+                    "type": "string"
+                  },
+                  "globalAccountSubdomain": {
+                    "type": "string"
+                  },
+                  "subaccountGuid": {
+                    "type": "string"
+                  },
+                  "subaccountSubdomain": {
+                    "type": "string"
+                  },
+                  "region": {
+                    "type": "string"
+                  },
+                  "accountsServiceUrl": {
+                    "type": "string"
+                  },
+                  "entitlementsServiceUrl": {
+                    "type": "string"
+                  },
+                  "provisioningServiceUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "payload": {
                 "type": "object",
-                "description": "Operation-specific data — see each workflow for exact fields"
+                "description": "Operation-specific data \u2014 see each workflow for exact fields"
               },
               "config": {
                 "type": "object",
                 "description": "Full BTP provisioning config for fullProvision resource"
               },
-              "skipEntitlements": { "type": "boolean" },
-              "skipProvisioning":  { "type": "boolean" },
-              "skipAuthorization": { "type": "boolean" }
+              "skipEntitlements": {
+                "type": "boolean"
+              },
+              "skipProvisioning": {
+                "type": "boolean"
+              },
+              "skipAuthorization": {
+                "type": "boolean"
+              }
             }
           }
         }
@@ -96,7 +161,6 @@
         "expression": "@triggerBody()?['resource']",
         "runAfter": {},
         "cases": {
-
           "Case_Accounts": {
             "case": "accounts",
             "actions": {
@@ -105,22 +169,32 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('subaccountManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
-                  "body": "@triggerBody()"
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Accounts": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('Invoke_Subaccount_Management')['statusCode']",
                   "body": "@body('Invoke_Subaccount_Management')"
                 },
-                "runAfter": { "Invoke_Subaccount_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Subaccount_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Entitlements": {
             "case": "entitlements",
             "actions": {
@@ -129,22 +203,32 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('entitlementsManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
-                  "body": "@triggerBody()"
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Entitlements": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('Invoke_Entitlements_Management')['statusCode']",
                   "body": "@body('Invoke_Entitlements_Management')"
                 },
-                "runAfter": { "Invoke_Entitlements_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Entitlements_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Provisioning": {
             "case": "provisioning",
             "actions": {
@@ -153,22 +237,32 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('provisioningManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
-                  "body": "@triggerBody()"
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Provisioning": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('Invoke_Provisioning_Management')['statusCode']",
                   "body": "@body('Invoke_Provisioning_Management')"
                 },
-                "runAfter": { "Invoke_Provisioning_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Provisioning_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Authorization": {
             "case": "authorization",
             "actions": {
@@ -177,22 +271,32 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('authorizationManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
-                  "body": "@triggerBody()"
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Authorization": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('Invoke_Authorization_Management')['statusCode']",
                   "body": "@body('Invoke_Authorization_Management')"
                 },
-                "runAfter": { "Invoke_Authorization_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Authorization_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Destinations": {
             "case": "destinations",
             "actions": {
@@ -201,22 +305,32 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('destinationsManagementUrl')",
-                  "headers": { "Content-Type": "application/json" },
-                  "body": "@triggerBody()"
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
+                  "body": "@triggerBody()",
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 },
                 "runAfter": {}
               },
               "Response_Destinations": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('Invoke_Destinations_Management')['statusCode']",
                   "body": "@body('Invoke_Destinations_Management')"
                 },
-                "runAfter": { "Invoke_Destinations_Management": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Destinations_Management": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_FullProvision": {
             "case": "fullProvision",
             "actions": {
@@ -225,35 +339,46 @@
                 "inputs": {
                   "method": "POST",
                   "uri": "@parameters('btp-mainOrchestratorUrl')",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
-                    "cisCredentials":      "@triggerBody()?['cisCredentials']",
-                    "xsuaaCredentials":    "@triggerBody()?['xsuaaCredentials']",
-                    "btpConfig":           "@triggerBody()?['btpConfig']",
-                    "config":              "@triggerBody()?['config']",
-                    "skipEntitlements":    "@coalesce(triggerBody()?['skipEntitlements'], false)",
-                    "skipProvisioning":    "@coalesce(triggerBody()?['skipProvisioning'], false)",
-                    "skipAuthorization":   "@coalesce(triggerBody()?['skipAuthorization'], false)"
+                    "cisCredentials": "@triggerBody()?['cisCredentials']",
+                    "xsuaaCredentials": "@triggerBody()?['xsuaaCredentials']",
+                    "btpConfig": "@triggerBody()?['btpConfig']",
+                    "config": "@triggerBody()?['config']",
+                    "skipEntitlements": "@coalesce(triggerBody()?['skipEntitlements'], false)",
+                    "skipProvisioning": "@coalesce(triggerBody()?['skipProvisioning'], false)",
+                    "skipAuthorization": "@coalesce(triggerBody()?['skipAuthorization'], false)"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
               },
               "Response_FullProvision": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('Invoke_Full_Orchestration')['statusCode']",
                   "body": "@body('Invoke_Full_Orchestration')"
                 },
-                "runAfter": { "Invoke_Full_Orchestration": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Invoke_Full_Orchestration": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           }
-
         },
         "default": {
           "actions": {
             "Response_Invalid_Resource": {
-              "type": "Response", "kind": "Http",
+              "type": "Response",
+              "kind": "Http",
               "inputs": {
                 "statusCode": 400,
                 "body": {

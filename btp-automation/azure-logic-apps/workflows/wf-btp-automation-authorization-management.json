@@ -10,23 +10,38 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["xsuaaCredentials", "action"],
+            "required": [
+              "xsuaaCredentials",
+              "action"
+            ],
             "properties": {
               "xsuaaCredentials": {
                 "type": "object",
                 "description": "XSUAA OAuth2 credentials. baseUrl = https://{subdomain}.authentication.{region}.hana.ondemand.com",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" },
-                  "baseUrl":      { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  },
+                  "baseUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "btpConfig": {
                 "type": "object",
                 "properties": {
-                  "subaccountGuid":      { "type": "string" },
-                  "subaccountSubdomain": { "type": "string" }
+                  "subaccountGuid": {
+                    "type": "string"
+                  },
+                  "subaccountSubdomain": {
+                    "type": "string"
+                  }
                 }
               },
               "action": {
@@ -47,42 +62,52 @@
       }
     },
     "actions": {
-
       "Get_XSUAA_Token": {
         "type": "Http",
         "inputs": {
           "method": "POST",
           "uri": "@{triggerBody()?['xsuaaCredentials']?['tokenUrl']}",
-          "headers": { "Content-Type": "application/x-www-form-urlencoded" },
+          "headers": {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
           "authentication": {
             "type": "Basic",
             "username": "@{triggerBody()?['xsuaaCredentials']?['clientId']}",
             "password": "@{triggerBody()?['xsuaaCredentials']?['clientSecret']}"
           },
-          "body": "grant_type=client_credentials"
+          "body": "grant_type=client_credentials",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
         "runAfter": {}
       },
-
       "Set_XsuaaBaseUrl": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "xsuaaBaseUrl",
-            "type": "string",
-            "value": "@{triggerBody()?['xsuaaCredentials']?['baseUrl']}"
-          }]
+          "variables": [
+            {
+              "name": "xsuaaBaseUrl",
+              "type": "string",
+              "value": "@{triggerBody()?['xsuaaCredentials']?['baseUrl']}"
+            }
+          ]
         },
-        "runAfter": { "Get_XSUAA_Token": ["Succeeded"] }
+        "runAfter": {
+          "Get_XSUAA_Token": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Switch_By_SubResource": {
         "type": "Switch",
         "expression": "@coalesce(triggerBody()?['subResource'], 'roleCollection')",
-        "runAfter": { "Set_XsuaaBaseUrl": ["Succeeded"] },
-
+        "runAfter": {
+          "Set_XsuaaBaseUrl": [
+            "Succeeded"
+          ]
+        },
         "cases": {
-
           "roleCollection": {
             "case": "roleCollection",
             "actions": {
@@ -91,50 +116,78 @@
                 "expression": "@triggerBody()?['action']",
                 "runAfter": {},
                 "cases": {
-
                   "list": {
                     "case": "list",
                     "actions": {
                       "HTTP_RC_List": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "GET",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_List": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_List')['statusCode']", "body": "@body('HTTP_RC_List')" },
-                        "runAfter": { "HTTP_RC_List": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_List')['statusCode']",
+                          "body": "@body('HTTP_RC_List')"
+                        },
+                        "runAfter": {
+                          "HTTP_RC_List": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "get": {
                     "case": "get",
                     "actions": {
                       "HTTP_RC_Get": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "GET",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['name'])}",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_Get": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_Get')['statusCode']", "body": "@body('HTTP_RC_Get')" },
-                        "runAfter": { "HTTP_RC_Get": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_Get')['statusCode']",
+                          "body": "@body('HTTP_RC_Get')"
+                        },
+                        "runAfter": {
+                          "HTTP_RC_Get": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "create": {
                     "case": "create",
                     "actions": {
                       "HTTP_RC_Create": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "POST",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections",
@@ -143,24 +196,36 @@
                             "Content-Type": "application/json"
                           },
                           "body": {
-                            "name":        "@{triggerBody()?['payload']?['name']}",
+                            "name": "@{triggerBody()?['payload']?['name']}",
                             "description": "@{coalesce(triggerBody()?['payload']?['description'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
                       "Resp_RC_Create": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_Create')['statusCode']", "body": "@body('HTTP_RC_Create')" },
-                        "runAfter": { "HTTP_RC_Create": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_Create')['statusCode']",
+                          "body": "@body('HTTP_RC_Create')"
+                        },
+                        "runAfter": {
+                          "HTTP_RC_Create": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "update": {
                     "case": "update",
                     "actions": {
                       "HTTP_RC_Update": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "PUT",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['name'])}",
@@ -169,43 +234,72 @@
                             "Content-Type": "application/json"
                           },
                           "body": {
-                            "name":        "@{triggerBody()?['payload']?['name']}",
+                            "name": "@{triggerBody()?['payload']?['name']}",
                             "description": "@{triggerBody()?['payload']?['description']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
                       "Resp_RC_Update": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_Update')['statusCode']", "body": "@body('HTTP_RC_Update')" },
-                        "runAfter": { "HTTP_RC_Update": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_Update')['statusCode']",
+                          "body": "@body('HTTP_RC_Update')"
+                        },
+                        "runAfter": {
+                          "HTTP_RC_Update": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "delete": {
                     "case": "delete",
                     "actions": {
                       "HTTP_RC_Delete": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "DELETE",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['name'])}",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_Delete": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_Delete')['statusCode']", "body": { "status": "deleted", "name": "@triggerBody()?['payload']?['name']" } },
-                        "runAfter": { "HTTP_RC_Delete": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_Delete')['statusCode']",
+                          "body": {
+                            "status": "deleted",
+                            "name": "@triggerBody()?['payload']?['name']"
+                          }
+                        },
+                        "runAfter": {
+                          "HTTP_RC_Delete": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "addRole": {
                     "case": "addRole",
                     "actions": {
                       "HTTP_RC_AddRole": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "PUT",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['collectionName'])}/roles",
@@ -213,72 +307,121 @@
                             "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}",
                             "Content-Type": "application/json"
                           },
-                          "body": [{
-                            "name":             "@{triggerBody()?['payload']?['roleName']}",
-                            "roleTemplateName": "@{triggerBody()?['payload']?['roleTemplateName']}",
-                            "appId":            "@{triggerBody()?['payload']?['appId']}"
-                          }]
+                          "body": [
+                            {
+                              "name": "@{triggerBody()?['payload']?['roleName']}",
+                              "roleTemplateName": "@{triggerBody()?['payload']?['roleTemplateName']}",
+                              "appId": "@{triggerBody()?['payload']?['appId']}"
+                            }
+                          ],
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_AddRole": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_AddRole')['statusCode']", "body": "@body('HTTP_RC_AddRole')" },
-                        "runAfter": { "HTTP_RC_AddRole": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_AddRole')['statusCode']",
+                          "body": "@body('HTTP_RC_AddRole')"
+                        },
+                        "runAfter": {
+                          "HTTP_RC_AddRole": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "removeRole": {
                     "case": "removeRole",
                     "actions": {
                       "HTTP_RC_RemoveRole": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "DELETE",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['collectionName'])}/roles/@{encodeURIComponent(triggerBody()?['payload']?['appId'])}/@{encodeURIComponent(triggerBody()?['payload']?['roleTemplateName'])}/@{encodeURIComponent(triggerBody()?['payload']?['roleName'])}",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_RemoveRole": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_RemoveRole')['statusCode']", "body": { "status": "removed" } },
-                        "runAfter": { "HTTP_RC_RemoveRole": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_RemoveRole')['statusCode']",
+                          "body": {
+                            "status": "removed"
+                          }
+                        },
+                        "runAfter": {
+                          "HTTP_RC_RemoveRole": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "listUsers": {
                     "case": "listUsers",
                     "actions": {
                       "HTTP_RC_ListUsers": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "GET",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['collectionName'])}/users",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_RC_ListUsers": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_RC_ListUsers')['statusCode']", "body": "@body('HTTP_RC_ListUsers')" },
-                        "runAfter": { "HTTP_RC_ListUsers": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_RC_ListUsers')['statusCode']",
+                          "body": "@body('HTTP_RC_ListUsers')"
+                        },
+                        "runAfter": {
+                          "HTTP_RC_ListUsers": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   }
-
                 },
                 "default": {
                   "actions": {
                     "Resp_RC_Invalid": {
-                      "type": "Response", "kind": "Http", "runAfter": {},
-                      "inputs": { "statusCode": 400, "body": { "error": "Invalid action for roleCollection. Use: list | get | create | update | delete | addRole | removeRole | listUsers" } }
+                      "type": "Response",
+                      "kind": "Http",
+                      "runAfter": {},
+                      "inputs": {
+                        "statusCode": 400,
+                        "body": {
+                          "error": "Invalid action for roleCollection. Use: list | get | create | update | delete | addRole | removeRole | listUsers"
+                        }
+                      }
                     }
                   }
                 }
               }
             }
           },
-
           "role": {
             "case": "role",
             "actions": {
@@ -287,31 +430,45 @@
                 "expression": "@triggerBody()?['action']",
                 "runAfter": {},
                 "cases": {
-
                   "list": {
                     "case": "list",
                     "actions": {
                       "HTTP_Role_List": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "GET",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/applications/@{encodeURIComponent(triggerBody()?['payload']?['appId'])}/roles",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_Role_List": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_Role_List')['statusCode']", "body": "@body('HTTP_Role_List')" },
-                        "runAfter": { "HTTP_Role_List": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Role_List')['statusCode']",
+                          "body": "@body('HTTP_Role_List')"
+                        },
+                        "runAfter": {
+                          "HTTP_Role_List": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "create": {
                     "case": "create",
                     "actions": {
                       "HTTP_Role_Create": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "POST",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/applications/@{encodeURIComponent(triggerBody()?['payload']?['appId'])}/roles",
@@ -320,52 +477,85 @@
                             "Content-Type": "application/json"
                           },
                           "body": {
-                            "name":             "@{triggerBody()?['payload']?['roleName']}",
+                            "name": "@{triggerBody()?['payload']?['roleName']}",
                             "roleTemplateName": "@{triggerBody()?['payload']?['roleTemplateName']}",
-                            "description":      "@{coalesce(triggerBody()?['payload']?['description'], '')}"
+                            "description": "@{coalesce(triggerBody()?['payload']?['description'], '')}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
                       "Resp_Role_Create": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_Role_Create')['statusCode']", "body": "@body('HTTP_Role_Create')" },
-                        "runAfter": { "HTTP_Role_Create": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Role_Create')['statusCode']",
+                          "body": "@body('HTTP_Role_Create')"
+                        },
+                        "runAfter": {
+                          "HTTP_Role_Create": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "delete": {
                     "case": "delete",
                     "actions": {
                       "HTTP_Role_Delete": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "DELETE",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/applications/@{encodeURIComponent(triggerBody()?['payload']?['appId'])}/roles/@{encodeURIComponent(triggerBody()?['payload']?['roleTemplateName'])}/@{encodeURIComponent(triggerBody()?['payload']?['roleName'])}",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_Role_Delete": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_Role_Delete')['statusCode']", "body": { "status": "deleted" } },
-                        "runAfter": { "HTTP_Role_Delete": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_Role_Delete')['statusCode']",
+                          "body": {
+                            "status": "deleted"
+                          }
+                        },
+                        "runAfter": {
+                          "HTTP_Role_Delete": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   }
-
                 },
                 "default": {
                   "actions": {
                     "Resp_Role_Invalid": {
-                      "type": "Response", "kind": "Http", "runAfter": {},
-                      "inputs": { "statusCode": 400, "body": { "error": "Invalid action for role. Use: list | create | delete" } }
+                      "type": "Response",
+                      "kind": "Http",
+                      "runAfter": {},
+                      "inputs": {
+                        "statusCode": 400,
+                        "body": {
+                          "error": "Invalid action for role. Use: list | create | delete"
+                        }
+                      }
                     }
                   }
                 }
               }
             }
           },
-
           "user": {
             "case": "user",
             "actions": {
@@ -374,12 +564,12 @@
                 "expression": "@triggerBody()?['action']",
                 "runAfter": {},
                 "cases": {
-
                   "assignUser": {
                     "case": "assignUser",
                     "actions": {
                       "HTTP_User_Assign": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "POST",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['collectionName'])}/users",
@@ -388,75 +578,125 @@
                             "Content-Type": "application/json"
                           },
                           "body": {
-                            "origin":   "@{coalesce(triggerBody()?['payload']?['origin'], 'sap.default')}",
+                            "origin": "@{coalesce(triggerBody()?['payload']?['origin'], 'sap.default')}",
                             "userName": "@{triggerBody()?['payload']?['userName']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
                           }
                         }
                       },
                       "Resp_User_Assign": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_User_Assign')['statusCode']", "body": "@body('HTTP_User_Assign')" },
-                        "runAfter": { "HTTP_User_Assign": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_User_Assign')['statusCode']",
+                          "body": "@body('HTTP_User_Assign')"
+                        },
+                        "runAfter": {
+                          "HTTP_User_Assign": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "removeUser": {
                     "case": "removeUser",
                     "actions": {
                       "HTTP_User_Remove": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "DELETE",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['collectionName'])}/users/@{encodeURIComponent(triggerBody()?['payload']?['userName'])}?origin=@{coalesce(triggerBody()?['payload']?['origin'], 'sap.default')}",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_User_Remove": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_User_Remove')['statusCode']", "body": { "status": "removed", "userName": "@triggerBody()?['payload']?['userName']" } },
-                        "runAfter": { "HTTP_User_Remove": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_User_Remove')['statusCode']",
+                          "body": {
+                            "status": "removed",
+                            "userName": "@triggerBody()?['payload']?['userName']"
+                          }
+                        },
+                        "runAfter": {
+                          "HTTP_User_Remove": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   },
-
                   "list": {
                     "case": "list",
                     "actions": {
                       "HTTP_User_List": {
-                        "type": "Http", "runAfter": {},
+                        "type": "Http",
+                        "runAfter": {},
                         "inputs": {
                           "method": "GET",
                           "uri": "@{variables('xsuaaBaseUrl')}/sap/rest/authorization/v2/rolecollections/@{encodeURIComponent(triggerBody()?['payload']?['collectionName'])}/users",
-                          "headers": { "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}" }
+                          "headers": {
+                            "Authorization": "Bearer @{body('Get_XSUAA_Token')?['access_token']}"
+                          },
+                          "retryPolicy": {
+                            "type": "none"
+                          }
                         }
                       },
                       "Resp_User_List": {
-                        "type": "Response", "kind": "Http",
-                        "inputs": { "statusCode": "@outputs('HTTP_User_List')['statusCode']", "body": "@body('HTTP_User_List')" },
-                        "runAfter": { "HTTP_User_List": ["Succeeded", "Failed"] }
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": "@outputs('HTTP_User_List')['statusCode']",
+                          "body": "@body('HTTP_User_List')"
+                        },
+                        "runAfter": {
+                          "HTTP_User_List": [
+                            "Succeeded",
+                            "Failed"
+                          ]
+                        }
                       }
                     }
                   }
-
                 },
                 "default": {
                   "actions": {
                     "Resp_User_Invalid": {
-                      "type": "Response", "kind": "Http", "runAfter": {},
-                      "inputs": { "statusCode": 400, "body": { "error": "Invalid action for user. Use: list | assignUser | removeUser" } }
+                      "type": "Response",
+                      "kind": "Http",
+                      "runAfter": {},
+                      "inputs": {
+                        "statusCode": 400,
+                        "body": {
+                          "error": "Invalid action for user. Use: list | assignUser | removeUser"
+                        }
+                      }
                     }
                   }
                 }
               }
             }
           }
-
         },
         "default": {
           "actions": {
             "Resp_Invalid_SubResource": {
-              "type": "Response", "kind": "Http", "runAfter": {},
+              "type": "Response",
+              "kind": "Http",
+              "runAfter": {},
               "inputs": {
                 "statusCode": 400,
                 "body": {
@@ -468,7 +708,6 @@
           }
         }
       }
-
     },
     "outputs": {}
   },

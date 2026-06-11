@@ -16,26 +16,57 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["onboardingInput"],
+            "required": [
+              "onboardingInput"
+            ],
             "properties": {
               "onboardingInput": {
                 "type": "object",
-                "description": "Full 3PL OnboardingInput — same schema as POST /api/tools/translation body",
-                "required": ["country_key", "country_code", "nav", "translation"],
+                "description": "Full 3PL OnboardingInput \u2014 same schema as POST /api/tools/translation body",
+                "required": [
+                  "country_key",
+                  "country_code",
+                  "nav",
+                  "translation"
+                ],
                 "properties": {
-                  "partner_comment": { "type": "string" },
-                  "country_key":     { "type": "string" },
-                  "country_code":    { "type": "string" },
-                  "created_by":      { "type": "string" },
-                  "nav":             { "type": "object" },
+                  "partner_comment": {
+                    "type": "string"
+                  },
+                  "country_key": {
+                    "type": "string"
+                  },
+                  "country_code": {
+                    "type": "string"
+                  },
+                  "created_by": {
+                    "type": "string"
+                  },
+                  "nav": {
+                    "type": "object"
+                  },
                   "translation": {
                     "type": "object",
-                    "required": ["receiver_name", "message_types"],
+                    "required": [
+                      "receiver_name",
+                      "message_types"
+                    ],
                     "properties": {
-                      "receiver_name":                  { "type": "string" },
-                      "message_types":                  { "type": "array", "items": { "type": "string" } },
-                      "source_destination_combinations": { "type": "array" },
-                      "uom_mappings":                   { "type": "array" }
+                      "receiver_name": {
+                        "type": "string"
+                      },
+                      "message_types": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "source_destination_combinations": {
+                        "type": "array"
+                      },
+                      "uom_mappings": {
+                        "type": "array"
+                      }
                     }
                   }
                 }
@@ -50,34 +81,49 @@
       }
     },
     "actions": {
-
       "Initialize_webAppBaseUrl": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "webAppBaseUrl",
-            "type": "string",
-            "value": "@{coalesce(triggerBody()?['muleWebAppUrl'], parameters('muleWebAppUrl'))}"
-          }]
+          "variables": [
+            {
+              "name": "webAppBaseUrl",
+              "type": "string",
+              "value": "@{coalesce(triggerBody()?['muleWebAppUrl'], parameters('muleWebAppUrl'))}"
+            }
+          ]
         },
         "runAfter": {}
       },
-
       "Invoke_Translation_WebApp": {
         "type": "Http",
         "inputs": {
           "method": "POST",
           "uri": "@{concat(variables('webAppBaseUrl'), '/api/tools/translation')}",
-          "headers": { "Content-Type": "application/json" },
-          "body": "@triggerBody()?['onboardingInput']"
+          "headers": {
+            "Content-Type": "application/json"
+          },
+          "body": "@triggerBody()?['onboardingInput']",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
-        "runAfter": { "Initialize_webAppBaseUrl": ["Succeeded"] }
+        "runAfter": {
+          "Initialize_webAppBaseUrl": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Check_Translation_Success": {
         "type": "If",
         "expression": {
-          "and": [{ "equals": ["@outputs('Invoke_Translation_WebApp')['statusCode']", 200] }]
+          "and": [
+            {
+              "equals": [
+                "@outputs('Invoke_Translation_WebApp')['statusCode']",
+                200
+              ]
+            }
+          ]
         },
         "actions": {
           "Response_Success": {
@@ -85,7 +131,9 @@
             "kind": "Http",
             "inputs": {
               "statusCode": 200,
-              "headers": { "Content-Type": "application/json" },
+              "headers": {
+                "Content-Type": "application/json"
+              },
               "body": {
                 "step": 8,
                 "stepKey": "translation",
@@ -96,7 +144,7 @@
                 "rowCount": "@{body('Invoke_Translation_WebApp')?['data']?['row_count']}",
                 "downloadUrls": {
                   "xlsx": "@{concat(variables('webAppBaseUrl'), '/api/download/', body('Invoke_Translation_WebApp')?['run_id'], '/xlsx')}",
-                  "csv":  "@{concat(variables('webAppBaseUrl'), '/api/download/', body('Invoke_Translation_WebApp')?['run_id'], '/csv')}"
+                  "csv": "@{concat(variables('webAppBaseUrl'), '/api/download/', body('Invoke_Translation_WebApp')?['run_id'], '/csv')}"
                 },
                 "sharepointTarget": "sites/pubsubpatterntesting/Lists/TranslationData_TST"
               }
@@ -111,7 +159,9 @@
               "kind": "Http",
               "inputs": {
                 "statusCode": "@{outputs('Invoke_Translation_WebApp')['statusCode']}",
-                "headers": { "Content-Type": "application/json" },
+                "headers": {
+                  "Content-Type": "application/json"
+                },
                 "body": {
                   "step": 8,
                   "stepKey": "translation",
@@ -125,9 +175,13 @@
             }
           }
         },
-        "runAfter": { "Invoke_Translation_WebApp": ["Succeeded", "Failed"] }
+        "runAfter": {
+          "Invoke_Translation_WebApp": [
+            "Succeeded",
+            "Failed"
+          ]
+        }
       }
-
     },
     "outputs": {}
   },

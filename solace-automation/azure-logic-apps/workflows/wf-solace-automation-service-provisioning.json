@@ -107,6 +107,9 @@
             "datacenterId": "@{triggerBody()?['datacenterId']}",
             "adminState": "start",
             "partitionId": "default"
+          },
+          "retryPolicy": {
+            "type": "none"
           }
         },
         "runAfter": {
@@ -190,6 +193,9 @@
               "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
               "headers": {
                 "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             },
             "runAfter": {
@@ -261,6 +267,9 @@
               "uri": "https://api.solace.cloud/api/v0/services/@{variables('serviceId')}",
               "headers": {
                 "Authorization": "Bearer @{appsetting('SOLACE_API_TOKEN')}"
+              },
+              "retryPolicy": {
+                "type": "none"
               }
             }
           },

@@ -15,21 +15,39 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["githubCredentials", "repoConfig", "action"],
+            "required": [
+              "githubCredentials",
+              "repoConfig",
+              "action"
+            ],
             "properties": {
               "githubCredentials": {
                 "type": "object",
-                "required": ["pat"],
+                "required": [
+                  "pat"
+                ],
                 "properties": {
-                  "pat": { "type": "string", "description": "GitHub Personal Access Token with repo scope" }
+                  "pat": {
+                    "type": "string",
+                    "description": "GitHub Personal Access Token with repo scope"
+                  }
                 }
               },
               "repoConfig": {
                 "type": "object",
-                "required": ["owner", "repo"],
+                "required": [
+                  "owner",
+                  "repo"
+                ],
                 "properties": {
-                  "owner": { "type": "string", "description": "GitHub organisation or user name" },
-                  "repo":  { "type": "string", "description": "Repository name" }
+                  "owner": {
+                    "type": "string",
+                    "description": "GitHub organisation or user name"
+                  },
+                  "repo": {
+                    "type": "string",
+                    "description": "Repository name"
+                  }
                 }
               },
               "action": {
@@ -39,8 +57,14 @@
               "payload": {
                 "type": "object",
                 "properties": {
-                  "branchName": { "type": "string", "description": "Branch name to create / get / delete" },
-                  "baseBranch": { "type": "string", "description": "Source branch for create — defaults to main" }
+                  "branchName": {
+                    "type": "string",
+                    "description": "Branch name to create / get / delete"
+                  },
+                  "baseBranch": {
+                    "type": "string",
+                    "description": "Source branch for create \u2014 defaults to main"
+                  }
                 }
               }
             }
@@ -49,14 +73,11 @@
       }
     },
     "actions": {
-
       "Switch_By_Action": {
         "type": "Switch",
         "expression": "@triggerBody()?['action']",
         "runAfter": {},
-
         "cases": {
-
           "Case_Create": {
             "case": "create",
             "actions": {
@@ -70,6 +91,9 @@
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
                     "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -89,36 +113,52 @@
                   "body": {
                     "ref": "@{concat('refs/heads/', triggerBody()?['payload']?['branchName'])}",
                     "sha": "@{body('Get_Base_Branch_Ref')?['object']?['sha']}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
-                "runAfter": { "Get_Base_Branch_Ref": ["Succeeded"] }
+                "runAfter": {
+                  "Get_Base_Branch_Ref": [
+                    "Succeeded"
+                  ]
+                }
               },
               "Response_Create": {
                 "type": "Response",
                 "kind": "Http",
                 "inputs": {
                   "statusCode": "@{outputs('Create_Branch_Ref')['statusCode']}",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "step": 6,
                     "stepKey": "mule-branch",
                     "status": "ok",
                     "action": "create",
                     "branchName": "@{triggerBody()?['payload']?['branchName']}",
-                    "baseBranch":  "@{coalesce(triggerBody()?['payload']?['baseBranch'], 'main')}",
-                    "sha":        "@{body('Get_Base_Branch_Ref')?['object']?['sha']}",
-                    "ref":        "@{body('Create_Branch_Ref')?['ref']}",
-                    "repo":       "@{concat(triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'])}"
+                    "baseBranch": "@{coalesce(triggerBody()?['payload']?['baseBranch'], 'main')}",
+                    "sha": "@{body('Get_Base_Branch_Ref')?['object']?['sha']}",
+                    "ref": "@{body('Create_Branch_Ref')?['ref']}",
+                    "repo": "@{concat(triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'])}"
                   }
                 },
-                "runAfter": { "Create_Branch_Ref": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Create_Branch_Ref": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               },
               "Response_Base_Branch_Error": {
                 "type": "Response",
                 "kind": "Http",
                 "inputs": {
                   "statusCode": "@{outputs('Get_Base_Branch_Ref')['statusCode']}",
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "step": 6,
                     "stepKey": "mule-branch",
@@ -127,14 +167,18 @@
                     "detail": "Base branch not found or GitHub API error",
                     "baseBranch": "@{coalesce(triggerBody()?['payload']?['baseBranch'], 'main')}",
                     "githubStatus": "@{outputs('Get_Base_Branch_Ref')['statusCode']}",
-                    "githubError":  "@{body('Get_Base_Branch_Ref')}"
+                    "githubError": "@{body('Get_Base_Branch_Ref')}"
                   }
                 },
-                "runAfter": { "Get_Base_Branch_Ref": ["Failed", "TimedOut"] }
+                "runAfter": {
+                  "Get_Base_Branch_Ref": [
+                    "Failed",
+                    "TimedOut"
+                  ]
+                }
               }
             }
           },
-
           "Case_Get": {
             "case": "get",
             "actions": {
@@ -148,6 +192,9 @@
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
                     "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -159,11 +206,15 @@
                   "statusCode": "@{outputs('Get_Branch_Ref')['statusCode']}",
                   "body": "@body('Get_Branch_Ref')"
                 },
-                "runAfter": { "Get_Branch_Ref": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Get_Branch_Ref": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_List": {
             "case": "list",
             "actions": {
@@ -177,6 +228,9 @@
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
                     "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -188,11 +242,15 @@
                   "statusCode": "@{outputs('List_Branches')['statusCode']}",
                   "body": "@body('List_Branches')"
                 },
-                "runAfter": { "List_Branches": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "List_Branches": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Delete": {
             "case": "delete",
             "actions": {
@@ -206,6 +264,9 @@
                     "Accept": "application/vnd.github+json",
                     "X-GitHub-Api-Version": "2022-11-28",
                     "User-Agent": "mars-3pl-mulesoft-automation/1.0"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 },
                 "runAfter": {}
@@ -215,20 +276,25 @@
                 "kind": "Http",
                 "inputs": {
                   "statusCode": 200,
-                  "headers": { "Content-Type": "application/json" },
+                  "headers": {
+                    "Content-Type": "application/json"
+                  },
                   "body": {
                     "status": "deleted",
                     "branchName": "@{triggerBody()?['payload']?['branchName']}",
                     "repo": "@{concat(triggerBody()?['repoConfig']?['owner'], '/', triggerBody()?['repoConfig']?['repo'])}"
                   }
                 },
-                "runAfter": { "Delete_Branch_Ref": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "Delete_Branch_Ref": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           }
-
         },
-
         "default": {
           "actions": {
             "Response_Invalid_Action": {
@@ -237,7 +303,9 @@
               "runAfter": {},
               "inputs": {
                 "statusCode": 400,
-                "headers": { "Content-Type": "application/json" },
+                "headers": {
+                  "Content-Type": "application/json"
+                },
                 "body": {
                   "error": "Invalid action. Valid values: create | get | list | delete",
                   "received": "@{triggerBody()?['action']}"
@@ -247,7 +315,6 @@
           }
         }
       }
-
     },
     "outputs": {}
   },

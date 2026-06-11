@@ -15,21 +15,34 @@
         "inputs": {
           "schema": {
             "type": "object",
-            "required": ["cisCredentials", "action"],
+            "required": [
+              "cisCredentials",
+              "action"
+            ],
             "properties": {
               "cisCredentials": {
                 "type": "object",
                 "properties": {
-                  "tokenUrl":     { "type": "string" },
-                  "clientId":     { "type": "string" },
-                  "clientSecret": { "type": "string" }
+                  "tokenUrl": {
+                    "type": "string"
+                  },
+                  "clientId": {
+                    "type": "string"
+                  },
+                  "clientSecret": {
+                    "type": "string"
+                  }
                 }
               },
               "btpConfig": {
                 "type": "object",
                 "properties": {
-                  "subaccountGuid":          { "type": "string" },
-                  "entitlementsServiceUrl":  { "type": "string" }
+                  "subaccountGuid": {
+                    "type": "string"
+                  },
+                  "entitlementsServiceUrl": {
+                    "type": "string"
+                  }
                 }
               },
               "action": {
@@ -46,75 +59,108 @@
       }
     },
     "actions": {
-
       "Get_CIS_Token": {
         "type": "Http",
         "inputs": {
           "method": "POST",
           "uri": "@{triggerBody()?['cisCredentials']?['tokenUrl']}",
-          "headers": { "Content-Type": "application/x-www-form-urlencoded" },
+          "headers": {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
           "authentication": {
             "type": "Basic",
             "username": "@{triggerBody()?['cisCredentials']?['clientId']}",
             "password": "@{triggerBody()?['cisCredentials']?['clientSecret']}"
           },
-          "body": "grant_type=client_credentials"
+          "body": "grant_type=client_credentials",
+          "retryPolicy": {
+            "type": "none"
+          }
         },
         "runAfter": {}
       },
-
       "Set_EntitlementsBaseUrl": {
         "type": "InitializeVariable",
         "inputs": {
-          "variables": [{
-            "name": "entitlementsBaseUrl",
-            "type": "string",
-            "value": "@{coalesce(triggerBody()?['btpConfig']?['entitlementsServiceUrl'], parameters('defaultEntitlementsServiceUrl'))}"
-          }]
+          "variables": [
+            {
+              "name": "entitlementsBaseUrl",
+              "type": "string",
+              "value": "@{coalesce(triggerBody()?['btpConfig']?['entitlementsServiceUrl'], parameters('defaultEntitlementsServiceUrl'))}"
+            }
+          ]
         },
-        "runAfter": { "Get_CIS_Token": ["Succeeded"] }
+        "runAfter": {
+          "Get_CIS_Token": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Initialize_BulkServicePlans": {
         "type": "InitializeVariable",
-        "inputs": { "variables": [{ "name": "bulkServicePlans", "type": "array", "value": [] }] },
-        "runAfter": { "Set_EntitlementsBaseUrl": ["Succeeded"] }
+        "inputs": {
+          "variables": [
+            {
+              "name": "bulkServicePlans",
+              "type": "array",
+              "value": []
+            }
+          ]
+        },
+        "runAfter": {
+          "Set_EntitlementsBaseUrl": [
+            "Succeeded"
+          ]
+        }
       },
-
       "Switch_By_Action": {
         "type": "Switch",
         "expression": "@triggerBody()?['action']",
-        "runAfter": { "Initialize_BulkServicePlans": ["Succeeded"] },
-
+        "runAfter": {
+          "Initialize_BulkServicePlans": [
+            "Succeeded"
+          ]
+        },
         "cases": {
-
           "Case_List": {
             "case": "list",
             "actions": {
               "HTTP_List_Entitlements": {
-                "type": "Http", "runAfter": {},
+                "type": "Http",
+                "runAfter": {},
                 "inputs": {
                   "method": "GET",
                   "uri": "@{variables('entitlementsBaseUrl')}/entitlements/v1/subaccountAssignments?subaccountGUID=@{triggerBody()?['btpConfig']?['subaccountGuid']}",
-                  "headers": { "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}" }
+                  "headers": {
+                    "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 }
               },
               "Response_List": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_List_Entitlements')['statusCode']",
                   "body": "@body('HTTP_List_Entitlements')"
                 },
-                "runAfter": { "HTTP_List_Entitlements": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_List_Entitlements": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Assign": {
             "case": "assign",
             "actions": {
               "HTTP_Assign_Entitlement": {
-                "type": "Http", "runAfter": {},
+                "type": "Http",
+                "runAfter": {},
                 "inputs": {
                   "method": "PUT",
                   "uri": "@{variables('entitlementsBaseUrl')}/entitlements/v1/subaccountServicePlans",
@@ -123,33 +169,46 @@
                     "Content-Type": "application/json"
                   },
                   "body": {
-                    "servicePlans": [{
-                      "serviceName":     "@{triggerBody()?['payload']?['serviceName']}",
-                      "servicePlanName": "@{triggerBody()?['payload']?['planName']}",
-                      "assignmentInfo": [{
-                        "subaccountGUID": "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
-                        "enable": true
-                      }]
-                    }]
+                    "servicePlans": [
+                      {
+                        "serviceName": "@{triggerBody()?['payload']?['serviceName']}",
+                        "servicePlanName": "@{triggerBody()?['payload']?['planName']}",
+                        "assignmentInfo": [
+                          {
+                            "subaccountGUID": "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
+                            "enable": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 }
               },
               "Response_Assign": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_Assign_Entitlement')['statusCode']",
                   "body": "@body('HTTP_Assign_Entitlement')"
                 },
-                "runAfter": { "HTTP_Assign_Entitlement": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_Assign_Entitlement": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_Unassign": {
             "case": "unassign",
             "actions": {
               "HTTP_Unassign_Entitlement": {
-                "type": "Http", "runAfter": {},
+                "type": "Http",
+                "runAfter": {},
                 "inputs": {
                   "method": "PUT",
                   "uri": "@{variables('entitlementsBaseUrl')}/entitlements/v1/subaccountServicePlans",
@@ -158,28 +217,44 @@
                     "Content-Type": "application/json"
                   },
                   "body": {
-                    "servicePlans": [{
-                      "serviceName":     "@{triggerBody()?['payload']?['serviceName']}",
-                      "servicePlanName": "@{triggerBody()?['payload']?['planName']}",
-                      "assignmentInfo": [{
-                        "subaccountGUID": "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
-                        "enable": false
-                      }]
-                    }]
+                    "servicePlans": [
+                      {
+                        "serviceName": "@{triggerBody()?['payload']?['serviceName']}",
+                        "servicePlanName": "@{triggerBody()?['payload']?['planName']}",
+                        "assignmentInfo": [
+                          {
+                            "subaccountGUID": "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
+                            "enable": false
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  "retryPolicy": {
+                    "type": "none"
                   }
                 }
               },
               "Response_Unassign": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_Unassign_Entitlement')['statusCode']",
-                  "body": { "status": "unassigned", "serviceName": "@triggerBody()?['payload']?['serviceName']", "planName": "@triggerBody()?['payload']?['planName']" }
+                  "body": {
+                    "status": "unassigned",
+                    "serviceName": "@triggerBody()?['payload']?['serviceName']",
+                    "planName": "@triggerBody()?['payload']?['planName']"
+                  }
                 },
-                "runAfter": { "HTTP_Unassign_Entitlement": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_Unassign_Entitlement": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           },
-
           "Case_BulkAssign": {
             "case": "bulkAssign",
             "actions": {
@@ -188,18 +263,25 @@
                 "inputs": {
                   "from": "@triggerBody()?['payload']?['assignments']",
                   "select": {
-                    "serviceName":     "@item()?['serviceName']",
+                    "serviceName": "@item()?['serviceName']",
                     "servicePlanName": "@item()?['planName']",
-                    "assignmentInfo": [{
-                      "subaccountGUID": "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
-                      "enable": true
-                    }]
+                    "assignmentInfo": [
+                      {
+                        "subaccountGUID": "@{triggerBody()?['btpConfig']?['subaccountGuid']}",
+                        "enable": true
+                      }
+                    ]
                   }
                 },
                 "runAfter": {}
               },
               "HTTP_BulkAssign_Entitlements": {
-                "type": "Http", "runAfter": { "Build_ServicePlans_Array": ["Succeeded"] },
+                "type": "Http",
+                "runAfter": {
+                  "Build_ServicePlans_Array": [
+                    "Succeeded"
+                  ]
+                },
                 "inputs": {
                   "method": "PUT",
                   "uri": "@{variables('entitlementsBaseUrl')}/entitlements/v1/subaccountServicePlans",
@@ -207,11 +289,17 @@
                     "Authorization": "Bearer @{body('Get_CIS_Token')?['access_token']}",
                     "Content-Type": "application/json"
                   },
-                  "body": { "servicePlans": "@body('Build_ServicePlans_Array')" }
+                  "body": {
+                    "servicePlans": "@body('Build_ServicePlans_Array')"
+                  },
+                  "retryPolicy": {
+                    "type": "none"
+                  }
                 }
               },
               "Response_BulkAssign": {
-                "type": "Response", "kind": "Http",
+                "type": "Response",
+                "kind": "Http",
                 "inputs": {
                   "statusCode": "@outputs('HTTP_BulkAssign_Entitlements')['statusCode']",
                   "body": {
@@ -220,16 +308,22 @@
                     "count": "@length(triggerBody()?['payload']?['assignments'])"
                   }
                 },
-                "runAfter": { "HTTP_BulkAssign_Entitlements": ["Succeeded", "Failed"] }
+                "runAfter": {
+                  "HTTP_BulkAssign_Entitlements": [
+                    "Succeeded",
+                    "Failed"
+                  ]
+                }
               }
             }
           }
-
         },
         "default": {
           "actions": {
             "Response_Invalid_Action": {
-              "type": "Response", "kind": "Http", "runAfter": {},
+              "type": "Response",
+              "kind": "Http",
+              "runAfter": {},
               "inputs": {
                 "statusCode": 400,
                 "body": {
@@ -241,7 +335,6 @@
           }
         }
       }
-
     },
     "outputs": {}
   },
