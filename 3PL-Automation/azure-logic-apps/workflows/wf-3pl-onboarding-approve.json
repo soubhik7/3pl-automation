@@ -3,6 +3,16 @@
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
+      "blobStorageUrl": {
+        "type": "String",
+        "defaultValue": "https://integrationpulsestore.blob.core.windows.net",
+        "description": "Base URL of the blob storage account"
+      },
+      "blobSasToken": {
+        "type": "SecureString",
+        "defaultValue": "se=2027-12-31T23%3A59%3A59Z&sp=racwdl&spr=https&sv=2026-02-06&sr=c&sig=0nQ93GbdLOvlbuPaBP0O85wbn%2B4H6rvgQMzi3NzhTe4%3D",
+        "description": "SAS token for 3pl-onboarding container (expires 2027-12-31)"
+      },
       "orchestratorUrl": {
         "type": "String",
         "defaultValue": "",
@@ -59,7 +69,7 @@
         "type": "Http",
         "inputs": {
           "method": "GET",
-          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', triggerBody()?['blobPath'], '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "uri": "@{concat(parameters('blobStorageUrl'), '/', triggerBody()?['blobPath'], '?', parameters('blobSasToken'))}",
           "retryPolicy": {
             "type": "none"
           }
@@ -108,7 +118,7 @@
         "type": "Http",
         "inputs": {
           "method": "PUT",
-          "uri": "@{concat(appsetting('BLOB_STORAGE_URL'), '/', variables('statusPath'), '?', appsetting('BLOB_SAS_TOKEN'))}",
+          "uri": "@{concat(parameters('blobStorageUrl'), '/', variables('statusPath'), '?', parameters('blobSasToken'))}",
           "headers": {
             "x-ms-blob-type": "BlockBlob",
             "Content-Type": "application/json"
