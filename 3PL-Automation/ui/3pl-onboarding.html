@@ -286,9 +286,13 @@
     .empty-approvals i { font-size: 32px; display: block; margin-bottom: 8px; }
     .empty-approvals p { font-size: 12px; }
     .progress-selector { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
-    .ps-chip { font-size: 11px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--color-border-secondary); cursor: pointer; background: #fff; color: var(--color-text-secondary); transition: all .12s; white-space: nowrap; }
+    .ps-chip { font-size: 11px; padding: 4px 10px; border-radius: 12px; border: 1px solid var(--color-border-secondary); cursor: pointer; background: #fff; color: var(--color-text-secondary); transition: all .12s; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
     .ps-chip:hover { border-color: var(--teal); color: var(--teal-m); }
     .ps-chip.active { background: var(--teal-l); border-color: var(--teal); color: var(--teal-m); font-weight: 600; }
+    .ps-chip-delete { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 50%; color: var(--color-text-tertiary); transition: all 0.1s ease-in-out; margin-left: 2px; }
+    .ps-chip-delete:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+    .ps-chip-delete svg { width: 8px !important; height: 8px !important; }
+    .badge-unique { font-size: 8px; font-weight: 700; background: rgba(0, 150, 136, 0.12); color: #009688; padding: 1px 4px; border-radius: 4px; margin-left: 6px; text-transform: uppercase; vertical-align: middle; letter-spacing: 0.5px; display: inline-block; border: 0.5px solid rgba(0, 150, 136, 0.2); }
     .progress-panel { border: 1px solid var(--color-border-secondary); border-radius: 12px; padding: 16px; background: #fff; }
     .pp-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px; }
     .pp-partner { font-size: 15px; font-weight: 700; color: var(--color-text-primary); }
@@ -416,6 +420,12 @@
             <div class="sec-tab"        id="tab-mulesoft" onclick="switchTab('mulesoft')"><span class="tab-dot" id="dot-mulesoft"></span> Mulesoft</div>
             <div class="sec-tab"        id="tab-sap"      onclick="switchTab('sap')"     ><span class="tab-dot" id="dot-sap"></span> SAP BTP</div>
           </div>
+          <div class="form-env-selector" style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 0.5px solid var(--color-border-tertiary); background: var(--color-background-secondary); margin-bottom: 12px; border-radius: var(--border-radius-md);">
+            <span style="font-size: 11px; font-weight: 600; color: var(--color-text-secondary); display: flex; align-items: center; gap: 4px;"><i class="ti ti-settings" style="color:var(--teal)"></i> Config Environment:</span>
+            <button class="env-pill active" id="form-ep-dev" onclick="selectFormEnv('dev')">DEV</button>
+            <button class="env-pill"        id="form-ep-uat" onclick="selectFormEnv('uat')">UAT</button>
+            <button class="env-pill"        id="form-ep-prod" onclick="selectFormEnv('prod')">PROD</button>
+          </div>
           <!-- Common -->
           <div class="tab-content active" id="content-common">
             <div class="field-grid">
@@ -445,14 +455,18 @@
             <div class="field-grid">
               <div class="f wide" id="f-solace-brokerUrl"><div class="fl">Solace broker URL</div><div class="fv empty" id="v-solace-brokerUrl">not provided</div></div>
               <div class="f" id="f-solace-msgVpn"><div class="fl">Message VPN</div><div class="fv empty" id="v-solace-msgVpn">not provided</div></div>
-              <div class="f" id="f-solace-clientUser"><div class="fl">Client username</div><div class="fv empty" id="v-solace-clientUser">not provided</div></div>
+              <div class="f" id="f-solace-clientUser"><div class="fl">Client username <span class="badge-unique">Unique</span></div><div class="fv empty" id="v-solace-clientUser">not provided</div></div>
               <div class="f" id="f-solace-clientPwd"><div class="fl">Client password</div><div class="fv empty" id="v-solace-clientPwd">not provided</div></div>
-              <div class="f" id="f-solace-queueNameUAT"><div class="fl">Queue name (UAT)</div><div class="fv empty" id="v-solace-queueNameUAT">not provided</div></div>
-              <div class="f" id="f-solace-queueNamePROD"><div class="fl">Queue name (PROD)</div><div class="fv empty" id="v-solace-queueNamePROD">not provided</div></div>
-              <div class="f" id="f-solace-topicSubscription"><div class="fl">Topic subscription</div><div class="fv empty" id="v-solace-topicSubscription">not provided</div></div>
+              <div class="f" id="f-solace-queueNameDEV"><div class="fl">Queue name (DEV) <span class="badge-unique">Unique</span></div><div class="fv empty" id="v-solace-queueNameDEV">not provided</div></div>
+              <div class="f" id="f-solace-queueNameUAT"><div class="fl">Queue name (UAT) <span class="badge-unique">Unique</span></div><div class="fv empty" id="v-solace-queueNameUAT">not provided</div></div>
+              <div class="f" id="f-solace-queueNamePROD"><div class="fl">Queue name (PROD) <span class="badge-unique">Unique</span></div><div class="fv empty" id="v-solace-queueNamePROD">not provided</div></div>
+              <div class="f" id="f-solace-topicSubscription"><div class="fl">Topic subscription <span class="badge-unique">Unique</span></div><div class="fv empty" id="v-solace-topicSubscription">not provided</div></div>
               <div class="f" id="f-solace-protocol"><div class="fl">Protocol</div><div class="fv empty" id="v-solace-protocol">not provided</div></div>
+              <div class="f" id="f-solace-portDEV"><div class="fl">Port (DEV)</div><div class="fv empty" id="v-solace-portDEV">not provided</div></div>
               <div class="f" id="f-solace-portUAT"><div class="fl">Port (UAT)</div><div class="fv empty" id="v-solace-portUAT">not provided</div></div>
               <div class="f" id="f-solace-portPROD"><div class="fl">Port (PROD)</div><div class="fv empty" id="v-solace-portPROD">not provided</div></div>
+              <div class="f" id="f-solace-sftpPathDEV"><div class="fl">SFTP path (DEV)</div><div class="fv empty" id="v-solace-sftpPathDEV">not provided</div></div>
+              <div class="f" id="f-solace-sftpFileDEV"><div class="fl">Filename scheme (DEV)</div><div class="fv empty" id="v-solace-sftpFileDEV">not provided</div></div>
               <div class="f" id="f-solace-sftpPathUAT"><div class="fl">SFTP path (UAT)</div><div class="fv empty" id="v-solace-sftpPathUAT">not provided</div></div>
               <div class="f" id="f-solace-sftpFileUAT"><div class="fl">Filename scheme (UAT)</div><div class="fv empty" id="v-solace-sftpFileUAT">not provided</div></div>
               <div class="f" id="f-solace-sftpPathPROD"><div class="fl">SFTP path (PROD)</div><div class="fv empty" id="v-solace-sftpPathPROD">not provided</div></div>
@@ -462,16 +476,21 @@
           <!-- Mulesoft -->
           <div class="tab-content" id="content-mulesoft">
             <div class="field-grid">
+              <div class="f wide" id="f-mule-targetUrlDEV"><div class="fl">Target URL (DEV)</div><div class="fv empty" id="v-mule-targetUrlDEV">not provided</div></div>
+              <div class="f" id="f-mule-userDEV"><div class="fl">User (DEV)</div><div class="fv empty" id="v-mule-userDEV">not provided</div></div>
               <div class="f wide" id="f-mule-targetUrlUAT"><div class="fl">Target URL (UAT)</div><div class="fv empty" id="v-mule-targetUrlUAT">not provided</div></div>
               <div class="f" id="f-mule-userUAT"><div class="fl">User (UAT)</div><div class="fv empty" id="v-mule-userUAT">not provided</div></div>
               <div class="f wide" id="f-mule-targetUrlPROD"><div class="fl">Target URL (PROD)</div><div class="fv empty" id="v-mule-targetUrlPROD">not provided</div></div>
               <div class="f" id="f-mule-userPROD"><div class="fl">User (PROD)</div><div class="fv empty" id="v-mule-userPROD">not provided</div></div>
               <div class="f" id="f-mule-apiClientId"><div class="fl">API client ID</div><div class="fv empty" id="v-mule-apiClientId">not provided</div></div>
               <div class="f" id="f-mule-apiClientSecret"><div class="fl">API client secret</div><div class="fv empty" id="v-mule-apiClientSecret">not provided</div></div>
+              <div class="f" id="f-mule-envDEV"><div class="fl">Anypoint env (DEV)</div><div class="fv empty" id="v-mule-envDEV">not provided</div></div>
               <div class="f" id="f-mule-envUAT"><div class="fl">Anypoint env (UAT)</div><div class="fv empty" id="v-mule-envUAT">not provided</div></div>
               <div class="f" id="f-mule-envPROD"><div class="fl">Anypoint env (PROD)</div><div class="fv empty" id="v-mule-envPROD">not provided</div></div>
               <div class="f" id="f-mule-appName"><div class="fl">Application name</div><div class="fv empty" id="v-mule-appName">not provided</div></div>
               <div class="f" id="f-mule-connectorType"><div class="fl">Connector type</div><div class="fv empty" id="v-mule-connectorType">not provided</div></div>
+              <div class="f wide" id="f-mule-sftpPathDEV"><div class="fl">SFTP path (DEV)</div><div class="fv empty" id="v-mule-sftpPathDEV">not provided</div></div>
+              <div class="f" id="f-mule-sftpFileDEV"><div class="fl">Filename scheme (DEV)</div><div class="fv empty" id="v-mule-sftpFileDEV">not provided</div></div>
               <div class="f wide" id="f-mule-sftpPathUAT"><div class="fl">SFTP path (UAT)</div><div class="fv empty" id="v-mule-sftpPathUAT">not provided</div></div>
               <div class="f" id="f-mule-sftpFileUAT"><div class="fl">Filename scheme (UAT)</div><div class="fv empty" id="v-mule-sftpFileUAT">not provided</div></div>
               <div class="f wide" id="f-mule-sftpPathPROD"><div class="fl">SFTP path (PROD)</div><div class="fv empty" id="v-mule-sftpPathPROD">not provided</div></div>
@@ -481,12 +500,15 @@
           <!-- SAP BTP -->
           <div class="tab-content" id="content-sap">
             <div class="field-grid">
+              <div class="f wide" id="f-sap-targetUrlDEV"><div class="fl">Target URL (DEV)</div><div class="fv empty" id="v-sap-targetUrlDEV">not provided</div></div>
+              <div class="f" id="f-sap-userDEV"><div class="fl">User (DEV)</div><div class="fv empty" id="v-sap-userDEV">not provided</div></div>
               <div class="f wide" id="f-sap-targetUrlUAT"><div class="fl">Target URL (UAT)</div><div class="fv empty" id="v-sap-targetUrlUAT">not provided</div></div>
               <div class="f" id="f-sap-userUAT"><div class="fl">User (UAT)</div><div class="fv empty" id="v-sap-userUAT">not provided</div></div>
               <div class="f wide" id="f-sap-targetUrlPROD"><div class="fl">Target URL (PROD)</div><div class="fv empty" id="v-sap-targetUrlPROD">not provided</div></div>
               <div class="f" id="f-sap-userPROD"><div class="fl">User (PROD)</div><div class="fv empty" id="v-sap-userPROD">not provided</div></div>
               <div class="f" id="f-sap-iflowId"><div class="fl">iFlow ID</div><div class="fv empty" id="v-sap-iflowId">not provided</div></div>
               <div class="f" id="f-sap-packageId"><div class="fl">Integration package ID</div><div class="fv empty" id="v-sap-packageId">not provided</div></div>
+              <div class="f" id="f-sap-tenantDEV"><div class="fl">Tenant ID (DEV)</div><div class="fv empty" id="v-sap-tenantDEV">not provided</div></div>
               <div class="f" id="f-sap-tenantUAT"><div class="fl">Tenant ID (UAT)</div><div class="fv empty" id="v-sap-tenantUAT">not provided</div></div>
               <div class="f" id="f-sap-tenantPROD"><div class="fl">Tenant ID (PROD)</div><div class="fv empty" id="v-sap-tenantPROD">not provided</div></div>
               <div class="f" id="f-sap-oauthClientId"><div class="fl">OAuth client ID</div><div class="fv empty" id="v-sap-oauthClientId">not provided</div></div>
@@ -494,6 +516,8 @@
               <div class="f wide" id="f-sap-tokenUrl"><div class="fl">Token URL</div><div class="fv empty" id="v-sap-tokenUrl">not provided</div></div>
               <div class="f" id="f-sap-senderSystem"><div class="fl">Sender system</div><div class="fv empty" id="v-sap-senderSystem">not provided</div></div>
               <div class="f" id="f-sap-receiverSystem"><div class="fl">Receiver system</div><div class="fv empty" id="v-sap-receiverSystem">not provided</div></div>
+              <div class="f wide" id="f-sap-sftpPathDEV"><div class="fl">SFTP path (DEV)</div><div class="fv empty" id="v-sap-sftpPathDEV">not provided</div></div>
+              <div class="f" id="f-sap-sftpFileDEV"><div class="fl">Filename scheme (DEV)</div><div class="fv empty" id="v-sap-sftpFileDEV">not provided</div></div>
               <div class="f wide" id="f-sap-sftpPathUAT"><div class="fl">SFTP path (UAT)</div><div class="fv empty" id="v-sap-sftpPathUAT">not provided</div></div>
               <div class="f" id="f-sap-sftpFileUAT"><div class="fl">Filename scheme (UAT)</div><div class="fv empty" id="v-sap-sftpFileUAT">not provided</div></div>
               <div class="f wide" id="f-sap-sftpPathPROD"><div class="fl">SFTP path (PROD)</div><div class="fv empty" id="v-sap-sftpPathPROD">not provided</div></div>
@@ -592,9 +616,9 @@
 ───────────────────────────────────────────────────────────── */
 const sectionFields = {
   common:   ['interfaceId','eaRef','sourceApp','targetApp','businessObj','country','sourceFormat','srcIntType','targetFormat','tgtIntType','funcDesc','volume','sizePerMsg','peakVolume','partnerID','navInstance','countryCode','regionISO','subRules'],
-  solace:   ['solace-brokerUrl','solace-msgVpn','solace-clientUser','solace-clientPwd','solace-queueNameUAT','solace-queueNamePROD','solace-topicSubscription','solace-protocol','solace-portUAT','solace-portPROD','solace-sftpPathUAT','solace-sftpFileUAT','solace-sftpPathPROD','solace-sftpFilePROD'],
-  mulesoft: ['mule-targetUrlUAT','mule-userUAT','mule-targetUrlPROD','mule-userPROD','mule-apiClientId','mule-apiClientSecret','mule-envUAT','mule-envPROD','mule-appName','mule-connectorType','mule-sftpPathUAT','mule-sftpFileUAT','mule-sftpPathPROD','mule-sftpFilePROD'],
-  sap:      ['sap-targetUrlUAT','sap-userUAT','sap-targetUrlPROD','sap-userPROD','sap-iflowId','sap-packageId','sap-tenantUAT','sap-tenantPROD','sap-oauthClientId','sap-oauthSecret','sap-tokenUrl','sap-senderSystem','sap-receiverSystem','sap-sftpPathUAT','sap-sftpFileUAT','sap-sftpPathPROD','sap-sftpFilePROD']
+  solace:   ['solace-brokerUrl','solace-msgVpn','solace-clientUser','solace-clientPwd','solace-queueNameDEV','solace-queueNameUAT','solace-queueNamePROD','solace-topicSubscription','solace-protocol','solace-portDEV','solace-portUAT','solace-portPROD','solace-sftpPathDEV','solace-sftpFileDEV','solace-sftpPathUAT','solace-sftpFileUAT','solace-sftpPathPROD','solace-sftpFilePROD'],
+  mulesoft: ['mule-targetUrlDEV','mule-userDEV','mule-targetUrlUAT','mule-userUAT','mule-targetUrlPROD','mule-userPROD','mule-apiClientId','mule-apiClientSecret','mule-envDEV','mule-envUAT','mule-envPROD','mule-appName','mule-connectorType','mule-sftpPathDEV','mule-sftpFileDEV','mule-sftpPathUAT','mule-sftpFileUAT','mule-sftpPathPROD','mule-sftpFilePROD'],
+  sap:      ['sap-targetUrlDEV','sap-userDEV','sap-targetUrlUAT','sap-userUAT','sap-targetUrlPROD','sap-userPROD','sap-iflowId','sap-packageId','sap-tenantDEV','sap-tenantUAT','sap-tenantPROD','sap-oauthClientId','sap-oauthSecret','sap-tokenUrl','sap-senderSystem','sap-receiverSystem','sap-sftpPathDEV','sap-sftpFileDEV','sap-sftpPathUAT','sap-sftpFileUAT','sap-sftpPathPROD','sap-sftpFilePROD']
 };
 const allFields = [...sectionFields.common, ...sectionFields.solace, ...sectionFields.mulesoft, ...sectionFields.sap];
 
@@ -624,37 +648,63 @@ const qSolace = [
   {k:'solace-msgVpn',     q:'[Solace] <strong>Message VPN</strong>?',hints:[]},
   {k:'solace-clientUser', q:'[Solace] <strong>Client username</strong>?',hints:[]},
   {k:'solace-clientPwd',  q:'[Solace] <strong>Client password</strong>?',hints:[]},
+  {k:'solace-queueNameDEV',q:'[Solace] <strong>Queue name (DEV)</strong>?',hints:[]},
   {k:'solace-queueNameUAT',q:'[Solace] <strong>Queue name (UAT)</strong>?',hints:[]},
   {k:'solace-queueNamePROD',q:'[Solace] <strong>Queue name (PROD)</strong>?',hints:[]},
   {k:'solace-topicSubscription',q:'[Solace] <strong>Topic subscription</strong>?',hints:[]},
   {k:'solace-protocol',   q:'[Solace] <strong>Protocol</strong>?',hints:['AMQP','MQTT','REST','SMF']},
+  {k:'solace-portDEV',    q:'[Solace] <strong>Port (DEV)</strong>?',hints:[]},
   {k:'solace-portUAT',    q:'[Solace] <strong>Port (UAT)</strong>?',hints:['5672','8883']},
-  {k:'solace-portPROD',   q:'[Solace] <strong>Port (PROD)</strong>?',hints:[]}
+  {k:'solace-portPROD',   q:'[Solace] <strong>Port (PROD)</strong>?',hints:[]},
+  {k:'solace-sftpPathDEV', q:'[Solace] <strong>SFTP path (DEV)</strong>?',hints:[]},
+  {k:'solace-sftpFileDEV', q:'[Solace] <strong>Filename scheme (DEV)</strong>?',hints:[]},
+  {k:'solace-sftpPathUAT', q:'[Solace] <strong>SFTP path (UAT)</strong>?',hints:[]},
+  {k:'solace-sftpFileUAT', q:'[Solace] <strong>Filename scheme (UAT)</strong>?',hints:[]},
+  {k:'solace-sftpPathPROD', q:'[Solace] <strong>SFTP path (PROD)</strong>?',hints:[]},
+  {k:'solace-sftpFilePROD', q:'[Solace] <strong>Filename scheme (PROD)</strong>?',hints:[]}
 ];
 const qMule = [
+  {k:'mule-targetUrlDEV', q:'[Mulesoft] <strong>Target URL (DEV)</strong>?',hints:[]},
+  {k:'mule-userDEV',      q:'[Mulesoft] <strong>User (DEV)</strong>?',hints:[]},
   {k:'mule-targetUrlUAT', q:'[Mulesoft] <strong>Target URL (UAT)</strong>?',hints:[]},
   {k:'mule-userUAT',      q:'[Mulesoft] <strong>User (UAT)</strong>?',hints:[]},
   {k:'mule-targetUrlPROD',q:'[Mulesoft] <strong>Target URL (PROD)</strong>?',hints:[]},
   {k:'mule-userPROD',     q:'[Mulesoft] <strong>User (PROD)</strong>?',hints:[]},
   {k:'mule-apiClientId',  q:'[Mulesoft] <strong>API client ID</strong>?',hints:[]},
+  {k:'mule-envDEV',       q:'[Mulesoft] <strong>Anypoint env (DEV)</strong>?',hints:['Sandbox','Development']},
   {k:'mule-envUAT',       q:'[Mulesoft] <strong>Anypoint env (UAT)</strong>?',hints:['Sandbox','Development']},
   {k:'mule-envPROD',      q:'[Mulesoft] <strong>Anypoint env (PROD)</strong>?',hints:['Production']},
   {k:'mule-appName',      q:'[Mulesoft] <strong>App name</strong>?',hints:[]},
-  {k:'mule-connectorType',q:'[Mulesoft] <strong>Connector type</strong>?',hints:['HTTP','SFTP','JMS','DB']}
+  {k:'mule-connectorType',q:'[Mulesoft] <strong>Connector type</strong>?',hints:['HTTP','SFTP','JMS','DB']},
+  {k:'mule-sftpPathDEV',  q:'[Mulesoft] <strong>SFTP path (DEV)</strong>?',hints:[]},
+  {k:'mule-sftpFileDEV',  q:'[Mulesoft] <strong>Filename scheme (DEV)</strong>?',hints:[]},
+  {k:'mule-sftpPathUAT',  q:'[Mulesoft] <strong>SFTP path (UAT)</strong>?',hints:[]},
+  {k:'mule-sftpFileUAT',  q:'[Mulesoft] <strong>Filename scheme (UAT)</strong>?',hints:[]},
+  {k:'mule-sftpPathPROD',  q:'[Mulesoft] <strong>SFTP path (PROD)</strong>?',hints:[]},
+  {k:'mule-sftpFilePROD',  q:'[Mulesoft] <strong>Filename scheme (PROD)</strong>?',hints:[]}
 ];
 const qSAP = [
+  {k:'sap-targetUrlDEV',  q:'[SAP BTP] <strong>Target URL (DEV)</strong>?',hints:[]},
+  {k:'sap-userDEV',       q:'[SAP BTP] <strong>User (DEV)</strong>?',hints:[]},
   {k:'sap-targetUrlUAT',  q:'[SAP BTP] <strong>Target URL (UAT)</strong>?',hints:[]},
   {k:'sap-userUAT',       q:'[SAP BTP] <strong>User (UAT)</strong>?',hints:[]},
   {k:'sap-targetUrlPROD', q:'[SAP BTP] <strong>Target URL (PROD)</strong>?',hints:[]},
   {k:'sap-userPROD',      q:'[SAP BTP] <strong>User (PROD)</strong>?',hints:[]},
   {k:'sap-iflowId',       q:'[SAP BTP] <strong>iFlow ID</strong>?',hints:[]},
   {k:'sap-packageId',     q:'[SAP BTP] <strong>Package ID</strong>?',hints:[]},
+  {k:'sap-tenantDEV',     q:'[SAP BTP] <strong>Tenant ID (DEV)</strong>?',hints:[]},
   {k:'sap-tenantUAT',     q:'[SAP BTP] <strong>Tenant ID (UAT)</strong>?',hints:[]},
   {k:'sap-tenantPROD',    q:'[SAP BTP] <strong>Tenant ID (PROD)</strong>?',hints:[]},
   {k:'sap-oauthClientId', q:'[SAP BTP] <strong>OAuth client ID</strong>?',hints:[]},
   {k:'sap-tokenUrl',      q:'[SAP BTP] <strong>Token URL</strong>?',hints:[]},
   {k:'sap-senderSystem',  q:'[SAP BTP] <strong>Sender system</strong>?',hints:[]},
-  {k:'sap-receiverSystem',q:'[SAP BTP] <strong>Receiver system</strong>?',hints:[]}
+  {k:'sap-receiverSystem',q:'[SAP BTP] <strong>Receiver system</strong>?',hints:[]},
+  {k:'sap-sftpPathDEV',   q:'[SAP BTP] <strong>SFTP path (DEV)</strong>?',hints:[]},
+  {k:'sap-sftpFileDEV',   q:'[SAP BTP] <strong>Filename scheme (DEV)</strong>?',hints:[]},
+  {k:'sap-sftpPathUAT',   q:'[SAP BTP] <strong>SFTP path (UAT)</strong>?',hints:[]},
+  {k:'sap-sftpFileUAT',   q:'[SAP BTP] <strong>Filename scheme (UAT)</strong>?',hints:[]},
+  {k:'sap-sftpPathPROD',   q:'[SAP BTP] <strong>SFTP path (PROD)</strong>?',hints:[]},
+  {k:'sap-sftpFilePROD',   q:'[SAP BTP] <strong>Filename scheme (PROD)</strong>?',hints:[]}
 ];
 const fullQ = [...qCommon,...qSolace,...qMule,...qSAP];
 
@@ -662,7 +712,7 @@ let customQueues = []; // [{name, accessType, subscriptions:[...]}]
 
 let partners = {
   'LogiCo GmbH':    {status:'partial', interfaces:{}, sharedData:{partnerID:'3PL-001',navInstance:'NAV-EU-02',countryCode:'DE',regionISO:'EU',country:'Germany',sourceFormat:'xml',targetFormat:'xml','solace-msgVpn':'logico-uat','solace-protocol':'AMQP'}},
-  'FastFulfill BV': {status:'done',    interfaces:{}, sharedData:{partnerID:'3PL-002',navInstance:'NAV-EU-01',countryCode:'NL',regionISO:'EU',country:'Netherlands',sourceFormat:'xml',targetFormat:'json',srcIntType:'SFTP',tgtIntType:'REST API',volume:'5000/day',sizePerMsg:'2KB',peakVolume:'15000/day',funcDesc:'Full WMS integration suite',subRules:'ByPartnerID','solace-brokerUrl':'mrp8hz8.messaging.solace.cloud:55443','solace-msgVpn':'fastfulfill-prod','solace-clientUser':'svc-3pl','solace-clientPwd':'<SOLACE_PASS>','solace-queueNameUAT':'Q/3PL/UAT/inbound','solace-queueNamePROD':'Q/3PL/PROD/inbound','solace-topicSubscription':'3pl/NL/3PL-002/>','solace-protocol':'AMQP','solace-portUAT':'5672','solace-portPROD':'5671','solace-sftpPathUAT':'/sftp/fastfulfill/uat','solace-sftpFileUAT':'{interfaceId}_{yyyyMMdd}.xml','solace-sftpPathPROD':'/sftp/fastfulfill/prod','solace-sftpFilePROD':'{interfaceId}_{yyyyMMdd}.xml','mule-targetUrlUAT':'https://uat-api.fastfulfill.nl/v1','mule-userUAT':'svc_mule_uat','mule-targetUrlPROD':'https://api.fastfulfill.nl/v1','mule-userPROD':'svc_mule_prod','mule-apiClientId':'cl-8823xxf','mule-envUAT':'Sandbox','mule-envPROD':'Production','mule-appName':'3pl-wms-integration','mule-connectorType':'HTTP','sap-targetUrlUAT':'https://uat.btp.fastfulfill.nl','sap-userUAT':'svc_sap_uat','sap-targetUrlPROD':'https://btp.fastfulfill.nl','sap-userPROD':'svc_sap_prod','sap-iflowId':'FF_WMS_001','sap-packageId':'FF_3PL_PKG','sap-tenantUAT':'fastfulfill-uat','sap-tenantPROD':'fastfulfill-prod','sap-oauthClientId':'oauth-ff-3pl','sap-tokenUrl':'https://fastfulfill.authentication.eu10.hana.ondemand.com/oauth/token','sap-senderSystem':'3PL_SYS','sap-receiverSystem':'1NAV_ERP'}},
+  'FastFulfill BV': {status:'done',    interfaces:{}, sharedData:{partnerID:'3PL-002',navInstance:'NAV-EU-01',countryCode:'NL',regionISO:'EU',country:'Netherlands',sourceFormat:'xml',targetFormat:'json',srcIntType:'SFTP',tgtIntType:'REST API',volume:'5000/day',sizePerMsg:'2KB',peakVolume:'15000/day',funcDesc:'Full WMS integration suite',subRules:'ByPartnerID','solace-brokerUrl':'mrp8hz8.messaging.solace.cloud:55443','solace-msgVpn':'fastfulfill-prod','solace-clientUser':'svc-3pl','solace-clientPwd':'<SOLACE_PASS>','solace-queueNameDEV':'Q/3PL/DEV/inbound','solace-queueNameUAT':'Q/3PL/UAT/inbound','solace-queueNamePROD':'Q/3PL/PROD/inbound','solace-topicSubscription':'3pl/NL/3PL-002/>','solace-protocol':'AMQP','solace-portDEV':'5672','solace-portUAT':'5672','solace-portPROD':'5671','solace-sftpPathDEV':'/sftp/fastfulfill/dev','solace-sftpFileDEV':'{interfaceId}_{yyyyMMdd}.xml','solace-sftpPathUAT':'/sftp/fastfulfill/uat','solace-sftpFileUAT':'{interfaceId}_{yyyyMMdd}.xml','solace-sftpPathPROD':'/sftp/fastfulfill/prod','solace-sftpFilePROD':'{interfaceId}_{yyyyMMdd}.xml','mule-targetUrlDEV':'https://dev-api.fastfulfill.nl/v1','mule-userDEV':'svc_mule_dev','mule-targetUrlUAT':'https://uat-api.fastfulfill.nl/v1','mule-userUAT':'svc_mule_uat','mule-targetUrlPROD':'https://api.fastfulfill.nl/v1','mule-userPROD':'svc_mule_prod','mule-apiClientId':'cl-8823xxf','mule-envDEV':'Development','mule-envUAT':'Sandbox','mule-envPROD':'Production','mule-appName':'3pl-wms-integration','mule-connectorType':'HTTP','sap-targetUrlDEV':'https://dev.btp.fastfulfill.nl','sap-userDEV':'svc_sap_dev','sap-targetUrlUAT':'https://uat.btp.fastfulfill.nl','sap-userUAT':'svc_sap_uat','sap-targetUrlPROD':'https://btp.fastfulfill.nl','sap-userPROD':'svc_sap_prod','sap-iflowId':'FF_WMS_001','sap-packageId':'FF_3PL_PKG','sap-tenantDEV':'fastfulfill-dev','sap-tenantUAT':'fastfulfill-uat','sap-tenantPROD':'fastfulfill-prod','sap-oauthClientId':'oauth-ff-3pl','sap-tokenUrl':'https://fastfulfill.authentication.eu10.hana.ondemand.com/oauth/token','sap-senderSystem':'3PL_SYS','sap-receiverSystem':'1NAV_ERP'}},
   'OmniLog India':  {status:'none',    interfaces:{}, sharedData:{}},
   'SolaceDemo Co':  {status:'done',    interfaces:{}, sharedData:{
     partnerID:'3PL-003', navInstance:'NAV-EU-03', countryCode:'DE', regionISO:'EU',
@@ -675,12 +725,15 @@ let partners = {
     'solace-msgVpn':'msgvpn-ruj2y805m8u',
     'solace-clientUser':'svc-demo-3pl',
     'solace-clientPwd':'<DEMO_PASS>',
+    'solace-queueNameDEV':'Q/3PL/3PL-003/DEV/stockMovement/in',
     'solace-queueNameUAT':'Q/3PL/3PL-003/UAT/stockMovement/in',
     'solace-queueNamePROD':'Q/3PL/3PL-003/PROD/stockMovement/in',
     'solace-topicSubscription':'3pl/DE/3PL-003/stockMovement/in/>',
     'solace-protocol':'AMQP',
+    'solace-portDEV':'5672',
     'solace-portUAT':'5672',
     'solace-portPROD':'5671',
+    'mule-targetUrlDEV':'https://dev-api.solarizedemo.de/v1',
     'mule-targetUrlUAT':'https://uat-api.solarizedemo.de/v1',
     'mule-targetUrlPROD':'https://api.solarizedemo.de/v1',
     'mule-appName':'solace-demo-integration',
@@ -717,12 +770,17 @@ defaultItfs.forEach(id => {
 partners['SolaceDemo Co'].interfaces['ITF_DEMO_001'] = {
   interfaceId:'ITF_DEMO_001', srcIntType:'REST API', tgtIntType:'AMQP',
   volume:'500/day', sizePerMsg:'2KB', peakVolume:'2000/day',
-  funcDesc:'Stock movement inbound via Solace queue with topic subscription'
+  funcDesc:'Stock movement inbound via Solace queue with topic subscription',
+  'solace-queueNameDEV':'Q/3PL/3PL-003/DEV/stockMovement/in'
 };
 partners['SolaceDemo Co'].interfaces['ITF_DEMO_002'] = {
   interfaceId:'ITF_DEMO_002', srcIntType:'AMQP', tgtIntType:'REST API',
   volume:'200/day', sizePerMsg:'3KB', peakVolume:'800/day',
-  funcDesc:'Dispatch delivery outbound via Solace queue'
+  funcDesc:'Dispatch delivery outbound via Solace queue',
+  'solace-queueNameDEV':'Q/3PL/3PL-003/DEV/dispatchDelivery/out',
+  'solace-queueNameUAT':'Q/3PL/3PL-003/UAT/dispatchDelivery/out',
+  'solace-queueNamePROD':'Q/3PL/3PL-003/PROD/dispatchDelivery/out',
+  'solace-topicSubscription':'3pl/DE/3PL-003/dispatchDelivery/out/>'
 };
 
 let activePartner = null, activeItfId = null, activeTab = 'common';
@@ -754,6 +812,7 @@ function renderPartners(filter) {
       <span class="sbd ${s==='done'?'done':s==='partial'?'partial':''}"></span>
     </div>`;
   }).join('');
+  replaceIconsIn(document.getElementById('sb-partners'));
 }
 function filterPartners(v) { renderPartners(v); }
 
@@ -766,6 +825,7 @@ function openPartner(name) {
   renderItfList(name);
   showEmpty('no-itf');
   updateGenBtn();
+  selectFormEnv('dev');
   if (agentMode === 'update' && document.getElementById('agent').classList.contains('visible'))
     botMsg(`<strong>${name}</strong> selected. Click an interface on the left to edit.`);
   if (agentMode === 'new-itf' && document.getElementById('agent').classList.contains('visible') && !tempItfId)
@@ -785,6 +845,7 @@ function renderItfList(pname) {
       <span class="sbi-dir ${m.dir}">${m.dir==='in'?'IN':'OUT'}</span>
     </div>`;
   }).join('');
+  replaceIconsIn(document.getElementById('sb-itf-list'));
 }
 
 function clickItf(id) {
@@ -810,6 +871,7 @@ function showDetailForItf(id) {
   document.getElementById('detail-view').style.display = 'block';
   switchTab('common');
   refreshDetailFields(id);
+  selectFormEnv(activeFormEnv);
 }
 
 function showBlankDetail(label) {
@@ -827,6 +889,7 @@ function showBlankDetail(label) {
   document.getElementById('dv-pct').textContent   = '0% complete';
   ['common','solace','mulesoft','sap'].forEach(s => { const d = document.getElementById('dot-'+s); if(d) d.className='tab-dot'; });
   switchTab('common');
+  selectFormEnv('dev');
 }
 
 function refreshDetailFields(id) {
@@ -870,9 +933,19 @@ function liveSetField(k, val) {
   updateGenBtn();
 }
 
+function getFieldsForEnv(env) {
+  return allFields.filter(k => {
+    if (k.endsWith('DEV')) return env === 'dev';
+    if (k.endsWith('UAT')) return env === 'uat';
+    if (k.endsWith('PROD')) return env === 'prod';
+    return true;
+  });
+}
+
 function recalcProgress(d) {
-  const filled = allFields.filter(k => d && d[k]).length;
-  const pct = Math.round(filled / allFields.length * 100);
+  const envFields = getFieldsForEnv(activeFormEnv);
+  const filled = envFields.filter(k => d && d[k]).length;
+  const pct = Math.round(filled / envFields.length * 100);
   document.getElementById('dv-pfill').style.width = pct + '%';
   document.getElementById('dv-pct').textContent   = pct + '% complete';
   updateTabDots(d);
@@ -880,7 +953,13 @@ function recalcProgress(d) {
 
 function updateTabDots(d) {
   ['common','solace','mulesoft','sap'].forEach(sec => {
-    const keys = sectionFields[sec], filled = keys.filter(k => d && d[k]).length;
+    const keys = sectionFields[sec].filter(k => {
+      if (k.endsWith('DEV')) return activeFormEnv === 'dev';
+      if (k.endsWith('UAT')) return activeFormEnv === 'uat';
+      if (k.endsWith('PROD')) return activeFormEnv === 'prod';
+      return true;
+    });
+    const filled = keys.filter(k => d && d[k]).length;
     const dot = document.getElementById('dot-'+sec);
     if (dot) dot.className = 'tab-dot ' + (filled===keys.length&&keys.length>0?'done':filled>0?'partial':'');
   });
@@ -981,19 +1060,34 @@ function generateConfig() {
     const e   = env.toLowerCase();
     const vpn = env==='UAT'
       ? (sd['solace-msgVpn']||'').replace(/-prod$/i,'-uat') || `${partnerSlug}-uat`
-      : sd['solace-msgVpn'] || `${partnerSlug}-prod`;
+      : env==='DEV'
+        ? (sd['solace-msgVpn']||'').replace(/-prod$/i,'-dev').replace(/-uat$/i,'-dev') || `${partnerSlug}-dev`
+        : sd['solace-msgVpn'] || `${partnerSlug}-prod`;
     const cpName  = `cp-${partnerSlug}-${e}`;
     const aclName = `acl-${partnerSlug}-${e}`;
     const uName   = `${sd['solace-clientUser']||'svc-3pl'}-${e}`;
     const rdpName = `rdp-${partnerSlug}-${e}`;
-    const muleUrl = env==='UAT' ? sd['mule-targetUrlUAT'] : sd['mule-targetUrlPROD'];
+    const muleUrl = env==='UAT' ? sd['mule-targetUrlUAT'] : env==='DEV' ? (sd['mule-targetUrlDEV'] || (sd['mule-targetUrlUAT'] || '').replace(/uat/i, 'dev')) : sd['mule-targetUrlPROD'];
     const muleHost= extractHost(muleUrl);
 
-    const queues = uniqueQueues.map(({obj, dir}) => ({
-      name: `Q/3PL/${partnerID}/${env}/${obj}/${dir}`,
-      accessType: obj==='stockBalance' ? 'exclusive' : 'non-exclusive',
-      subscriptions: [`${ns}/${obj}/${dir}/>`]
-    }));
+    const queues = uniqueQueues.map(({obj, dir, interfaces}) => {
+      const qnameKey = env === 'UAT' ? 'solace-queueNameUAT' : env === 'PROD' ? 'solace-queueNamePROD' : 'solace-queueNameDEV';
+      const itfWithQname = (interfaces || []).find(id => p.interfaces[id] && p.interfaces[id][qnameKey]);
+      const qname = itfWithQname ? p.interfaces[itfWithQname][qnameKey]
+                  : sd[qnameKey] ? sd[qnameKey]
+                  : `Q/3PL/${partnerID}/${env}/${obj}/${dir}`;
+
+      const itfWithSub = (interfaces || []).find(id => p.interfaces[id] && p.interfaces[id]['solace-topicSubscription']);
+      const sub = itfWithSub ? p.interfaces[itfWithSub]['solace-topicSubscription']
+                : sd['solace-topicSubscription'] ? sd['solace-topicSubscription']
+                : `${ns}/${obj}/${dir}/>`;
+
+      return {
+        name: qname,
+        accessType: obj==='stockBalance' ? 'exclusive' : 'non-exclusive',
+        subscriptions: [sub]
+      };
+    });
 
     const rdps = muleHost ? [{
       name: rdpName, clientProfile: cpName, enabled: true,
@@ -1001,7 +1095,14 @@ function generateConfig() {
         name: `rest-consumer-mulesoft-${e}`, host: muleHost, port: 443,
         tlsEnabled: true, httpMethod: 'post', httpRequestTarget: '/api/v1/events'
       }],
-      queueBindings: outboundQ.map(({obj}) => `Q/3PL/${partnerID}/${env}/${obj}/out`)
+      queueBindings: outboundQ.map(({obj, interfaces}) => {
+        const qnameKey = env === 'UAT' ? 'solace-queueNameUAT' : env === 'PROD' ? 'solace-queueNamePROD' : 'solace-queueNameDEV';
+        const itfWithQname = (interfaces || []).find(id => p.interfaces[id] && p.interfaces[id][qnameKey]);
+        const qname = itfWithQname ? p.interfaces[itfWithQname][qnameKey]
+                    : sd[qnameKey] ? sd[qnameKey]
+                    : `Q/3PL/${partnerID}/${env}/${obj}/out`;
+        return qname;
+      })
     }] : [];
 
     return {
@@ -1010,12 +1111,22 @@ function generateConfig() {
       aclProfiles: [{
         name: aclName,
         publishDefault: 'disallow', subscribeDefault: 'disallow',
-        publishExceptions:  inboundQ .map(({obj}) => `${ns}/${obj}/in/>`),
-        subscribeExceptions: outboundQ.map(({obj}) => `${ns}/${obj}/out/>`)
+        publishExceptions: inboundQ.map(({obj, interfaces}) => {
+          const itfWithSub = (interfaces || []).find(id => p.interfaces[id] && p.interfaces[id]['solace-topicSubscription']);
+          return itfWithSub ? p.interfaces[itfWithSub]['solace-topicSubscription']
+                   : sd['solace-topicSubscription'] ? sd['solace-topicSubscription']
+                   : `${ns}/${obj}/in/>`;
+        }),
+        subscribeExceptions: outboundQ.map(({obj, interfaces}) => {
+          const itfWithSub = (interfaces || []).find(id => p.interfaces[id] && p.interfaces[id]['solace-topicSubscription']);
+          return itfWithSub ? p.interfaces[itfWithSub]['solace-topicSubscription']
+                   : sd['solace-topicSubscription'] ? sd['solace-topicSubscription']
+                   : `${ns}/${obj}/out/>`;
+        })
       }],
       clientUsernames: [{
         name: uName,
-        password: env==='UAT' ? (sd['solace-clientPwd']||'<UAT_PASSWORD>') : '<PROD_PASSWORD>',
+        password: env==='UAT' ? (sd['solace-clientPwd']||'<UAT_PASSWORD>') : env==='DEV' ? (sd['solace-clientPwd']||'<DEV_PASSWORD>') : '<PROD_PASSWORD>',
         clientProfile: cpName, aclProfile: aclName, enabled: true
       }],
       queues,
@@ -1038,12 +1149,14 @@ function generateConfig() {
       srcIntType: itfd.srcIntType||'',     tgtIntType: itfd.tgtIntType||'',
       volume: itfd.volume||'', sizePerMsg: itfd.sizePerMsg||'', peakVolume: itfd.peakVolume||'',
       topicPattern: `${ns}/${m.obj}/${m.dir}/{correlationId}`,
-      queueUAT:  `Q/3PL/${partnerID}/UAT/${m.obj}/${m.dir}`,
-      queuePROD: `Q/3PL/${partnerID}/PROD/${m.obj}/${m.dir}`,
+      queueDEV:  itfd['solace-queueNameDEV']  || `Q/3PL/${partnerID}/DEV/${m.obj}/${m.dir}`,
+      queueUAT:  itfd['solace-queueNameUAT']  || `Q/3PL/${partnerID}/UAT/${m.obj}/${m.dir}`,
+      queuePROD: itfd['solace-queueNamePROD'] || `Q/3PL/${partnerID}/PROD/${m.obj}/${m.dir}`,
       eventPortalEvent: `${cap(m.obj)}${m.dir==='out'?'Outbound':'Inbound'}`,
       sftp: {
-        uat:  { path: sd['solace-sftpPathUAT']  || `/sftp/${partnerSlug}/uat`,  filenameScheme: sd['solace-sftpFileUAT']  || `${id}_{yyyyMMdd_HHmmss}` },
-        prod: { path: sd['solace-sftpPathPROD'] || `/sftp/${partnerSlug}/prod`, filenameScheme: sd['solace-sftpFilePROD'] || `${id}_{yyyyMMdd_HHmmss}` }
+        dev:  { path: itfd['solace-sftpPathDEV']  || `/sftp/${partnerSlug}/dev`,  filenameScheme: itfd['solace-sftpFileDEV']  || `${id}_{yyyyMMdd_HHmmss}` },
+        uat:  { path: itfd['solace-sftpPathUAT']  || `/sftp/${partnerSlug}/uat`,  filenameScheme: itfd['solace-sftpFileUAT']  || `${id}_{yyyyMMdd_HHmmss}` },
+        prod: { path: itfd['solace-sftpPathPROD'] || `/sftp/${partnerSlug}/prod`, filenameScheme: itfd['solace-sftpFilePROD'] || `${id}_{yyyyMMdd_HHmmss}` }
       }
     };
   });
@@ -1060,7 +1173,8 @@ function generateConfig() {
     _metadata: {
       schemaVersion: '3.0.0', schemaType: '3pl-solace-onboarding',
       generatedFrom: 'Integration Hub — 3PL Onboarding UI v8',
-      generatedAt: new Date().toISOString(), partnerRef: activePartner
+      generatedAt: new Date().toISOString(), partnerRef: activePartner,
+      targetEnvironment: activeFormEnv.toUpperCase()
     },
     partner: {
       partnerID, partnerName: activePartner,
@@ -1070,23 +1184,50 @@ function generateConfig() {
     },
     service,
     eventPortal: epConfig,
-    clusterManagement: { uat: uatCluster, prod: prodCluster },
-    interfaces: interfaceList,
-    orchestrationPayloads: {
-      phase1_uatRun: {
-        _submitTo: 'wf-solace-automation-main-orchestrator',
-        _description: 'Phase 1 — service + Event Portal + UAT cluster',
-        config: { service, eventPortal: { ...epConfig, schemas: schemas.map(s=>({name:s.name,type:s.type,version:s.version})), events: events.map(e=>({name:e.name,version:e.version,topic:e.topic,schemaRef:e.schemaRef})) }, clusterManagement: uatCluster },
-        skipEventPortal: false, skipCluster: false
-      },
-      phase2_prodRun: {
-        _submitTo: 'wf-solace-automation-main-orchestrator',
-        _description: 'Phase 2 — PROD cluster only (Event Portal already created)',
-        config: { service: { serviceId: '<SERVICE_ID_FROM_PHASE1>', name: service.name }, clusterManagement: prodCluster },
-        skipEventPortal: true, skipCluster: false
+    interfaces: interfaceList.map(itf => {
+      const cleaned = {
+        interfaceId: itf.interfaceId,
+        sourceApp: itf.sourceApp, targetApp: itf.targetApp,
+        businessObject: itf.businessObject, direction: itf.direction,
+        sourceFormat: itf.sourceFormat, targetFormat: itf.targetFormat,
+        srcIntType: itf.srcIntType, tgtIntType: itf.tgtIntType,
+        volume: itf.volume, sizePerMsg: itf.sizePerMsg, peakVolume: itf.peakVolume,
+        topicPattern: itf.topicPattern,
+        eventPortalEvent: itf.eventPortalEvent
+      };
+      if (activeFormEnv === 'dev') {
+        cleaned.queueDEV = itf.queueDEV;
+        cleaned.sftp = { dev: itf.sftp.dev };
+      } else if (activeFormEnv === 'uat') {
+        cleaned.queueUAT = itf.queueUAT;
+        cleaned.sftp = { uat: itf.sftp.uat };
+      } else if (activeFormEnv === 'prod') {
+        cleaned.queuePROD = itf.queuePROD;
+        cleaned.sftp = { prod: itf.sftp.prod };
       }
-    },
-    executionPlan: {
+      return cleaned;
+    })
+  };
+
+  if (activeFormEnv === 'dev') {
+    const tempConfig = {
+      _metadata: { partnerRef: activePartner },
+      orchestrationPayloads: {
+        phase1_uatRun: {
+          config: {
+            clusterManagement: uatCluster,
+            eventPortal: epConfig
+          }
+        }
+      },
+      interfaces: interfaceList
+    };
+    const devCluster = buildDevPayload(tempConfig);
+    config.clusterManagement = { dev: devCluster.config.clusterManagement };
+    config.orchestrationPayloads = {
+      devRun: devCluster
+    };
+    config.executionPlan = {
       logicAppEndpoints: {
         mainOrchestrator:       'wf-solace-automation-main-orchestrator',
         dispatcher:             'wf-solace-automation-main-dispatcher',
@@ -1097,13 +1238,59 @@ function generateConfig() {
         exportClone:            'wf-solace-automation-export-clone'
       },
       phases: [
-        { phase:1, name:'UAT Full Provision',    endpoint:'mainOrchestrator', body:'orchestrationPayloads.phase1_uatRun',  estimatedDuration:'10–15 min' },
-        { phase:2, name:'PROD Cluster Provision', endpoint:'mainOrchestrator', body:'orchestrationPayloads.phase2_prodRun', estimatedDuration:'3–5 min', prerequisite:'Phase 1 completed' }
+        { phase:1, name:'DEV Provision', endpoint:'mainOrchestrator', body:'orchestrationPayloads.devRun', estimatedDuration:'5–10 min' }
       ]
-    }
-  };
+    };
+  } else if (activeFormEnv === 'uat') {
+    config.clusterManagement = { uat: uatCluster };
+    config.orchestrationPayloads = {
+      phase1_uatRun: {
+        _submitTo: 'wf-solace-automation-main-orchestrator',
+        _description: 'Phase 1 — service + Event Portal + UAT cluster',
+        config: { service, eventPortal: { ...epConfig, schemas: schemas.map(s=>({name:s.name,type:s.type,version:s.version})), events: events.map(e=>({name:e.name,version:e.version,topic:e.topic,schemaRef:e.schemaRef})) }, clusterManagement: uatCluster },
+        skipEventPortal: false, skipCluster: false
+      }
+    };
+    config.executionPlan = {
+      logicAppEndpoints: {
+        mainOrchestrator:       'wf-solace-automation-main-orchestrator',
+        dispatcher:             'wf-solace-automation-main-dispatcher',
+        clusterManagement:      'wf-solace-automation-cluster-management',
+        credentialsInit:        'wf-solace-automation-credentials-init',
+        serviceProvisioning:    'wf-solace-automation-service-provisioning',
+        eventPortalProvisioning:'wf-solace-automation-event-portal-provisioning',
+        exportClone:            'wf-solace-automation-export-clone'
+      },
+      phases: [
+        { phase:1, name:'UAT Full Provision', endpoint:'mainOrchestrator', body:'orchestrationPayloads.phase1_uatRun', estimatedDuration:'10–15 min' }
+      ]
+    };
+  } else if (activeFormEnv === 'prod') {
+    config.clusterManagement = { prod: prodCluster };
+    config.orchestrationPayloads = {
+      phase2_prodRun: {
+        _submitTo: 'wf-solace-automation-main-orchestrator',
+        _description: 'Phase 2 — PROD cluster only (Event Portal already created)',
+        config: { service: { serviceId: '<SERVICE_ID_FROM_PHASE1>', name: service.name }, clusterManagement: prodCluster },
+        skipEventPortal: true, skipCluster: false
+      }
+    };
+    config.executionPlan = {
+      logicAppEndpoints: {
+        mainOrchestrator:       'wf-solace-automation-main-orchestrator',
+        dispatcher:             'wf-solace-automation-main-dispatcher',
+        clusterManagement:      'wf-solace-automation-cluster-management',
+        credentialsInit:        'wf-solace-automation-credentials-init',
+        serviceProvisioning:    'wf-solace-automation-service-provisioning',
+        eventPortalProvisioning:'wf-solace-automation-event-portal-provisioning',
+        exportClone:            'wf-solace-automation-export-clone'
+      },
+      phases: [
+        { phase:1, name:'PROD Cluster Provision', endpoint:'mainOrchestrator', body:'orchestrationPayloads.phase2_prodRun', estimatedDuration:'3–5 min' }
+      ]
+    };
+  }
 
-  config.orchestrationPayloads.devRun = buildDevPayload(config);
   generatedJSON = config;
   showModal(config, partnerID, countryCode, uniqueQueues.length, schemas.length, events.length);
 }
@@ -1132,6 +1319,49 @@ function selectEnv(env) {
   if (cqPanel) cqPanel.classList.toggle('hidden', env !== 'dev');
 }
 
+let activeFormEnv = 'dev';
+
+function selectFormEnv(env) {
+  activeFormEnv = env;
+  ['dev', 'uat', 'prod'].forEach(e => {
+    const btn = document.getElementById('form-ep-' + e);
+    if (btn) btn.classList.toggle('active', e === env);
+  });
+  
+  allFields.forEach(k => {
+    const f = document.getElementById('f-' + k);
+    if (f) {
+      if (k.endsWith('DEV')) {
+        f.style.display = (env === 'dev') ? '' : 'none';
+      } else if (k.endsWith('UAT')) {
+        f.style.display = (env === 'uat') ? '' : 'none';
+      } else if (k.endsWith('PROD')) {
+        f.style.display = (env === 'prod') ? '' : 'none';
+      } else {
+        f.style.display = '';
+      }
+    }
+  });
+
+  if (activePartner && activeItfId) {
+    const p = partners[activePartner];
+    const d = Object.assign({}, p.sharedData, p.interfaces[activeItfId] || {});
+    recalcProgress(d);
+  } else if (tempItfId) {
+    recalcProgress(tempItfData);
+  }
+}
+
+function getQuestionsForEnv(env) {
+  return fullQ.filter(q => {
+    const k = q.k;
+    if (k.endsWith('DEV')) return env === 'dev';
+    if (k.endsWith('UAT')) return env === 'uat';
+    if (k.endsWith('PROD')) return env === 'prod';
+    return true;
+  });
+}
+
 /* backward-compat alias used by addCustomQueue / removeCustomQueue */
 function switchJsonTab(tab) { selectEnv(tab === 'info' ? 'dev' : tab); }
 
@@ -1143,9 +1373,16 @@ function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
   document.getElementById('modal-stats').innerHTML =
     `<strong>${itfCount}</strong> interfaces &nbsp;·&nbsp; <strong>${qCount * 2}</strong> queues &nbsp;·&nbsp; <strong>${sCount}</strong> schemas &nbsp;·&nbsp; <strong>${eCount}</strong> events`;
 
-  document.getElementById('json-pre').textContent = JSON.stringify(config.orchestrationPayloads.devRun, null, 2);
+  // Dynamically filter environment tabs in the JSON preview modal
+  const devTab  = document.getElementById('ep-dev');
+  const uatTab  = document.getElementById('ep-uat');
+  const prodTab = document.getElementById('ep-prod');
+  
+  if (devTab) devTab.style.display = (activeFormEnv === 'dev') ? '' : 'none';
+  if (uatTab) uatTab.style.display = (activeFormEnv === 'uat') ? '' : 'none';
+  if (prodTab) prodTab.style.display = (activeFormEnv === 'prod') ? '' : 'none';
 
-  selectEnv('dev');
+  selectEnv(activeFormEnv);
   document.getElementById('json-overlay').classList.add('open');
   showSubmitStatus('', '');
   updateAzBtn();
@@ -1197,7 +1434,7 @@ function pickMode(mode) {
 function startNewItfFlow() {
   tempItfId = 'NEW_PENDING'; tempItfData = {};
   showBlankDetail('New Interface');
-  agentQueue = [...fullQ]; pendingQ = agentQueue.shift();
+  agentQueue = getQuestionsForEnv(activeFormEnv); pendingQ = agentQueue.shift();
   botMsg(`Creating a new interface for <strong>${activePartner}</strong>. ${pendingQ.q}`);
   highlightField(pendingQ.k); autoSwitchTab(pendingQ.k);
   if (pendingQ.hints && pendingQ.hints.length) setQR(pendingQ.hints);
@@ -1208,12 +1445,14 @@ function botMsg(txt) {
   d.className = 'msg bot';
   d.innerHTML = `<div class="bbl">${txt}</div><div class="mtime">${ts()}</div>`;
   c.appendChild(d); c.scrollTop = c.scrollHeight;
+  replaceIconsIn(d);
 }
 function usrMsg(txt) {
   const c = document.getElementById('ag-msgs'), d = document.createElement('div');
   d.className = 'msg usr';
   d.innerHTML = `<div class="bbl">${txt}</div><div class="mtime">${ts()}</div>`;
   c.appendChild(d); c.scrollTop = c.scrollHeight;
+  replaceIconsIn(d);
 }
 function setQR(opts) { document.getElementById('qr-bar').innerHTML = opts.map(o=>`<button class="qr" onclick="qrClick('${o}')">${o}</button>`).join(''); }
 function qrClick(v)  { document.getElementById('ag-inp').value = v; send(); }
@@ -1239,7 +1478,7 @@ function handleReply(v) {
       return;
     }
     const lv = v.toLowerCase();
-    if (lv.includes('fill all')) { agentQueue=[...fullQ]; pendingQ=agentQueue.shift(); highlightField(pendingQ.k); autoSwitchTab(pendingQ.k); botMsg(pendingQ.q); if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints); return; }
+    if (lv.includes('fill all')) { agentQueue=getQuestionsForEnv(activeFormEnv); pendingQ=agentQueue.shift(); highlightField(pendingQ.k); autoSwitchTab(pendingQ.k); botMsg(pendingQ.q); if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints); return; }
     botMsg('Which field? e.g. "source format", "broker URL", "UAT URL". Or say "fill all fields".');
     return;
   }
@@ -1288,7 +1527,7 @@ function handleReply(v) {
       activePartner = pname; renderPartners(); openPartner(pname);
       tempItfId='NEW_PENDING'; tempItfData={};
       showBlankDetail('New Interface');
-      agentQueue=[...fullQ]; pendingQ=agentQueue.shift();
+      agentQueue=getQuestionsForEnv(activeFormEnv); pendingQ=agentQueue.shift();
       botMsg(`<strong>${pname}</strong> added! Let's set up the first interface. ${pendingQ.q}`);
       highlightField(pendingQ.k); autoSwitchTab(pendingQ.k);
       if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints);
@@ -1323,7 +1562,7 @@ function handleReply(v) {
     } else {
       if(v.toLowerCase().includes('add')||v.toLowerCase().includes('another')){
         tempItfId='NEW_PENDING';tempItfData={};showBlankDetail('New Interface');
-        agentQueue=[...fullQ];pendingQ=agentQueue.shift();
+        agentQueue=getQuestionsForEnv(activeFormEnv);pendingQ=agentQueue.shift();
         botMsg(`Next interface. ${pendingQ.q}`);highlightField(pendingQ.k);autoSwitchTab(pendingQ.k);
         if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints);
       } else {
@@ -1361,15 +1600,124 @@ const AZ_ENDPOINTS = {
 
 
 function buildDevPayload(cfg) {
-  const uatCluster = cfg.orchestrationPayloads.phase1_uatRun.config.clusterManagement;
-  const generatedQueues = uatCluster.queues.map(q => ({
-    ...q, name: q.name.replace('/UAT/', '/DEV/')
-  }));
-  // Merge in any custom test queues defined via the UI panel
+  const p = partners[cfg._metadata.partnerRef || activePartner];
+  const sd = p ? p.sharedData : {};
+  const partnerSlug = slug(cfg._metadata.partnerRef || activePartner);
+  const partnerID = p ? p.sharedData.partnerID || 'PARTNER' : 'PARTNER';
+  const ns = p ? `3pl/${p.sharedData.countryCode || 'XX'}/${partnerID}` : '3pl/XX/PARTNER';
+
+  const uatRun = cfg.orchestrationPayloads && cfg.orchestrationPayloads.phase1_uatRun;
+  const uatCluster = uatRun && uatRun.config && uatRun.config.clusterManagement;
+
+  let generatedQueues = [];
+  if (uatCluster && uatCluster.queues) {
+    generatedQueues = uatCluster.queues.map(q => {
+      const itf = cfg.interfaces.find(i => i.queueUAT === q.name);
+      let name = itf ? itf.queueDEV : (sd['solace-queueNameDEV'] || q.name.replace('/UAT/', '/DEV/').replace('/uat/', '/dev/'));
+      return {
+        ...q,
+        name: name,
+        subscriptions: q.subscriptions.map(s => s.replace('/UAT/', '/DEV/').replace('/uat/', '/dev/'))
+      };
+    });
+  } else {
+    // Generate DEV queues directly from the interface list
+    const queueMap = {};
+    cfg.interfaces.forEach(itf => {
+      const key = `${itf.businessObject}/${itf.direction}`;
+      if (!queueMap[key]) {
+        const itfData = p ? (p.interfaces[itf.interfaceId] || {}) : {};
+        const sub = itfData['solace-topicSubscription'] || sd['solace-topicSubscription'] || `${ns}/${itf.businessObject}/${itf.direction}/>`;
+        queueMap[key] = {
+          name: itf.queueDEV || `Q/3PL/${partnerID}/DEV/${itf.businessObject}/${itf.direction}`,
+          accessType: itf.businessObject === 'stockBalance' ? 'exclusive' : 'non-exclusive',
+          subscriptions: [sub]
+        };
+      }
+    });
+    generatedQueues = Object.values(queueMap);
+  }
+
+  let aclProfiles = [];
+  if (uatCluster && uatCluster.aclProfiles) {
+    aclProfiles = uatCluster.aclProfiles.map(acl => ({
+      ...acl,
+      name: acl.name.replace('-uat', '-dev').replace('-prod', '-dev'),
+      publishExceptions: acl.publishExceptions.map(t => t.replace('/UAT/', '/DEV/').replace('/uat/', '/dev/')),
+      subscribeExceptions: acl.subscribeExceptions.map(t => t.replace('/UAT/', '/DEV/').replace('/uat/', '/dev/'))
+    }));
+  } else {
+    const aclExceptionsIn = cfg.interfaces.filter(i => i.direction === 'in').map(i => {
+      const itfData = p ? (p.interfaces[i.interfaceId] || {}) : {};
+      return itfData['solace-topicSubscription'] || sd['solace-topicSubscription'] || `${ns}/${i.businessObject}/in/>`;
+    });
+    const aclExceptionsOut = cfg.interfaces.filter(i => i.direction === 'out').map(i => {
+      const itfData = p ? (p.interfaces[i.interfaceId] || {}) : {};
+      return itfData['solace-topicSubscription'] || sd['solace-topicSubscription'] || `${ns}/${i.businessObject}/out/>`;
+    });
+    aclProfiles = [{
+      name: `acl-${partnerSlug}-dev`,
+      publishDefault: 'disallow', subscribeDefault: 'disallow',
+      publishExceptions: aclExceptionsIn,
+      subscribeExceptions: aclExceptionsOut
+    }];
+  }
+
+  let clientUsernames = [];
+  const cpName = `cp-${partnerSlug}-dev`;
+  if (uatCluster && uatCluster.clientUsernames) {
+    clientUsernames = uatCluster.clientUsernames.map(cu => ({
+      ...cu,
+      name: cu.name.replace('-uat', '-dev').replace('-prod', '-dev'),
+      clientProfile: cu.clientProfile.replace('-uat', '-dev').replace('-prod', '-dev'),
+      aclProfile: cu.aclProfile.replace('-uat', '-dev').replace('-prod', '-dev'),
+      password: sd['solace-clientPwd'] || '<DEV_PASSWORD>'
+    }));
+  } else {
+    clientUsernames = [{
+      name: `${sd['solace-clientUser']||'svc-3pl'}-dev`,
+      password: sd['solace-clientPwd'] || '<DEV_PASSWORD>',
+      clientProfile: cpName, aclProfile: `acl-${partnerSlug}-dev`, enabled: true
+    }];
+  }
+
   const allQueues = [...generatedQueues, ...customQueues];
+  
+  const devMuleUrl = sd['mule-targetUrlDEV'] || (sd['mule-targetUrlUAT'] || '').replace(/uat/i, 'dev');
+  const muleHost = extractHost(devMuleUrl);
+  const rdpName = `rdp-${partnerSlug}-dev`;
+  
+  let rdps = [];
+  if (uatCluster && uatCluster.restDeliveryPoints) {
+    rdps = uatCluster.restDeliveryPoints.map(rdp => {
+      return {
+        ...rdp,
+        name: rdp.name.replace('-uat', '-dev').replace('-prod', '-dev'),
+        clientProfile: rdp.clientProfile.replace('-uat', '-dev').replace('-prod', '-dev'),
+        consumers: rdp.consumers.map(c => ({
+          ...c,
+          name: c.name.replace('-uat', '-dev').replace('-prod', '-dev'),
+          host: muleHost || c.host
+        })),
+        queueBindings: rdp.queueBindings.map(qName => {
+          const itf = cfg.interfaces.find(i => i.queueUAT === qName);
+          return itf ? itf.queueDEV : qName.replace('/UAT/', '/DEV/').replace('/uat/', '/dev/');
+        })
+      };
+    });
+  } else if (muleHost) {
+    rdps = [{
+      name: rdpName, clientProfile: cpName, enabled: true,
+      consumers: [{
+        name: `rest-consumer-mulesoft-dev`, host: muleHost, port: 443,
+        tlsEnabled: true, httpMethod: 'post', httpRequestTarget: '/api/v1/events'
+      }],
+      queueBindings: generatedQueues.filter(q => q.name.includes('/out') || q.name.includes('/out/')).map(q => q.name)
+    }];
+  }
+
   return {
     config: {
-      // Use the existing DEV service — no new service creation needed
       service: {
         serviceId:     'ruj2y805m8u',
         name:          '3pl-automation-dev',
@@ -1377,18 +1725,17 @@ function buildDevPayload(cfg) {
         serviceTypeId: 'developer',
         serviceClassId:'developer'
       },
-      // Event Portal objects already exist for DEV — skip to avoid duplicates
-      eventPortal: cfg.orchestrationPayloads.phase1_uatRun.config.eventPortal,
+      eventPortal: cfg.eventPortal || (uatRun && uatRun.config && uatRun.config.eventPortal ? uatRun.config.eventPortal : {}),
       clusterManagement: {
-        vpnName:         'msgvpn-ruj2y805m8u',
-        clientProfiles:  uatCluster.clientProfiles,
-        aclProfiles:     uatCluster.aclProfiles,
-        clientUsernames: uatCluster.clientUsernames,
+        vpnName:         (sd['solace-msgVpn'] || `${partnerSlug}-dev`).replace(/-prod$/i, '-dev').replace(/-uat$/i, '-dev'),
+        clientProfiles:  [{ name: cpName }],
+        aclProfiles:     aclProfiles,
+        clientUsernames: clientUsernames,
         queues:          allQueues,
-        restDeliveryPoints: []
+        restDeliveryPoints: rdps
       }
     },
-    skipEventPortal: true,   // EP already configured for DEV service
+    skipEventPortal: true,
     skipCluster: false
   };
 }
@@ -1445,6 +1792,7 @@ function renderCustomQueues() {
       <span class="cq-item-sub"  title="${q.subscriptions[0]||''}">${q.subscriptions[0] || '<em style="color:#adb5bd">no subscription</em>'}</span>
       <button class="cq-del" onclick="removeCustomQueue(${i})" title="Remove queue"><i class="ti ti-trash"></i></button>
     </div>`).join('');
+  replaceIconsIn(list);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1472,6 +1820,7 @@ function showSubmitStatus(state, html) {
   const el = document.getElementById('submit-status');
   if (!el) return;
   el.className = state; el.innerHTML = html;
+  replaceIconsIn(el);
 }
 
 function submitForApproval() {
@@ -1480,10 +1829,7 @@ function submitForApproval() {
     showSubmitStatus('error', '<i class="ti ti-alert-triangle"></i> Submission endpoint not configured — set PIPELINE_ENDPOINTS.submission in the JS.');
     return;
   }
-  const freshDevRun = buildDevPayload(generatedJSON);
-  const configToSend = Object.assign({}, generatedJSON, {
-    orchestrationPayloads: Object.assign({}, generatedJSON.orchestrationPayloads, { devRun: freshDevRun })
-  });
+  const configToSend = generatedJSON;
   const pid  = generatedJSON.partner && generatedJSON.partner.partnerID || 'UNKNOWN';
   const pname = generatedJSON.partner && generatedJSON.partner.partnerName || activePartner || 'Unknown Partner';
   const btn  = document.getElementById('submit-approval-btn');
@@ -1597,6 +1943,7 @@ function renderApprovalCards() {
   const el = document.getElementById('approval-list');
   if (!pending.length) {
     el.innerHTML = `<div class="empty-approvals"><i class="ti ti-checks"></i><p>No pending approvals. Submissions from the Manager tab will appear here.</p></div>`;
+    replaceIconsIn(el);
     return;
   }
   el.innerHTML = pending.map(s => {
@@ -1617,12 +1964,14 @@ function renderApprovalCards() {
       <div class="ac-actions">
         <button class="ac-btn approve" id="ac-appbtn-${s.submissionId}" onclick="approveSubmission('${s.submissionId}','${s.blobPath}','${s.statusPath}')"><i class="ti ti-check"></i> Approve</button>
         <button class="ac-btn review"  onclick="toggleAcJson('${s.submissionId}')"><i class="ti ti-code"></i> Review JSON</button>
+        <button class="ac-btn review"  onclick="copyAcJson('${s.submissionId}', this)"><i class="ti ti-copy"></i> Copy JSON</button>
         <button class="ac-btn reject"  onclick="rejectSubmission('${s.submissionId}')"><i class="ti ti-x"></i> Reject</button>
       </div>
       <div class="ac-status" id="ac-status-${s.submissionId}"></div>
       <pre class="ac-json-preview" id="ac-json-${s.submissionId}">${JSON.stringify(s.config, null, 2)}</pre>
     </div>`;
   }).join('');
+  replaceIconsIn(el);
 }
 
 function toggleAcJson(id) {
@@ -1633,10 +1982,36 @@ function toggleAcJson(id) {
   card.classList.toggle('reviewing', pre.classList.contains('open'));
 }
 
+function copyAcJson(id, btn) {
+  const pre = document.getElementById('ac-json-'+id);
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  });
+}
+
+function togglePpJson() {
+  const pre = document.getElementById('pp-json-preview');
+  if (pre) pre.classList.toggle('open');
+}
+
+function copyPpJson(btn) {
+  const pre = document.getElementById('pp-json-preview');
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="ti ti-check"></i> Copied!';
+    setTimeout(() => { btn.innerHTML = orig; }, 2000);
+  });
+}
+
 function setAcStatus(id, state, html) {
   const el = document.getElementById('ac-status-'+id);
   if (!el) return;
   el.className = 'ac-status show ' + state; el.innerHTML = html;
+  replaceIconsIn(el);
 }
 
 function approveSubmission(submissionId, blobPath, statusPath) {
@@ -1681,6 +2056,18 @@ function rejectSubmission(submissionId) {
 ─────────────────────────────────────────────────────────────── */
 let activeProgressId = null;
 
+function deleteSubmissionFromHistory(submissionId, event) {
+  if (event) event.stopPropagation();
+  if (!confirm('Remove this submission from history?')) return;
+  const list = loadLocalSubmissions().filter(s => s.submissionId !== submissionId);
+  saveLocalSubmissions(list);
+  if (activeProgressId === submissionId) {
+    activeProgressId = null;
+    stopProgressPoll();
+  }
+  renderProgressChips();
+}
+
 function renderProgressChips() {
   const list = loadLocalSubmissions().filter(s => ['approved','running','completed','failed','completed_partial'].includes(s.status));
   const el = document.getElementById('progress-chips');
@@ -1688,11 +2075,13 @@ function renderProgressChips() {
   if (!list.length) {
     el.innerHTML = '';
     container.innerHTML = '<div class="empty-approvals"><i class="ti ti-chart-line"></i><p>No approved submissions yet. Approve a submission from the Architect tab to start tracking.</p></div>';
+    replaceIconsIn(container);
     return;
   }
   el.innerHTML = list.map(s =>
-    `<span class="ps-chip ${s.submissionId===activeProgressId?'active':''}" onclick="showProgressFor('${s.submissionId}')">${s.partnerName || s.partnerID}</span>`
+    `<span class="ps-chip ${s.submissionId===activeProgressId?'active':''}" onclick="showProgressFor('${s.submissionId}')">${s.partnerName || s.partnerID}<span class="ps-chip-delete" onclick="deleteSubmissionFromHistory('${s.submissionId}', event)" title="Remove from history"><i class="ti ti-x"></i></span></span>`
   ).join('');
+  replaceIconsIn(el);
   if (!activeProgressId || !list.find(s => s.submissionId === activeProgressId)) {
     showProgressFor(list[0].submissionId);
   } else {
@@ -1736,7 +2125,8 @@ function renderProgressPanel(sub, liveStatus) {
     </div>`).join('');
 
   const isRunning = ['approved','running'].includes(overall);
-  document.getElementById('progress-panel-container').innerHTML = `
+  const pContainer = document.getElementById('progress-panel-container');
+  pContainer.innerHTML = `
     <div class="progress-panel">
       <div class="pp-header">
         <div><div class="pp-partner">${sub.partnerName || sub.partnerID}</div><div class="pp-id">${sub.submissionId}</div></div>
@@ -1750,7 +2140,13 @@ function renderProgressPanel(sub, liveStatus) {
       </div>
       <div class="services-list">${svcRows}</div>
       ${isRunning ? `<div class="poll-note"><span class="poll-dot"></span> Auto-refreshing every 10 seconds…</div>` : ''}
+      <div class="pp-actions" style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--color-border-secondary); display: flex; gap: 8px;">
+        <button class="ac-btn review" onclick="togglePpJson()" style="font-size: 11px; padding: 4px 8px;"><i class="ti ti-code"></i> View JSON Config</button>
+        <button class="ac-btn review" onclick="copyPpJson(this)" style="font-size: 11px; padding: 4px 8px;"><i class="ti ti-copy"></i> Copy JSON Config</button>
+      </div>
+      <pre class="ac-json-preview" id="pp-json-preview" style="margin-top:12px; max-height: 250px; overflow-y: auto;">${JSON.stringify(sub.config, null, 2)}</pre>
     </div>`;
+  replaceIconsIn(pContainer);
 }
 
 function startProgressPoll(submissionId) {
@@ -1789,7 +2185,7 @@ const sharedFieldKeys = new Set([
   'partnerID','navInstance','countryCode','regionISO','country','subRules',
   'sourceFormat','srcIntType','targetFormat','tgtIntType',
   'solace-brokerUrl','solace-msgVpn','solace-clientUser','solace-clientPwd',
-  'solace-protocol','solace-portUAT','solace-portPROD'
+  'solace-protocol','solace-portDEV','solace-portUAT','solace-portPROD'
 ]);
 
 function onDirectEdit(el) {
@@ -1808,6 +2204,78 @@ function onDirectEdit(el) {
     activeItfId && activeItfId !== 'NEW_PENDING' ? (partners[activePartner].interfaces[activeItfId] || {}) : {}
   );
   recalcProgress(merged); renderItfList(activePartner); updateGenBtn();
+}
+
+const svgPaths = {
+  'send': '<path d="M10 14l11 -9l-9 11v-4" /><path d="M21 5l-3.5 14.5a.75 .75 0 0 1 -1.35 .1l-4.15 -5.1" />',
+  'file-download': '<path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M12 17v-6" /><path d="M9.5 14.5l2.5 2.5l2.5 -2.5" />',
+  'user': '<path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" />',
+  'building-warehouse': '<path d="M3 21v-13l9 -4l9 4v13" /><path d="M13 13h4v8h-4z" /><path d="M6 13h4v8h-4z" /><path d="M9 21h3" />',
+  'plus': '<path d="M12 5l0 14" /><path d="M5 12l14 0" />',
+  'layout-grid': '<path d="M4 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M14 14m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v4a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" />',
+  'robot': '<path d="M7 7h10v8a4 4 0 0 1 -4 4h-2a4 4 0 0 1 -4 -4z" /><path d="M12 4v3" /><path d="M9 11v.01" /><path d="M15 11v.01" /><path d="M8 3h8" /><path d="M4 12h3" /><path d="M17 12h3" />',
+  'x': '<path d="M18 6l-12 12" /><path d="M6 6l12 12" />',
+  'edit': '<path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" /><path d="M13.5 6.5l4 4" />',
+  'file-code': '<path d="M14 3v4a1 1 0 0 0 1 1h4" /><path d="M17 21h-10a2 2 0 0 1 -2 -2v-14a2 2 0 0 1 2 -2h7l5 5v11a2 2 0 0 1 -2 2z" /><path d="M10 13l-1 1.5l1 1.5" /><path d="M14 13l1 1.5l-1 1.5" /><path d="M11 17l2 -6" />',
+  'check': '<path d="M5 12l5 5l10 -10" />',
+  'copy': '<path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" /><path d="M16 8v-2a2 2 0 0 0 -2 -2h-8a2 2 0 0 0 -2 2v8a2 2 0 0 0 2 2h2" />',
+  'download': '<path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2 -2v-2" /><path d="M7 11l5 5l5 -5" /><path d="M12 4l0 12" />',
+  'stack-2': '<path d="M12 4l-8 4l8 4l8 -4l-8 -4" /><path d="M4 12l8 4l8 -4" /><path d="M4 16l8 4l8 -4" />',
+  'chevron-down': '<path d="M6 9l6 6l6 -6" />',
+  'chevron-up': '<path d="M6 15l6 -6l6 6" />',
+  'info-circle': '<path d="M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0" /><path d="M12 9h.01" /><path d="M11 12h1v4h1" />',
+  'flask': '<path d="M9 3h6" /><path d="M10 9h4" /><path d="M10 3v6l-4 9a2 2 0 0 0 1.85 2.85h8.3a2 2 0 0 0 1.85 -2.85l-4 -9v-6" />',
+  'truck': '<path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />',
+  'trash': '<path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" />',
+  'alert-triangle': '<path d="M12 9v4" /><path d="M12 17h.01" /><path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636 -2.87l-8.106 -13.536a1.914 1.914 0 0 0 -3.274 0z" />',
+  'circle-check': '<path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0" /><path d="M9 12l2 2l4 -4" />',
+  'checks': '<path d="M7 12l5 5l10 -10" /><path d="M2 12l5 5m5 -5l5 -5" />',
+  'git-branch': '<path d="M7 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M7 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M17 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M7 8v8" /><path d="M9 18h6a2 2 0 0 0 2 -2v-5" /><path d="M14 12l3 -3l3 3" />',
+  'layers-difference': '<path d="M16 16v2a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-8a2 2 0 0 1 2 -2h2" /><path d="M8 8m0 2a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v8a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2z" />',
+  'bolt': '<path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0z" />',
+  'code': '<path d="M7 8l-4 4l4 4" /><path d="M17 8l4 4l-4 4" /><path d="M14 4l-4 16" />',
+  'chart-line': '<path d="M4 16l6 -6l4 4l6 -6" /><path d="M3 3v18h18" />',
+  'topology-star': '<path d="M12 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M6 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M18 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M18 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M6 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" /><path d="M12 14v4" /><path d="M12 10v-4" /><path d="M10 12h-4" /><path d="M14 12h4" />',
+  'cloud': '<path d="M7 18a4.6 4.4 0 0 1 0 -9a5 4.5 0 0 1 11 2h1a3.5 3.5 0 0 1 0 7h-12" />',
+  'building-bank': '<path d="M3 21l18 0" /><path d="M3 10l18 0" /><path d="M5 6l7 -3l7 3" /><path d="M4 10l0 11" /><path d="M20 10l0 11" /><path d="M8 14l0 3" /><path d="M12 14l0 3" /><path d="M16 14l0 3" />',
+  'calendar': '<path d="M4 5m0 2a2 2 0 0 1 2 -2h12a2 2 0 0 1 2 2v12a2 2 0 0 1 -2 2h-12a2 2 0 0 1 -2 -2z" /><path d="M16 3l0 4" /><path d="M8 3l0 4" /><path d="M4 11l16 0" /><path d="M8 15h2v2h-2z" />',
+  'player-play': '<path d="M7 4v16l13 -8z" />',
+  'flag': '<path d="M5 5a5 5 0 0 1 7 0a5 5 0 0 0 7 0v9a5 5 0 0 1 -7 0a5 5 0 0 0 -7 0v-9z" /><path d="M5 21v-7" />',
+  'settings': '<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 0 0-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 0 0-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 0 0 1.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />'
+};
+
+function replaceIcon(el) {
+  if (!el) return;
+  const classes = el.className.split(' ');
+  const tiClass = classes.find(c => c.startsWith('ti-') && c !== 'ti');
+  if (tiClass) {
+    const iconName = tiClass.replace('ti-', '');
+    const path = svgPaths[iconName] || '';
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24");
+    svg.setAttribute("stroke-width", "2");
+    svg.setAttribute("stroke", "currentColor");
+    svg.setAttribute("fill", "none");
+    svg.setAttribute("stroke-linecap", "round");
+    svg.setAttribute("stroke-linejoin", "round");
+    
+    if (el.style.cssText) {
+      svg.style.cssText = el.style.cssText;
+    }
+    let size = el.style.fontSize || "1.1em";
+    svg.style.width = size;
+    svg.style.height = size;
+    svg.style.display = "inline-block";
+    svg.style.verticalAlign = "middle";
+    
+    svg.innerHTML = path;
+    el.parentNode.replaceChild(svg, el);
+  }
+}
+
+function replaceIconsIn(parent) {
+  if (!parent) return;
+  parent.querySelectorAll('i.ti').forEach(replaceIcon);
 }
 
 function initEditableFields() {
@@ -1829,6 +2297,8 @@ showEmpty('no-partner');
 initEditableFields();
 updateAzBtn();
 refreshArchitectBadge();
+replaceIconsIn(document.body);
+selectFormEnv('dev');
 </script>
 </body>
 </html>
