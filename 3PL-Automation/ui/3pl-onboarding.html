@@ -663,7 +663,31 @@ let customQueues = []; // [{name, accessType, subscriptions:[...]}]
 let partners = {
   'LogiCo GmbH':    {status:'partial', interfaces:{}, sharedData:{partnerID:'3PL-001',navInstance:'NAV-EU-02',countryCode:'DE',regionISO:'EU',country:'Germany',sourceFormat:'xml',targetFormat:'xml','solace-msgVpn':'logico-uat','solace-protocol':'AMQP'}},
   'FastFulfill BV': {status:'done',    interfaces:{}, sharedData:{partnerID:'3PL-002',navInstance:'NAV-EU-01',countryCode:'NL',regionISO:'EU',country:'Netherlands',sourceFormat:'xml',targetFormat:'json',srcIntType:'SFTP',tgtIntType:'REST API',volume:'5000/day',sizePerMsg:'2KB',peakVolume:'15000/day',funcDesc:'Full WMS integration suite',subRules:'ByPartnerID','solace-brokerUrl':'mrp8hz8.messaging.solace.cloud:55443','solace-msgVpn':'fastfulfill-prod','solace-clientUser':'svc-3pl','solace-clientPwd':'<SOLACE_PASS>','solace-queueNameUAT':'Q/3PL/UAT/inbound','solace-queueNamePROD':'Q/3PL/PROD/inbound','solace-topicSubscription':'3pl/NL/3PL-002/>','solace-protocol':'AMQP','solace-portUAT':'5672','solace-portPROD':'5671','solace-sftpPathUAT':'/sftp/fastfulfill/uat','solace-sftpFileUAT':'{interfaceId}_{yyyyMMdd}.xml','solace-sftpPathPROD':'/sftp/fastfulfill/prod','solace-sftpFilePROD':'{interfaceId}_{yyyyMMdd}.xml','mule-targetUrlUAT':'https://uat-api.fastfulfill.nl/v1','mule-userUAT':'svc_mule_uat','mule-targetUrlPROD':'https://api.fastfulfill.nl/v1','mule-userPROD':'svc_mule_prod','mule-apiClientId':'cl-8823xxf','mule-envUAT':'Sandbox','mule-envPROD':'Production','mule-appName':'3pl-wms-integration','mule-connectorType':'HTTP','sap-targetUrlUAT':'https://uat.btp.fastfulfill.nl','sap-userUAT':'svc_sap_uat','sap-targetUrlPROD':'https://btp.fastfulfill.nl','sap-userPROD':'svc_sap_prod','sap-iflowId':'FF_WMS_001','sap-packageId':'FF_3PL_PKG','sap-tenantUAT':'fastfulfill-uat','sap-tenantPROD':'fastfulfill-prod','sap-oauthClientId':'oauth-ff-3pl','sap-tokenUrl':'https://fastfulfill.authentication.eu10.hana.ondemand.com/oauth/token','sap-senderSystem':'3PL_SYS','sap-receiverSystem':'1NAV_ERP'}},
-  'OmniLog India':  {status:'none',    interfaces:{}, sharedData:{}}
+  'OmniLog India':  {status:'none',    interfaces:{}, sharedData:{}},
+  'SolaceDemo Co':  {status:'done',    interfaces:{}, sharedData:{
+    partnerID:'3PL-003', navInstance:'NAV-EU-03', countryCode:'DE', regionISO:'EU',
+    country:'Germany', sourceFormat:'json', targetFormat:'json',
+    srcIntType:'REST API', tgtIntType:'AMQP',
+    volume:'500/day', sizePerMsg:'2KB', peakVolume:'2000/day',
+    funcDesc:'Demo: Solace queue creation with topic subscription',
+    subRules:'ByPartnerID',
+    'solace-brokerUrl':'mr-connection-bv61r48nseq.messaging.solace.cloud:55443',
+    'solace-msgVpn':'msgvpn-ruj2y805m8u',
+    'solace-clientUser':'svc-demo-3pl',
+    'solace-clientPwd':'<DEMO_PASS>',
+    'solace-queueNameUAT':'Q/3PL/3PL-003/UAT/stockMovement/in',
+    'solace-queueNamePROD':'Q/3PL/3PL-003/PROD/stockMovement/in',
+    'solace-topicSubscription':'3pl/DE/3PL-003/stockMovement/in/>',
+    'solace-protocol':'AMQP',
+    'solace-portUAT':'5672',
+    'solace-portPROD':'5671',
+    'mule-targetUrlUAT':'https://uat-api.solarizedemo.de/v1',
+    'mule-targetUrlPROD':'https://api.solarizedemo.de/v1',
+    'mule-appName':'solace-demo-integration',
+    'mule-connectorType':'HTTP',
+    'sap-iflowId':'DEMO_WMS_001','sap-packageId':'DEMO_3PL_PKG',
+    'sap-senderSystem':'3PL_SYS','sap-receiverSystem':'1NAV_ERP'
+  }}
 };
 const defaultItfs = ['ITF_MST_009','ITF_PUR_028','ITF_SAL_006','ITF_SAL_007','ITF_WMS_002','ITF_WMS_003','ITF_INV_002','ITF_INV_004','ITF_INV_003','ITF_WMS_005','ITF_PUR_019','ITF_SAL_008','ITF_WMS_004','ITF_SAL_011'];
 const itfMeta = {
@@ -680,13 +704,26 @@ const itfMeta = {
   'ITF_PUR_019':{src:'3PL',tgt:'1NAV',obj:'sourcingStock',   dir:'in'},
   'ITF_SAL_008':{src:'3PL',tgt:'1NAV',obj:'despatchStock',   dir:'in'},
   'ITF_WMS_004':{src:'3PL',tgt:'1NAV',obj:'despatchStock',   dir:'in'},
-  'ITF_SAL_011':{src:'3PL',tgt:'1NAV',obj:'returnStock',     dir:'in'}
+  'ITF_SAL_011':{src:'3PL',tgt:'1NAV',obj:'returnStock',     dir:'in'},
+  'ITF_DEMO_001':{src:'3PL',tgt:'1NAV',obj:'stockMovement',  dir:'in'},
+  'ITF_DEMO_002':{src:'1NAV',tgt:'3PL',obj:'dispatchDelivery',dir:'out'}
 };
 defaultItfs.forEach(id => {
   partners['LogiCo GmbH'].interfaces[id]    = {};
   partners['FastFulfill BV'].interfaces[id] = {};
   partners['OmniLog India'].interfaces[id]  = {};
 });
+// Demo partner: 2 focused interfaces only
+partners['SolaceDemo Co'].interfaces['ITF_DEMO_001'] = {
+  interfaceId:'ITF_DEMO_001', srcIntType:'REST API', tgtIntType:'AMQP',
+  volume:'500/day', sizePerMsg:'2KB', peakVolume:'2000/day',
+  funcDesc:'Stock movement inbound via Solace queue with topic subscription'
+};
+partners['SolaceDemo Co'].interfaces['ITF_DEMO_002'] = {
+  interfaceId:'ITF_DEMO_002', srcIntType:'AMQP', tgtIntType:'REST API',
+  volume:'200/day', sizePerMsg:'3KB', peakVolume:'800/day',
+  funcDesc:'Dispatch delivery outbound via Solace queue'
+};
 
 let activePartner = null, activeItfId = null, activeTab = 'common';
 let agentMode = 'update';
@@ -711,8 +748,10 @@ function renderPartners(filter) {
   const names = Object.keys(partners).filter(n => !filter || n.toLowerCase().includes(filter.toLowerCase()));
   document.getElementById('sb-partners').innerHTML = names.map(name => {
     const s = partners[name].status;
+    const isDemo = name === 'SolaceDemo Co';
     return `<div class="sbp ${activePartner===name?'active':''}" onclick="openPartner('${name}')">
-      <i class="ti ti-truck"></i>${name}<span class="sbd ${s==='done'?'done':s==='partial'?'partial':''}"></span>
+      <i class="ti ti-${isDemo?'flask':'truck'}"></i>${name}${isDemo?'<span style="font-size:9px;font-weight:700;background:#e8f4ff;color:#1971c2;border-radius:4px;padding:1px 5px;margin-left:4px;letter-spacing:.03em;">DEMO</span>':''}
+      <span class="sbd ${s==='done'?'done':s==='partial'?'partial':''}"></span>
     </div>`;
   }).join('');
 }
