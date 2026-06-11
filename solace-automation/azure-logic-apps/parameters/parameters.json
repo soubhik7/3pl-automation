@@ -34,5 +34,20 @@
     "exportCloneUrl": {
         "type": "String",
         "value": ""
+    },
+    "blobUploadUrl": {
+        "type": "String",
+        "value": "https://prod-73.eastus.logic.azure.com:443/workflows/ce419f64db0e4ccfa7908f109c4f6d7d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED03",
+        "description": "HTTP trigger URL for wf-solace-automation-blob-upload — used by 3PL Onboarding UI"
+    },
+    "blobTriggerUrl": {
+        "type": "String",
+        "value": "https://prod-37.eastus.logic.azure.com:443/workflows/10aea9f528f743388ad0c5d9ed9246e2/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED17",
+        "description": "HTTP trigger URL for wf-solace-automation-blob-trigger — called by blob-upload after writing the blob"
+    },
+    "mainOrchestratorUrl": {
+        "type": "String",
+        "value": "https://prod-93.eastus.logic.azure.com:443/workflows/a3aa7415cd0b4fc8afc868d94da85829/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED06",
+        "description": "HTTP trigger URL for wf-solace-automation-main-orchestrator — called by blob-trigger for UAT and PROD runs"
     }
 }

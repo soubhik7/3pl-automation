@@ -7,5 +7,7 @@
   "wf-solace-automation-export-clone": "https://prod-32.eastus.logic.azure.com:443/workflows/073f986f7466444c95e36461eebe596f/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=lFxEa2VKKgOJp5RfSkOKhXmSid9ZZlD0VVkfRja7mUE",
   "wf-solace-automation-credentials-init": "https://prod-77.eastus.logic.azure.com:443/workflows/13b3e713a53e4e9a8fb9d5a694dd7b9d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED09",
   "wf-solace-automation-main-orchestrator": "https://prod-93.eastus.logic.azure.com:443/workflows/a3aa7415cd0b4fc8afc868d94da85829/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED06",
-  "wf-solace-automation-main-dispatcher": "https://prod-37.eastus.logic.azure.com:443/workflows/2e7e7ad2e9714e358a404c407f7d10c1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED11"
+  "wf-solace-automation-main-dispatcher": "https://prod-37.eastus.logic.azure.com:443/workflows/2e7e7ad2e9714e358a404c407f7d10c1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED11",
+  "wf-solace-automation-blob-upload": "https://prod-73.eastus.logic.azure.com:443/workflows/ce419f64db0e4ccfa7908f109c4f6d7d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED03",
+  "wf-solace-automation-blob-trigger": "https://prod-37.eastus.logic.azure.com:443/workflows/10aea9f528f743388ad0c5d9ed9246e2/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED17"
 }
