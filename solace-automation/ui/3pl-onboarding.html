@@ -229,6 +229,30 @@
     .az-spinner { width: 12px; height: 12px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; animation: az-spin .6s linear infinite; flex-shrink: 0; }
     @keyframes az-spin { to { transform: rotate(360deg); } }
     .blob-path { font-family: var(--font-mono); background: rgba(0,0,0,.07); padding: 1px 5px; border-radius: 3px; font-size: 10px; word-break: break-all; }
+    /* Custom Test Queues */
+    #cq-panel { background: #f4fdf8; border: 1px solid rgba(29,158,117,.25); border-radius: 8px; padding: 9px 11px; }
+    #cq-panel.hidden { display: none; }
+    .cq-header { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; cursor: pointer; user-select: none; }
+    .cq-title { font-size: 11px; font-weight: 600; color: var(--teal-m); flex: 1; display: flex; align-items: center; gap: 5px; }
+    #cq-badge { font-size: 10px; background: var(--teal); color: #fff; border-radius: 8px; padding: 1px 6px; display: none; }
+    .cq-toggle-btn { font-size: 10px; color: var(--color-text-tertiary); background: none; border: none; cursor: pointer; padding: 0; display: flex; align-items: center; }
+    #cq-body { }
+    #cq-body.collapsed { display: none; }
+    .cq-hint { font-size: 10px; color: var(--color-text-tertiary); margin-bottom: 6px; font-style: italic; }
+    .cq-hint code { font-family: var(--font-mono); background: rgba(0,0,0,.06); padding: 1px 4px; border-radius: 3px; font-style: normal; }
+    .cq-add-row { display: flex; gap: 5px; margin-bottom: 6px; }
+    .cq-inp { flex: 1; font-size: 11px; padding: 5px 8px; border: 1px solid var(--color-border-secondary); border-radius: 5px; background: #fff; color: var(--color-text-primary); font-family: var(--font-mono); outline: none; min-width: 0; }
+    .cq-inp:focus { border-color: var(--teal); box-shadow: 0 0 0 2px rgba(29,158,117,.1); }
+    .cq-inp::placeholder { font-family: var(--font-sans); color: var(--color-text-tertiary); font-size: 10px; }
+    .cq-add-btn { font-size: 11px; padding: 5px 10px; background: var(--teal); color: #fff; border: none; border-radius: 5px; cursor: pointer; font-weight: 600; white-space: nowrap; flex-shrink: 0; display: flex; align-items: center; gap: 4px; }
+    .cq-add-btn:hover { background: var(--teal-m); }
+    .cq-list { display: flex; flex-direction: column; gap: 4px; }
+    .cq-item { display: flex; align-items: center; gap: 6px; background: #fff; border: 1px solid rgba(29,158,117,.18); border-radius: 5px; padding: 5px 8px; }
+    .cq-item-name { font-family: var(--font-mono); font-size: 10px; color: var(--teal-m); font-weight: 600; flex-shrink: 0; max-width: 45%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cq-item-sub  { font-family: var(--font-mono); font-size: 10px; color: var(--color-text-secondary); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cq-del { background: none; border: none; cursor: pointer; color: #c0392b; font-size: 13px; flex-shrink: 0; display: flex; align-items: center; padding: 0; opacity: .7; }
+    .cq-del:hover { opacity: 1; }
+    .cq-empty { font-size: 10px; color: var(--color-text-tertiary); font-style: italic; text-align: center; padding: 3px 0; }
   </style>
 </head>
 <body>
@@ -438,6 +462,23 @@
       </div>
     </div>
     <div id="json-card-footer">
+      <!-- Custom Test Queues (DEV only) -->
+      <div id="cq-panel" class="hidden">
+        <div class="cq-header" onclick="toggleCqBody()">
+          <div class="cq-title"><i class="ti ti-stack-2"></i> Custom Test Queues <span id="cq-badge"></span></div>
+          <span id="cq-ns-hint" style="font-size:10px;font-family:var(--font-mono);color:var(--color-text-tertiary);"></span>
+          <button class="cq-toggle-btn" id="cq-toggle"><i class="ti ti-chevron-down"></i></button>
+        </div>
+        <div id="cq-body">
+          <div class="cq-hint">Add queues &amp; subscriptions outside the auto-generated set for E2E testing. They are merged into the <strong>DEV</strong> cluster payload on submit.</div>
+          <div class="cq-add-row">
+            <input id="cq-name" class="cq-inp" type="text" placeholder="Queue name  e.g. Q/3PL/LOGICO/DEV/testObject/in" />
+            <input id="cq-sub"  class="cq-inp" type="text" placeholder="Topic subscription  e.g. 3pl/DE/3PL-001/testObject/in/>" />
+            <button class="cq-add-btn" onclick="addCustomQueue()"><i class="ti ti-plus"></i> Add</button>
+          </div>
+          <div class="cq-list" id="cq-list"><p class="cq-empty">No custom queues added — only interface-generated queues will be provisioned.</p></div>
+        </div>
+      </div>
       <div class="az-row">
         <div class="az-env-sel">
           <label class="az-env-opt"><input type="radio" name="az-env" value="dev" checked onchange="updateAzBtn()"><i class="ti ti-code"></i> DEV</label>
@@ -528,6 +569,8 @@ const qSAP = [
   {k:'sap-receiverSystem',q:'[SAP BTP] <strong>Receiver system</strong>?',hints:[]}
 ];
 const fullQ = [...qCommon,...qSolace,...qMule,...qSAP];
+
+let customQueues = []; // [{name, accessType, subscriptions:[...]}]
 
 let partners = {
   'LogiCo GmbH':    {status:'partial', interfaces:{}, sharedData:{partnerID:'3PL-001',navInstance:'NAV-EU-02',countryCode:'DE',regionISO:'EU',country:'Germany',sourceFormat:'xml',targetFormat:'xml','solace-msgVpn':'logico-uat','solace-protocol':'AMQP'}},
@@ -760,6 +803,8 @@ function updateGenBtn() {
 ───────────────────────────────────────────────────────────── */
 function generateConfig() {
   if (!activePartner) return;
+  customQueues = [];
+  renderCustomQueues();
   const p  = partners[activePartner];
   const sd = p.sharedData;
   const partnerID  = sd.partnerID  || 'PARTNER';
@@ -931,6 +976,7 @@ function generateConfig() {
     }
   };
 
+  config.orchestrationPayloads.devRun = buildDevPayload(config);
   generatedJSON = config;
   showModal(config, partnerID, countryCode, uniqueQueues.length, schemas.length, events.length);
 }
@@ -939,6 +985,23 @@ function generateConfig() {
    MODAL
 ───────────────────────────────────────────────────────────── */
 let currentJsonTab = 'info';
+
+function updateModalTabs() {
+  const env = getSelectedEnv();
+  const tabsEl = document.getElementById('json-tabs');
+  if (env === 'dev') {
+    tabsEl.innerHTML =
+      '<div class="json-tab" onclick="switchJsonTab(\'info\')">Summary</div>' +
+      '<div class="json-tab" onclick="switchJsonTab(\'dev\')">DEV Payload</div>' +
+      '<div class="json-tab" onclick="switchJsonTab(\'full\')">Full Config</div>';
+  } else {
+    tabsEl.innerHTML =
+      '<div class="json-tab" onclick="switchJsonTab(\'info\')">Summary</div>' +
+      '<div class="json-tab" onclick="switchJsonTab(\'uat\')">UAT Payload</div>' +
+      '<div class="json-tab" onclick="switchJsonTab(\'prod\')">PROD Payload</div>' +
+      '<div class="json-tab" onclick="switchJsonTab(\'full\')">Full Config</div>';
+  }
+}
 
 function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
   document.getElementById('modal-title').textContent = `Solace Config — ${activePartner}`;
@@ -975,6 +1038,7 @@ function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
   // Pre-fill JSON views
   document.getElementById('json-pre').textContent = JSON.stringify(config, null, 2);
 
+  updateModalTabs();
   switchJsonTab('info');
   document.getElementById('json-overlay').classList.add('open');
   // Reset Azure status and re-evaluate submit button
@@ -984,8 +1048,9 @@ function showModal(config, partnerID, countryCode, qCount, sCount, eCount) {
 
 function switchJsonTab(tab) {
   currentJsonTab = tab;
-  document.querySelectorAll('.json-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['info','uat','prod','full'][i] === tab);
+  document.querySelectorAll('.json-tab').forEach(t => {
+    const m = (t.getAttribute('onclick') || '').match(/switchJsonTab\('(\w+)'\)/);
+    t.classList.toggle('active', !!(m && m[1] === tab));
   });
   const infoEl = document.getElementById('json-info');
   const preEl  = document.getElementById('json-pre-wrap');
@@ -993,8 +1058,9 @@ function switchJsonTab(tab) {
     infoEl.classList.add('active'); preEl.classList.remove('active');
   } else {
     infoEl.classList.remove('active'); preEl.classList.add('active');
-    const payload = tab==='uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
-                  : tab==='prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+    const payload = tab === 'uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
+                  : tab === 'prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+                  : tab === 'dev'  ? generatedJSON.orchestrationPayloads.devRun
                   : generatedJSON;
     document.getElementById('json-pre').textContent = JSON.stringify(payload, null, 2);
   }
@@ -1004,8 +1070,9 @@ function closeModal() { document.getElementById('json-overlay').classList.remove
 
 function copyJSON() {
   const txt = JSON.stringify(
-    currentJsonTab==='uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
-    : currentJsonTab==='prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+    currentJsonTab === 'uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
+    : currentJsonTab === 'prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+    : currentJsonTab === 'dev'  ? generatedJSON.orchestrationPayloads.devRun
     : generatedJSON, null, 2);
   navigator.clipboard.writeText(txt).then(() => {
     const t = document.getElementById('copy-toast');
@@ -1015,10 +1082,14 @@ function copyJSON() {
 }
 
 function downloadJSON() {
-  const payload = currentJsonTab==='uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
-                : currentJsonTab==='prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+  const payload = currentJsonTab === 'uat'  ? generatedJSON.orchestrationPayloads.phase1_uatRun
+                : currentJsonTab === 'prod' ? generatedJSON.orchestrationPayloads.phase2_prodRun
+                : currentJsonTab === 'dev'  ? generatedJSON.orchestrationPayloads.devRun
                 : generatedJSON;
-  const suffix = currentJsonTab==='uat' ? '-uat-payload' : currentJsonTab==='prod' ? '-prod-payload' : '-onboarding';
+  const suffix = currentJsonTab === 'uat'  ? '-uat-payload'
+               : currentJsonTab === 'prod' ? '-prod-payload'
+               : currentJsonTab === 'dev'  ? '-dev-payload'
+               : '-onboarding';
   const fname  = `${slug(activePartner)}${suffix}.json`;
   const blob   = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
   const a = Object.assign(document.createElement('a'), {href:URL.createObjectURL(blob), download:fname});
@@ -1217,6 +1288,27 @@ function updateAzBtn() {
   if (disp) disp.textContent = env === 'dev' ? 'solace-main-orchestrator (DEV)' : 'wf-solace-automation-blob-upload (UAT+PROD)';
   const btn = document.getElementById('az-submit-btn');
   if (btn) btn.disabled = !generatedJSON;
+  // Show custom queue panel only for DEV
+  const cqPanel = document.getElementById('cq-panel');
+  if (cqPanel) cqPanel.classList.toggle('hidden', env !== 'dev');
+  // Update namespace hint from the generated config
+  if (generatedJSON && env === 'dev') {
+    const ns  = generatedJSON.partner && generatedJSON.partner.topicNamespace || '';
+    const pid = generatedJSON.partner && generatedJSON.partner.partnerID || '';
+    const hint = document.getElementById('cq-ns-hint');
+    if (hint && ns) hint.textContent = `ns: ${ns}`;
+    // Pre-fill queue name placeholder with partner context
+    const nameInp = document.getElementById('cq-name');
+    if (nameInp && pid) nameInp.placeholder = `e.g. Q/3PL/${pid}/DEV/testObject/in`;
+    const subInp  = document.getElementById('cq-sub');
+    if (subInp  && ns) subInp.placeholder  = `e.g. ${ns}/testObject/in/>`;
+  }
+  // Refresh modal tabs when env changes while modal is open
+  if (document.getElementById('json-overlay').classList.contains('open') && generatedJSON) {
+    updateModalTabs();
+    switchJsonTab('info');
+    showAzStatus('', '');
+  }
 }
 
 function showAzStatus(state, html) {
@@ -1226,6 +1318,11 @@ function showAzStatus(state, html) {
 
 function buildDevPayload(cfg) {
   const uatCluster = cfg.orchestrationPayloads.phase1_uatRun.config.clusterManagement;
+  const generatedQueues = uatCluster.queues.map(q => ({
+    ...q, name: q.name.replace('/UAT/', '/DEV/')
+  }));
+  // Merge in any custom test queues defined via the UI panel
+  const allQueues = [...generatedQueues, ...customQueues];
   return {
     config: {
       // Use the existing DEV service — no new service creation needed
@@ -1243,15 +1340,62 @@ function buildDevPayload(cfg) {
         clientProfiles:  uatCluster.clientProfiles,
         aclProfiles:     uatCluster.aclProfiles,
         clientUsernames: uatCluster.clientUsernames,
-        queues: uatCluster.queues.map(q => ({
-          ...q, name: q.name.replace('/UAT/', '/DEV/')
-        })),
+        queues:          allQueues,
         restDeliveryPoints: []
       }
     },
     skipEventPortal: true,   // EP already configured for DEV service
     skipCluster: false
   };
+}
+
+/* ─────────────────────────────────────────────────────────────
+   CUSTOM TEST QUEUES
+───────────────────────────────────────────────────────────── */
+let cqBodyOpen = true;
+
+function toggleCqBody() {
+  cqBodyOpen = !cqBodyOpen;
+  document.getElementById('cq-body').classList.toggle('collapsed', !cqBodyOpen);
+  const icon = document.querySelector('#cq-toggle i');
+  if (icon) icon.className = cqBodyOpen ? 'ti ti-chevron-up' : 'ti ti-chevron-down';
+}
+
+function addCustomQueue() {
+  const nameEl = document.getElementById('cq-name');
+  const subEl  = document.getElementById('cq-sub');
+  const name   = (nameEl.value || '').trim();
+  const sub    = (subEl.value  || '').trim();
+  if (!name) { nameEl.focus(); nameEl.style.borderColor = '#c0392b'; setTimeout(() => nameEl.style.borderColor = '', 1200); return; }
+  customQueues.push({ name, accessType: 'non-exclusive', subscriptions: sub ? [sub] : [] });
+  nameEl.value = ''; subEl.value = '';
+  renderCustomQueues();
+  // Rebuild devRun in generatedJSON so the DEV Payload tab reflects the change immediately
+  if (generatedJSON) generatedJSON.orchestrationPayloads.devRun = buildDevPayload(generatedJSON);
+}
+
+function removeCustomQueue(idx) {
+  customQueues.splice(idx, 1);
+  renderCustomQueues();
+  if (generatedJSON) generatedJSON.orchestrationPayloads.devRun = buildDevPayload(generatedJSON);
+}
+
+function renderCustomQueues() {
+  const list  = document.getElementById('cq-list');
+  const badge = document.getElementById('cq-badge');
+  if (!list) return;
+  if (!customQueues.length) {
+    list.innerHTML = '<p class="cq-empty">No custom queues added — only interface-generated queues will be provisioned.</p>';
+    if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
+    return;
+  }
+  if (badge) { badge.style.display = 'inline'; badge.textContent = customQueues.length; }
+  list.innerHTML = customQueues.map((q, i) => `
+    <div class="cq-item">
+      <span class="cq-item-name" title="${q.name}">${q.name}</span>
+      <span class="cq-item-sub"  title="${q.subscriptions[0]||''}">${q.subscriptions[0] || '<em style="color:#adb5bd">no subscription</em>'}</span>
+      <button class="cq-del" onclick="removeCustomQueue(${i})" title="Remove queue"><i class="ti ti-trash"></i></button>
+    </div>`).join('');
 }
 
 function submitToAzure() {
@@ -1262,10 +1406,12 @@ function submitToAzure() {
   // blob-trigger branches on config.runMode: "dev" = single-phase DEV, otherwise UAT+PROD.
   let configToSend = generatedJSON;
   if (env === 'dev') {
+    // Rebuild devRun now to pick up any custom queues added since generateConfig()
+    const freshDevRun = buildDevPayload(generatedJSON);
     configToSend = Object.assign({}, generatedJSON, {
       runMode: 'dev',
       orchestrationPayloads: Object.assign({}, generatedJSON.orchestrationPayloads, {
-        devRun: buildDevPayload(generatedJSON)
+        devRun: freshDevRun
       })
     });
   }
@@ -1289,8 +1435,11 @@ function submitToAzure() {
   })
   .then(data => {
     const blob = data.blobPath || 'solace-onboarding/…';
+    const cqNote = (env === 'dev' && customQueues.length)
+      ? ` <strong>+${customQueues.length} custom queue${customQueues.length > 1 ? 's' : ''}</strong> included.`
+      : '';
     showAzStatus('success',
-      `<i class="ti ti-circle-check"></i>&nbsp;<span>Accepted. Blob: <span class="blob-path">${blob}</span>. Pipeline running in background.</span>`);
+      `<i class="ti ti-circle-check"></i>&nbsp;<span>Accepted. Blob: <span class="blob-path">${blob}</span>. Pipeline running in background.${cqNote}</span>`);
     btn.disabled = false;
   })
   .catch(err => {

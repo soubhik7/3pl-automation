@@ -540,8 +540,27 @@
         },
         "runAfter": {
           "For_Each_Application": [
-            "Succeeded",
-            "Failed"
+            "Succeeded"
+          ]
+        }
+      },
+      "Response_Error": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 500,
+          "body": {
+            "status": "error",
+            "message": "Event Portal provisioning failed — check Azure Logic Apps run history for details",
+            "failedStep": "@{if(not(equals(actions('For_Each_Schema')?['status'], 'Succeeded')), 'schema-creation', if(not(equals(actions('For_Each_Event')?['status'], 'Succeeded')), 'event-creation', 'application-creation'))}",
+            "domainId": "@variables('domainId')"
+          }
+        },
+        "runAfter": {
+          "For_Each_Application": [
+            "Failed",
+            "TimedOut",
+            "Skipped"
           ]
         }
       }

@@ -354,8 +354,28 @@
         },
         "runAfter": {
           "Scope_Cluster_Provisioning": [
-            "Succeeded",
-            "Failed"
+            "Succeeded"
+          ]
+        }
+      },
+      "Response_Error": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 500,
+          "body": {
+            "status": "error",
+            "message": "Provisioning failed — check Azure Logic Apps run history for details",
+            "failedStep": "@{if(not(equals(actions('Scope_Service_Provisioning')?['status'], 'Succeeded')), 'service-provisioning', if(not(equals(actions('Scope_Event_Portal_Provisioning')?['status'], 'Succeeded')), 'event-portal-provisioning', 'cluster-provisioning'))}",
+            "serviceId": "@variables('serviceId')",
+            "domainId": "@variables('domainId')"
+          }
+        },
+        "runAfter": {
+          "Scope_Cluster_Provisioning": [
+            "Failed",
+            "TimedOut",
+            "Skipped"
           ]
         }
       }
