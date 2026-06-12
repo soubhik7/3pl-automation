@@ -15,8 +15,8 @@
       },
       "solaceOrchestratorUrl": {
         "type": "String",
-        "defaultValue": "",
-        "description": "HTTP trigger URL of wf-solace-automation-main-orchestrator (Solace is live; all provisioning handled there)"
+        "defaultValue": "https://prod-46.eastus.logic.azure.com:443/workflows/47f0ac2e7b964abdaae593ea94a223a7/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED16",
+        "description": "HTTP trigger URL of wf-solace-automation-main-orchestrator"
       }
     },
     "triggers": {
@@ -274,7 +274,8 @@
         "runAfter": {
           "Scope_Solace_Automation": [
             "Succeeded",
-            "Skipped"
+            "Skipped",
+            "Failed"
           ],
           "Set_Solace_Status_Failed": [
             "Succeeded",
@@ -297,7 +298,9 @@
         "type": "Scope",
         "runAfter": {
           "Scope_MuleSoft_Stub": [
-            "Succeeded"
+            "Succeeded",
+            "Skipped",
+            "Failed"
           ]
         },
         "actions": {
@@ -316,7 +319,9 @@
         "type": "SetVariable",
         "runAfter": {
           "Scope_BTP_Stub": [
-            "Succeeded"
+            "Succeeded",
+            "Skipped",
+            "Failed"
           ]
         },
         "inputs": {
