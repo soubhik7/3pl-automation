@@ -1,0 +1,151 @@
+{
+  "config": {
+    "service": {
+      "serviceId": "acmegermanydev01",
+      "name": "acme-orders-dev",
+      "datacenterId": "aks-germanywestcentral",
+      "serviceTypeId": "developer",
+      "serviceClassId": "developer"
+    },
+    "eventPortal": {
+      "domainName": "Acme-Orders-DE-DEV",
+      "domainDescription": "Order integration domain for Acme Corp (Germany, Dev)",
+      "schemas": [
+        {
+          "name": "OrderCreatedSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "orderCreated event payload for Acme Corp",
+          "usedByInterfaces": [
+            "ITF_ORDER_001"
+          ]
+        },
+        {
+          "name": "OrderConfirmedSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "orderConfirmed event payload for Acme Corp",
+          "usedByInterfaces": [
+            "ITF_ORDER_002"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "name": "OrderCreatedInbound",
+          "version": "1.0.0",
+          "topic": "3pl/DE/ACME-ORDERS/orderCreated/in/{correlationId}",
+          "schemaRef": "OrderCreatedSchema",
+          "direction": "in",
+          "interfaces": [
+            "ITF_ORDER_001"
+          ]
+        },
+        {
+          "name": "OrderConfirmedOutbound",
+          "version": "1.0.0",
+          "topic": "3pl/DE/ACME-ORDERS/orderConfirmed/out/{correlationId}",
+          "schemaRef": "OrderConfirmedSchema",
+          "direction": "out",
+          "interfaces": [
+            "ITF_ORDER_002"
+          ]
+        }
+      ],
+      "applications": [
+        {
+          "name": "SAP-System",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": [
+            "OrderCreatedInbound"
+          ],
+          "consumes": [
+            "OrderConfirmedOutbound"
+          ]
+        },
+        {
+          "name": "3PL-Partner",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": [
+            "OrderConfirmedOutbound"
+          ],
+          "consumes": [
+            "OrderCreatedInbound"
+          ]
+        }
+      ]
+    },
+    "clusterManagement": {
+      "vpnName": "msgvpn-acmegermanydev01",
+      "clientProfiles": [
+        {
+          "name": "cp-acme-orders-dev"
+        }
+      ],
+      "aclProfiles": [
+        {
+          "name": "acl-acme-orders-dev",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "publishExceptions": [
+            "3pl/DE/ACME-ORDERS/orderCreated/in/>",
+            "3pl/DE/ACME-ORDERS/orderConfirmed/out/>"
+          ],
+          "subscribeExceptions": [
+            "3pl/DE/ACME-ORDERS/orderCreated/in/>",
+            "3pl/DE/ACME-ORDERS/orderConfirmed/out/>"
+          ]
+        }
+      ],
+      "clientUsernames": [
+        {
+          "name": "svc-acme-orders-dev",
+          "password": "<SET_VIA_KEY_VAULT>",
+          "clientProfile": "cp-acme-orders-dev",
+          "aclProfile": "acl-acme-orders-dev",
+          "enabled": true
+        }
+      ],
+      "queues": [
+        {
+          "name": "Q/3PL/ACME-ORDERS/DEV/orderCreated/in",
+          "accessType": "non-exclusive",
+          "subscriptions": [
+            "3pl/DE/ACME-ORDERS/orderCreated/in/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/ACME-ORDERS/DEV/orderConfirmed/out",
+          "accessType": "non-exclusive",
+          "subscriptions": [
+            "3pl/DE/ACME-ORDERS/orderConfirmed/out/>"
+          ]
+        }
+      ],
+      "restDeliveryPoints": [
+        {
+          "name": "rdp-acme-orders-dev",
+          "clientProfile": "cp-acme-orders-dev",
+          "enabled": true,
+          "consumers": [
+            {
+              "name": "rest-consumer-3plpartner-dev",
+              "host": "dev-api.3plpartner.de",
+              "port": 443,
+              "tlsEnabled": true,
+              "httpMethod": "post",
+              "httpRequestTarget": "/api/events/orderConfirmed"
+            }
+          ],
+          "queueBindings": [
+            "Q/3PL/ACME-ORDERS/DEV/orderConfirmed/out"
+          ]
+        }
+      ]
+    }
+  },
+  "skipEventPortal": true,
+  "skipCluster": false
+}
