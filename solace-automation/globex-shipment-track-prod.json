@@ -1,0 +1,149 @@
+{
+  "config": {
+    "service": {
+      "serviceId": "auto-gen",
+      "name": "globex-shipment-tracking-prod",
+      "datacenterId": "aks-us",
+      "serviceTypeId": "developer",
+      "serviceClassId": "developer"
+    },
+    "eventPortal": {
+      "domainName": "Globex-ShipTrack-US",
+      "domainDescription": "Shipment tracking integration domain for Globex Logistics (US/Prod)",
+      "schemas": [
+        {
+          "name": "ShipmentDispatchedSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "shipmentDispatched payload for Globex Logistics",
+          "usedByInterfaces": [
+            "ITF_GLOBEX_WMS"
+          ]
+        },
+        {
+          "name": "ShipmentDeliveredSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "shipmentDelivered payload for Globex Logistics",
+          "usedByInterfaces": [
+            "ITF_GLOBEX_CARRIER"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "name": "ShipmentDispatchedInbound",
+          "version": "1.0.0",
+          "topic": "3pl/US/GLOBEX-TRACK/shipmentDispatched/in/{correlationId}",
+          "schemaRef": "ShipmentDispatchedSchema",
+          "direction": "in",
+          "interfaces": [
+            "ITF_GLOBEX_WMS"
+          ]
+        },
+        {
+          "name": "ShipmentDeliveredOutbound",
+          "version": "1.0.0",
+          "topic": "3pl/US/GLOBEX-TRACK/shipmentDelivered/out/{correlationId}",
+          "schemaRef": "ShipmentDeliveredSchema",
+          "direction": "out",
+          "interfaces": [
+            "ITF_GLOBEX_CARRIER"
+          ]
+        }
+      ],
+      "applications": [
+        {
+          "name": "Globex-WMS",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": [
+            "ShipmentDispatchedInbound"
+          ],
+          "consumes": [
+            "ShipmentDeliveredOutbound"
+          ]
+        },
+        {
+          "name": "Globex-Carrier-REST",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": [
+            "ShipmentDeliveredOutbound"
+          ],
+          "consumes": [
+            "ShipmentDispatchedInbound"
+          ]
+        }
+      ]
+    },
+    "clusterManagement": {
+      "vpnName": "msgvpn-globex-shipment-track-prod",
+      "clientProfiles": [
+        {
+          "name": "cp-globex-prod"
+        }
+      ],
+      "aclProfiles": [
+        {
+          "name": "acl-globex-prod",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "publishExceptions": [
+            "3pl/US/GLOBEX-TRACK/shipmentDispatched/in/>"
+          ],
+          "subscribeExceptions": [
+            "3pl/US/GLOBEX-TRACK/shipmentDelivered/out/>"
+          ]
+        }
+      ],
+      "clientUsernames": [
+        {
+          "name": "svc-globex-prod",
+          "password": "<SET_VIA_KEY_VAULT>",
+          "clientProfile": "cp-globex-prod",
+          "aclProfile": "acl-globex-prod",
+          "enabled": true
+        }
+      ],
+      "queues": [
+        {
+          "name": "Q/3PL/GLOBEX-TRACK/PROD/shipmentDispatched/in",
+          "accessType": "non-exclusive",
+          "subscriptions": [
+            "3pl/US/GLOBEX-TRACK/shipmentDispatched/in/>"
+          ]
+        },
+        {
+          "name": "Q/3PL/GLOBEX-TRACK/PROD/shipmentDelivered/out",
+          "accessType": "non-exclusive",
+          "subscriptions": [
+            "3pl/US/GLOBEX-TRACK/shipmentDelivered/out/>"
+          ]
+        }
+      ],
+      "restDeliveryPoints": [
+        {
+          "name": "rdp-globex-prod",
+          "clientProfile": "cp-globex-prod",
+          "enabled": true,
+          "consumers": [
+            {
+              "name": "rest-consumer-carrier-prod",
+              "host": "<SET_HOSTNAME>",
+              "port": 443,
+              "tlsEnabled": true,
+              "httpMethod": "post",
+              "httpRequestTarget": "/api/v1/events"
+            }
+          ],
+          "queueBindings": [
+            "Q/3PL/GLOBEX-TRACK/PROD/shipmentDelivered/out"
+          ]
+        }
+      ]
+    }
+  },
+  "skipEventPortal": true,
+  "skipCluster": false
+}
