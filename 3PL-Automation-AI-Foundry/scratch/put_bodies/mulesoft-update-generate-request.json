@@ -1,0 +1,5 @@
+{
+  "from": "ops@royalcanin.com",
+  "subject": "Update NAV host - Royal Canin France DEV",
+  "body": "Royal Canin France's DEV NAV connector needs to point at a new host: azr-yyy9876-dev.mars-ad.net instead of the current one. This is DEV-only, UAT/TST/PROD are unaffected."
+}

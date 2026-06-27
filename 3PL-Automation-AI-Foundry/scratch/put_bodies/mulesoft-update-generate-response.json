@@ -1,0 +1,11 @@
+{
+  "id": "3c4d5e6f-8a9b-4c0d-1e2f-3a4b5c6d7e8f",
+  "mulesoftYaml": {
+    "dev.yaml": "nav:\n  host: azr-yyy9876-dev.mars-ad.net\n  company: Company(DEV - Royal Canin France)\n  soap_path: /sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_DEV_FRA\n"
+  },
+  "branchName": "mulesoft/onboarding",
+  "filePaths": {
+    "dev.yaml": "mulesoft-automation/config/royal-canin-france/dev.yaml"
+  },
+  "summaryForApproval": "Updates Royal Canin France's DEV-only NAV host to azr-yyy9876-dev.mars-ad.net. Only dev.yaml changes — app.yaml (base config) and tst.yaml/prod.yaml are untouched."
+}

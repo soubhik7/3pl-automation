@@ -6,14 +6,17 @@ Part of: 3pl-automation Solace/MuleSoft/BTP-publisher features (fully isolated f
          publisher agents.
 Layer:   mcp-server lib
 
-Purpose:  Minimal wrapper over GitHub's REST API for the two operations these features
-          need: create/update a file on a platform's persistent feature branch, and open
-          (or reuse) a pull request from that branch back to main. There is no
-          create-branch operation — each platform's feature branch (solace/onboarding,
-          mulesoft/onboarding, btp/onboarding) is created ONCE as a manual setup step
-          (see ../../README.md "One-time setup"), not by the automated flow. Every
-          onboarding request just commits to its platform's existing branch (one file per
-          partner/slug, so concurrent requests never collide) and ensures a PR is open.
+Purpose:  Minimal wrapper over GitHub's REST API for the three operations these features
+          need: read a file's current content (so an agent can tell whether a request is
+          a brand-new config or an update to one that already exists, and merge into the
+          latter instead of clobbering it), create/update a file on a platform's
+          persistent feature branch, and open (or reuse) a pull request from that branch
+          back to main. There is no create-branch operation — each platform's feature
+          branch (solace/onboarding, mulesoft/onboarding, btp/onboarding) is created ONCE
+          as a manual setup step (see ../../README.md "One-time setup"), not by the
+          automated flow. Every request — new or updating an existing partner/slug — just
+          commits to its platform's existing branch (one file per partner/slug, so
+          concurrent requests never collide) and ensures a PR is open.
 Auth:     No PAT/long-lived token is configured anywhere. This Function App authenticates
           to GitHub as a GitHub App: its private key lives in Azure Key Vault (never in an
           App Setting), fetched at call time via this Function App's system-assigned
@@ -115,6 +118,24 @@ def _request(method: str, path: str, body: dict | None = None) -> tuple[int, dic
         except Exception:
             err_body = {"message": str(e)}
         return e.code, err_body
+
+
+def get_file(branch: str, path: str) -> dict:
+    """Read-only. Returns {status:'OK', content, sha} if the file exists on this branch,
+    {status:'NOT_FOUND'} if it doesn't (a brand-new config for this partner/slug — not an
+    error), or {status:'FAILED', error} for any other GitHub error. Used by Phase 1
+    ("generate") to tell new-config requests apart from update-existing-config requests
+    and, for the latter, to give the agent the real current content to merge into instead
+    of guessing or overwriting it blind."""
+    owner = os.environ.get("GITHUB_OWNER", "")
+    repo = os.environ.get("GITHUB_REPO", "")
+    status, body = _request("GET", f"/repos/{owner}/{repo}/contents/{path}?ref={branch}")
+    if status == 404:
+        return {"status": "NOT_FOUND"}
+    if status != 200:
+        return {"status": "FAILED", "error": body.get("message", f"HTTP {status}")}
+    content = base64.b64decode(body.get("content", "")).decode()
+    return {"status": "OK", "content": content, "sha": body.get("sha", "")}
 
 
 def commit_file(branch: str, path: str, content: str, message: str) -> dict:
