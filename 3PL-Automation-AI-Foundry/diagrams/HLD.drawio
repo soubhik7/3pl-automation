@@ -1,44 +1,44 @@
 <mxfile host="65bd71144e">
     <diagram name="HLD - 3PL Onboarding (Solace + MuleSoft + BTP)" id="hld-3pl-onboarding">
-        <mxGraphModel dx="3116" dy="1820" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1000" math="0" shadow="0">
+        <mxGraphModel dx="3116" dy="1720" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="900" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
                 <mxCell id="n1" value="Requester" style="shape=actor;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="-330" y="210" width="110" height="80" as="geometry"/>
+                    <mxGeometry x="40" y="320" width="110" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n2" value="Logic App (Standard)&#xa;3pl-onboarding-orchestrator-workflow&#xa;(main orchestrator)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="-170" y="385" width="230" height="70" as="geometry"/>
+                    <mxGeometry x="220" y="325" width="240" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="n3" value="Logic App:&#xa;solace-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="150" y="20" width="220" height="70" as="geometry"/>
+                    <mxGeometry x="620" y="40" width="220" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n4" value="Logic App:&#xa;mulesoft-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="130" y="800" width="220" height="70" as="geometry"/>
+                    <mxGeometry x="620" y="320" width="220" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n5" value="Logic App:&#xa;btp-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="350" y="540" width="220" height="70" as="geometry"/>
+                    <mxGeometry x="620" y="600" width="220" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n6" value="ip-3pl-mcp (Function App) — shared&#xa;solace-mcp / mulesoft-mcp / btp-mcp&#xa;+ 6 HTTP routes ({platform}-generate / -publish)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="740" y="230" width="280" height="260" as="geometry"/>
+                    <mxGeometry x="940" y="270" width="280" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n7" value="integration-pulse-&#xa;solace-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1530" y="150" width="230" height="80" as="geometry"/>
+                    <mxGeometry x="1300" y="40" width="230" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n8" value="integration-pulse-&#xa;mulesoft-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1490" y="410" width="230" height="80" as="geometry"/>
+                    <mxGeometry x="1300" y="320" width="230" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n9" value="integration-pulse-&#xa;btp-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1510" y="590" width="230" height="80" as="geometry"/>
+                    <mxGeometry x="1300" y="600" width="230" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n10" value="GitHub soubhik7/3pl-automation&#xa;(branch + commit + open PR)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1980" y="440" width="240" height="90" as="geometry"/>
+                    <mxGeometry x="1640" y="270" width="240" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n11" value="Microsoft Teams&#xa;(Adaptive Card approval — one card per platform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="510" y="-110" width="240" height="70" as="geometry"/>
+                    <mxGeometry x="380" y="-260" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="n12" value="Cosmos DB (audit only)&#xa;solace_requests / mulesoft_requests / btp_requests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="1050" y="760" width="280" height="80" as="geometry"/>
+                    <mxGeometry x="940" y="560" width="280" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" value="HTTP POST {from, subject, body, platforms[]}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;" parent="1" source="n1" target="n2" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
