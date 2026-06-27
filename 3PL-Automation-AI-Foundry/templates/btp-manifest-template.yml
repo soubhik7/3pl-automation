@@ -1,0 +1,17 @@
+# Cloud Foundry app deployment descriptor — worked example (structure to follow, not values to
+# copy). Modeled verbatim on btp-automation/apps/hello-flask/manifest.yml's shape. Only generated
+# when the onboarding request explicitly describes deploying a CF app for this partner.
+
+applications:
+- name: acme-3pl-de-api
+  memory: 256M
+  instances: 1
+  buildpacks:
+  - python_buildpack
+  command: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2
+  metadata:
+    annotations:
+      description: "Acme 3PL (DE) integration API on BTP Cloud Foundry"
+  env:
+    APP_NAME: acme-3pl-de-api
+    APP_ENV: production

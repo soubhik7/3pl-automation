@@ -1,0 +1,145 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "$connections": {
+        "defaultValue": {},
+        "type": "Object"
+      }
+    },
+    "triggers": {
+      "manual": {
+        "type": "Request",
+        "kind": "Http",
+        "inputs": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "from": { "type": "string" },
+              "subject": { "type": "string" },
+              "body": { "type": "string" },
+              "platforms": {
+                "type": "array",
+                "items": { "type": "string", "enum": ["solace", "mulesoft", "btp"] },
+                "description": "Which of the 3 pipelines to fan out to for this request — 1, 2, or all 3."
+              }
+            },
+            "required": ["from", "subject", "body", "platforms"]
+          }
+        }
+      }
+    },
+    "actions": {
+      "Dispatch_Solace": {
+        "type": "If",
+        "expression": {
+          "and": [
+            { "contains": ["@triggerBody()?['platforms']", "solace"] }
+          ]
+        },
+        "actions": {
+          "Invoke_Solace_Subflow": {
+            "type": "Workflow",
+            "inputs": {
+              "host": {
+                "workflow": {
+                  "id": "solace-mail-trigger-workflow"
+                }
+              },
+              "body": {
+                "from": "@triggerBody()?['from']",
+                "subject": "@triggerBody()?['subject']",
+                "body": "@triggerBody()?['body']"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "else": {
+          "actions": {}
+        },
+        "runAfter": {}
+      },
+      "Dispatch_MuleSoft": {
+        "type": "If",
+        "expression": {
+          "and": [
+            { "contains": ["@triggerBody()?['platforms']", "mulesoft"] }
+          ]
+        },
+        "actions": {
+          "Invoke_MuleSoft_Subflow": {
+            "type": "Workflow",
+            "inputs": {
+              "host": {
+                "workflow": {
+                  "id": "mulesoft-mail-trigger-workflow"
+                }
+              },
+              "body": {
+                "from": "@triggerBody()?['from']",
+                "subject": "@triggerBody()?['subject']",
+                "body": "@triggerBody()?['body']"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "else": {
+          "actions": {}
+        },
+        "runAfter": {}
+      },
+      "Dispatch_BTP": {
+        "type": "If",
+        "expression": {
+          "and": [
+            { "contains": ["@triggerBody()?['platforms']", "btp"] }
+          ]
+        },
+        "actions": {
+          "Invoke_BTP_Subflow": {
+            "type": "Workflow",
+            "inputs": {
+              "host": {
+                "workflow": {
+                  "id": "btp-mail-trigger-workflow"
+                }
+              },
+              "body": {
+                "from": "@triggerBody()?['from']",
+                "subject": "@triggerBody()?['subject']",
+                "body": "@triggerBody()?['body']"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "else": {
+          "actions": {}
+        },
+        "runAfter": {}
+      },
+      "Response_Dispatched": {
+        "type": "Response",
+        "kind": "Http",
+        "inputs": {
+          "statusCode": 202,
+          "body": {
+            "status": "DISPATCHED",
+            "platforms": "@triggerBody()?['platforms']",
+            "note": "Each requested platform's Teams approval card will arrive separately and may take hours to be actioned. This response only confirms the pipelines were started, not that any of them finished — check the matching {platform}_requests Cosmos record for final per-platform status."
+          }
+        },
+        "runAfter": {
+          "Dispatch_Solace": ["Succeeded", "Skipped"],
+          "Dispatch_MuleSoft": ["Succeeded", "Skipped"],
+          "Dispatch_BTP": ["Succeeded", "Skipped"]
+        }
+      }
+    },
+    "outputs": {}
+  },
+  "kind": "Stateful"
+}

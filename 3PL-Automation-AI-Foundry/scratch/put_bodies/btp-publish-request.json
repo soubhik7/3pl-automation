@@ -1,0 +1,7 @@
+{
+  "id": "1a2b3c4d-6e7f-4a8b-9c0d-1e2f3a4b5c6d",
+  "btpConfigYaml": "<exact btpConfigYaml string from btp-generate-response.json, human-approved, round-tripped unmodified>",
+  "manifestYaml": "<exact manifestYaml string from btp-generate-response.json — omit this field entirely if no app deployment was requested>",
+  "branchName": "btp/acme-de-w8t4",
+  "filePaths": "<exact filePaths object from btp-generate-response.json>"
+}

@@ -1,0 +1,6 @@
+{
+  "id": "7f2a1c3e-4b5d-4e6f-8a9b-0c1d2e3f4a5b",
+  "solaceJson": "<exact solaceJson object from solace-generate-response.json, human-approved, round-tripped unmodified>",
+  "branchName": "solace/acme-de-dev-x7f2",
+  "filePath": "solace-automation/config/3pl/acme-de-dev.json"
+}

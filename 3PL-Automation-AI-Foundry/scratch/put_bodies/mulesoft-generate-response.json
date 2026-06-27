@@ -1,0 +1,17 @@
+{
+  "id": "9c3d2b1a-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "mulesoftYaml": {
+    "app.yaml": "country_key: royal-canin-france\ncountry_code: fr\npartner_comment: Royal Canin France NAV onboarding\ncreated_by: integration-pulse-mulesoft-publisher\nnav:\n  protocol: https\n  host: azr-xxx1234.mars-ad.net\n  port: \"7124\"\n  username: SVC_UAT_MULESOFT\n  password: \"<SET_VIA_KEY_VAULT>\"\n  domain: mars-ad.net\n  company: Company(UAT - Royal Canin France)\n  service: InterfaceWebServices\n  soap_port: \"7124\"\n  soap_path: /sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_UAT_FRA\n  use_common_cert: true\n  transaction_types:\n    sal_008: { enabled: true, type: SHIPMENT }\n    sal_011: { enabled: true, type: SALES_RETURN_RECEIPT }\n    inv_003: { enabled: true, type: INVENTORY }\ntranslation:\n  receiver_name: petc-rc-navision-3plspl-sys\n  message_types: [despatchStock]\n  source_destination_combinations:\n    - value_from: PLANT-FR1-PLANT-FR2\n      value_to: spl_001\n  uom_mappings:\n    - value_from: EA\n      value_to: UNIT\n",
+    "dev.yaml": "nav:\n  host: azr-xxx1234-dev.mars-ad.net\n  company: Company(DEV - Royal Canin France)\n  soap_path: /sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_DEV_FRA\n",
+    "tst.yaml": "nav:\n  host: azr-xxx1234-tst.mars-ad.net\n  company: Company(TST - Royal Canin France)\n  soap_path: /sop_fra_tst_01/WS/TST - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_TST_FRA\n",
+    "prod.yaml": "nav:\n  host: azr-xxx1234-prod.mars-ad.net\n  company: Company(PROD - Royal Canin France)\n  soap_path: /sop_fra_prod_01/WS/PROD - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_PROD_FRA\n"
+  },
+  "branchName": "mulesoft/royal-canin-france-k3p9",
+  "filePaths": {
+    "app.yaml": "mulesoft-automation/config/royal-canin-france/app.yaml",
+    "dev.yaml": "mulesoft-automation/config/royal-canin-france/dev.yaml",
+    "tst.yaml": "mulesoft-automation/config/royal-canin-france/tst.yaml",
+    "prod.yaml": "mulesoft-automation/config/royal-canin-france/prod.yaml"
+  },
+  "summaryForApproval": "Creates a new MuleSoft NAV connector onboarding for Royal Canin France covering shipment, sales return receipt, and inventory transaction types, plus a despatchStock translation mapping. NAV credentials are masked pending Key Vault setup."
+}

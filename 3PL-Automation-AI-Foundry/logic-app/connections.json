@@ -1,0 +1,32 @@
+{
+  "managedApiConnections": {
+    "gmail": {
+      "api": {
+        "id": "/subscriptions/a556a28c-c14a-4657-b59f-e0c80f0bb54c/providers/Microsoft.Web/locations/canadacentral/managedApis/gmail"
+      },
+      "connection": {
+        "id": "/subscriptions/a556a28c-c14a-4657-b59f-e0c80f0bb54c/resourceGroups/ODL-IBM-2262033/providers/Microsoft.Web/connections/gmail"
+      },
+      "connectionRuntimeUrl": "<FILL IN — only available after the connection is authenticated; see notes below>",
+      "authentication": {
+        "type": "Raw",
+        "scheme": "Key",
+        "parameter": "@appsetting('gmail-connectionKey')"
+      }
+    },
+    "teams": {
+      "api": {
+        "id": "/subscriptions/a556a28c-c14a-4657-b59f-e0c80f0bb54c/providers/Microsoft.Web/locations/canadacentral/managedApis/teams"
+      },
+      "connection": {
+        "id": "/subscriptions/a556a28c-c14a-4657-b59f-e0c80f0bb54c/resourceGroups/ODL-IBM-2262033/providers/Microsoft.Web/connections/teams"
+      },
+      "connectionRuntimeUrl": "<FILL IN — only available after the connection is authenticated; see notes below>",
+      "authentication": {
+        "type": "Raw",
+        "scheme": "Key",
+        "parameter": "@appsetting('teams-connectionKey')"
+      }
+    }
+  }
+}
