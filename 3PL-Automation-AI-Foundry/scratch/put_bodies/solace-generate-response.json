@@ -59,7 +59,7 @@
     "skipEventPortal": false,
     "skipCluster": false
   },
-  "branchName": "solace/acme-de-dev-x7f2",
+  "branchName": "solace/onboarding",
   "filePath": "solace-automation/config/3pl/acme-de-dev.json",
   "summaryForApproval": "Creates a new Solace integration domain for Acme Corp (DE, dev) covering stock movement inbound and dispatch delivery outbound, with a REST delivery point to dev-api.acme.de. Client credentials are masked pending Key Vault setup."
 }

@@ -123,7 +123,14 @@ depend on that detail.
    `BTP_MCP_ENDPOINT`, both pointing at that same Function App's `/api/mulesoft-mcp`/`/api/btp-mcp`
    routes (parallel to the existing `SOLACE_MCP_ENDPOINT` → `/api/solace-mcp`).
 
-9. **Get each workflow's callable URL** once the app is back up:
+9. **Complete the root `README.md`'s "One-time setup"** on the `ip-3pl-mcp` Function App before any
+   platform's publish phase will work: push the 3 persistent feature branches
+   (`solace/onboarding`, `mulesoft/onboarding`, `btp/onboarding`) and install the GitHub App that
+   `mcp-server/lib/github_client.py` authenticates as (no `GITHUB_TOKEN`/PAT is configured anywhere
+   in this stack — see that section for the 4 `GITHUB_APP_*` env vars and the Key Vault + managed
+   identity it reads the App's private key from).
+
+10. **Get each workflow's callable URL** once the app is back up:
    ```bash
    az rest --method POST --url "https://management.azure.com/subscriptions/a556a28c-c14a-4657-b59f-e0c80f0bb54c/resourceGroups/ODL-IBM-2262033/providers/Microsoft.Web/sites/3pl-automation/hostruntime/runtime/webhooks/workflow/api/management/workflows/<workflow-name>/triggers/manual/listCallbackUrl?api-version=2022-03-01"
    ```
@@ -142,8 +149,10 @@ depend on that detail.
    with Approve/Reject buttons, pauses the run until one is clicked.
 4. **Decision_check** — if `decision == "approve"`, calls `POST /api/{platform}-publish` with the
    exact id/config/branchName/filePath(s) from step 2 (round-tripped, never re-derived) — this is
-   what actually creates the branch, commits the file(s), and opens the PR. On reject, the run just
-   ends without touching GitHub.
+   what actually commits the file(s) to that platform's persistent feature branch
+   (`solace/onboarding`/`mulesoft/onboarding`/`btp/onboarding` — already exists, never created
+   here) and ensures a PR is open from it to `main`. On reject, the run just ends without touching
+   GitHub.
 5. **Response_Final_Status** — always runs (`Succeeded`/`Failed`/`Skipped` from `Decision_check`),
    returns `{platform, decision, publishResult}` — read by a direct test caller, or ignored by the
    orchestrator (which has already responded to its own caller by this point).

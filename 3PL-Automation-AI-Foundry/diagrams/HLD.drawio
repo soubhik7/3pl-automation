@@ -31,7 +31,7 @@
                 <mxCell id="n9" value="integration-pulse-&#xa;btp-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="1300" y="600" width="230" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="n10" value="GitHub soubhik7/3pl-automation&#xa;(branch + commit + open PR)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" parent="1" vertex="1">
+                <mxCell id="n10" value="GitHub soubhik7/3pl-automation&#xa;3 persistent branches (solace/mulesoft/btp-onboarding)&#xa;commit to existing branch + ensure PR open" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="1640" y="270" width="240" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n11" value="Microsoft Teams&#xa;(Adaptive Card approval — one card per platform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" parent="1" vertex="1">
@@ -39,6 +39,9 @@
                 </mxCell>
                 <mxCell id="n12" value="Cosmos DB (audit only)&#xa;solace_requests / mulesoft_requests / btp_requests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;dashed=1;" parent="1" vertex="1">
                     <mxGeometry x="940" y="560" width="280" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="n13" value="GitHub App + Key Vault&#xa;(auth — no PAT anywhere)&#xa;private key in Key Vault, fetched via&#xa;this Function App's managed identity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;dashed=1;" parent="1" vertex="1">
+                    <mxGeometry x="1640" y="560" width="240" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" value="HTTP POST {from, subject, body, platforms[]}" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;" parent="1" source="n1" target="n2" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -82,16 +85,19 @@
                 <mxCell id="e14" value="Adaptive Card (Approve / Reject)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n5" target="n11" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e15" value="create_branch + commit_file(x1) + open_pull_request&#xa;-&gt; branch + commit + PR urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n7" target="n10" edge="1">
+                <mxCell id="e15" value="commit_file(x1) -&gt; solace/onboarding + ensure PR open&#xa;-&gt; commit + PR urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n7" target="n10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e16" value="create_branch + commit_file(x4: app/dev/tst/prod.yaml) + open_pull_request&#xa;-&gt; branch + commit + PR urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n8" target="n10" edge="1">
+                <mxCell id="e16" value="commit_file(x4: app/dev/tst/prod.yaml) -&gt; mulesoft/onboarding + ensure PR open&#xa;-&gt; commit + PR urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n8" target="n10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e17" value="create_branch + commit_file(x1-2: btp_config.yaml + optional manifest.yml) + open_pull_request&#xa;-&gt; branch + commit + PR urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n9" target="n10" edge="1">
+                <mxCell id="e17" value="commit_file(x1-2: btp_config.yaml + optional manifest.yml) -&gt; btp/onboarding + ensure PR open&#xa;-&gt; commit + PR urls" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n9" target="n10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e18" value="audit: GENERATED -&gt; PUBLISHED / REJECTED&#xa;(written to the matching per-platform container)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;dashed=1;" parent="1" source="n6" target="n12" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e19" value="installation token (1hr, cached in memory) — minted from the App's Key Vault private key, never a stored PAT" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;dashed=1;startArrow=block;endArrow=block;" parent="1" source="n10" target="n13" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>

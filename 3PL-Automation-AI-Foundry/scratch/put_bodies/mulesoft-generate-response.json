@@ -6,7 +6,7 @@
     "tst.yaml": "nav:\n  host: azr-xxx1234-tst.mars-ad.net\n  company: Company(TST - Royal Canin France)\n  soap_path: /sop_fra_tst_01/WS/TST - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_TST_FRA\n",
     "prod.yaml": "nav:\n  host: azr-xxx1234-prod.mars-ad.net\n  company: Company(PROD - Royal Canin France)\n  soap_path: /sop_fra_prod_01/WS/PROD - Royal Canin France/Codeunit/InterfaceWebServices?wsdl\n  routing_code: NAV_FM_IN_PROD_FRA\n"
   },
-  "branchName": "mulesoft/royal-canin-france-k3p9",
+  "branchName": "mulesoft/onboarding",
   "filePaths": {
     "app.yaml": "mulesoft-automation/config/royal-canin-france/app.yaml",
     "dev.yaml": "mulesoft-automation/config/royal-canin-france/dev.yaml",

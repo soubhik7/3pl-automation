@@ -19,13 +19,13 @@ Importance: The only way this feature's HTTP routes reach the solace-publisher a
 
 IMPORTANT — stream=False is NOT safe for a tool-calling response here: a live test
 (2026-06-26) confirmed `responses.create(..., stream=False)` can return before the
-workflow has actually finished its tool calls — the underlying github_create_branch/
-github_commit_file calls completed for real (verified via the GitHub commit history),
-but the synchronous response object read back had no final "message" item yet, so text
-extraction came back empty even though the operation succeeded. Streaming and waiting
-for the response.completed event (the same pattern orchestration_workflow.py's _invoke
-uses elsewhere in this repo) reliably blocks until every tool call and the final message
-are actually present.
+workflow has actually finished its tool calls — the underlying github_commit_file calls
+completed for real (verified via the GitHub commit history), but the synchronous
+response object read back had no final "message" item yet, so text extraction came back
+empty even though the operation succeeded. Streaming and waiting for the
+response.completed event (the same pattern orchestration_workflow.py's _invoke uses
+elsewhere in this repo) reliably blocks until every tool call and the final message are
+actually present.
 """
 import os
 import time

@@ -8,10 +8,13 @@ Layer:   mcp-server (Execution Plane) + lightweight orchestration
 Purpose:  Hosts MCP tool servers + HTTP routes for all 3 onboarding platforms (Solace,
           MuleSoft, BTP) behind one shared Function App.
           1. Three MCP JSON-RPC tool servers (solace-mcp, mulesoft-mcp, btp-mcp), each
-             exposing the same 3 tools (github_create_branch, github_commit_file,
-             github_open_pull_request) — served on separate routes because each
-             platform's agent.yaml connects to its own server_label, even though the
-             tool implementations and this Function App are shared across all 3.
+             exposing the same 2 tools (github_commit_file, github_open_pull_request) —
+             served on separate routes because each platform's agent.yaml connects to its
+             own server_label, even though the tool implementations and this Function App
+             are shared across all 3. There is no branch-creation tool — each platform
+             commits to its own persistent feature branch (solace/onboarding,
+             mulesoft/onboarding, btp/onboarding), created once as a manual setup step,
+             never by the agent.
           2. Six plain HTTP routes that the Logic App calls directly:
              /api/{platform}-generate (Phase 1 — returns the generated config
              synchronously so the Logic App can show it in a Teams "post adaptive card
@@ -22,8 +25,7 @@ Purpose:  Hosts MCP tool servers + HTTP routes for all 3 onboarding platforms (S
              all live in the Logic App, not here — there is no webhook URL, approval
              token, or decision endpoint on this side.
 Used by:  The Logic App (solace/mulesoft/btp -generate/-publish routes) and the 3
-          publisher agents via MCP (github_create_branch/github_commit_file/
-          github_open_pull_request).
+          publisher agents via MCP (github_commit_file/github_open_pull_request).
 Depends:  lib/github_client.py, lib/nosql_client.py, lib/foundry_client.py,
           lib/json_extract.py, lib/yaml_extract.py, tools/*.
 Importance: This is the only bridge between the email trigger, the agents, and GitHub
@@ -40,7 +42,6 @@ import azure.functions as func
 from lib.foundry_client import invoke_workflow
 from lib.json_extract import extract_json
 from lib.yaml_extract import validate_yaml
-from tools.github_create_branch import github_create_branch
 from tools.github_commit_file import github_commit_file
 from tools.github_open_pull_request import github_open_pull_request
 from tools.solace.save_solace_request import save_solace_request
@@ -53,12 +54,8 @@ from tools.btp.update_btp_request_status import update_btp_request_status
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 TOOLS = [
-    {"name": "github_create_branch", "inputSchema": {"type": "object", "properties": {
-        "branchName": {"type": "string", "description": "New branch name, e.g. solace/acme-orders-dev-x7f2"}
-    }, "required": ["branchName"], "additionalProperties": False}},
-
     {"name": "github_commit_file", "inputSchema": {"type": "object", "properties": {
-        "branchName": {"type": "string"},
+        "branchName": {"type": "string", "description": "This platform's persistent feature branch, e.g. solace/onboarding"},
         "path": {"type": "string", "description": "e.g. solace-automation/config/3pl/acme-orders-dev.json"},
         "content": {"type": "string", "description": "Full file content (pretty-printed JSON or raw YAML text)"},
         "message": {"type": "string", "description": "Commit message"},
@@ -74,8 +71,6 @@ TOOLS = [
 
 
 def _call_tool(name: str, args: dict):
-    if name == "github_create_branch":
-        return github_create_branch(args["branchName"])
     if name == "github_commit_file":
         return github_commit_file(args["branchName"], args["path"], args["content"], args["message"])
     if name == "github_open_pull_request":
