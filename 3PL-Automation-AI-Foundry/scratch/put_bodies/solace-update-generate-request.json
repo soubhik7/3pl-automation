@@ -1,0 +1,5 @@
+{
+  "from": "ops@acme.com",
+  "subject": "Update existing Solace domain - Acme Corp DE",
+  "body": "Acme Corp's existing DE dev Solace domain needs a new queue: add an inventory-adjustment event (inbound) alongside the existing stock movement and dispatch delivery events. Everything else about the domain stays the same."
+}

@@ -1,0 +1,68 @@
+{
+  "id": "2b3c4d5e-7f8a-4b9c-0d1e-2f3a4b5c6d7e",
+  "solaceJson": {
+    "config": {
+      "service": {
+        "serviceId": "ruj2y805m8u",
+        "name": "3pl-automation-dev",
+        "datacenterId": "aks-australiaeast",
+        "serviceTypeId": "developer",
+        "serviceClassId": "developer"
+      },
+      "eventPortal": {
+        "domainName": "3PL-ACME-DE",
+        "domainDescription": "3PL integration domain for Acme Corp (DE)",
+        "schemas": [
+          { "name": "StockMovementSchema", "type": "jsonSchema", "version": "1.0.0", "description": "stockMovement payload for Acme Corp" },
+          { "name": "DispatchDeliverySchema", "type": "jsonSchema", "version": "1.0.0", "description": "dispatchDelivery payload for Acme Corp" },
+          { "name": "InventoryAdjustmentSchema", "type": "jsonSchema", "version": "1.0.0", "description": "inventoryAdjustment payload for Acme Corp" }
+        ],
+        "events": [
+          { "name": "StockMovementInbound", "version": "1.0.0", "topic": "3pl/DE/ACME/stockMovement/in/{correlationId}", "schemaRef": "StockMovementSchema", "direction": "in" },
+          { "name": "DispatchDeliveryOutbound", "version": "1.0.0", "topic": "3pl/DE/ACME/dispatchDelivery/out/{correlationId}", "schemaRef": "DispatchDeliverySchema", "direction": "out" },
+          { "name": "InventoryAdjustmentInbound", "version": "1.0.0", "topic": "3pl/DE/ACME/inventoryAdjustment/in/{correlationId}", "schemaRef": "InventoryAdjustmentSchema", "direction": "in" }
+        ],
+        "applications": [
+          { "name": "3PL-Acme-Corp", "type": "standard", "version": "1.0.0", "produces": ["StockMovementInbound", "InventoryAdjustmentInbound"], "consumes": ["DispatchDeliveryOutbound"] }
+        ]
+      },
+      "clusterManagement": {
+        "vpnName": "msgvpn-ruj2y805m8u",
+        "clientProfiles": [{ "name": "cp-acme-dev" }],
+        "aclProfiles": [
+          {
+            "name": "acl-acme-dev",
+            "publishDefault": "disallow",
+            "subscribeDefault": "disallow",
+            "publishExceptions": ["3pl/DE/ACME/stockMovement/in/>", "3pl/DE/ACME/inventoryAdjustment/in/>"],
+            "subscribeExceptions": ["3pl/DE/ACME/dispatchDelivery/out/>"]
+          }
+        ],
+        "clientUsernames": [
+          { "name": "svc-acme-dev", "password": "<SET_VIA_KEY_VAULT>", "clientProfile": "cp-acme-dev", "aclProfile": "acl-acme-dev", "enabled": true }
+        ],
+        "queues": [
+          { "name": "Q/3PL/ACME/DEV/stockMovement/in", "accessType": "non-exclusive", "subscriptions": ["3pl/DE/ACME/stockMovement/in/>"] },
+          { "name": "Q/3PL/ACME/DEV/dispatchDelivery/out", "accessType": "non-exclusive", "subscriptions": ["3pl/DE/ACME/dispatchDelivery/out/>"] },
+          { "name": "Q/3PL/ACME/DEV/inventoryAdjustment/in", "accessType": "non-exclusive", "subscriptions": ["3pl/DE/ACME/inventoryAdjustment/in/>"] }
+        ],
+        "restDeliveryPoints": [
+          {
+            "name": "rdp-acme-dev",
+            "clientProfile": "cp-acme-dev",
+            "enabled": true,
+            "consumers": [
+              { "name": "rest-consumer-acme-dev", "host": "dev-api.acme.de", "port": 443, "tlsEnabled": true, "httpMethod": "post", "httpRequestTarget": "/api/v1/events" }
+            ],
+            "queueBindings": ["Q/3PL/ACME/DEV/dispatchDelivery/out"]
+          }
+        ]
+      }
+    },
+    "skipEventPortal": false,
+    "skipCluster": false
+  },
+  "branchName": "solace/onboarding",
+  "filePath": "solace-automation/config/3pl/acme-de-dev.json",
+  "summaryForApproval": "Updates Acme Corp's existing DE (dev) Solace domain: adds a new inventoryAdjustment inbound event, schema, queue, and ACL exception. Everything else in the existing domain (stock movement, dispatch delivery, REST delivery point, client credentials) is unchanged."
+}

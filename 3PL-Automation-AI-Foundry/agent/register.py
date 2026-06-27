@@ -36,7 +36,7 @@ PLATFORMS = {
         "mcp_endpoint_env": "SOLACE_MCP_ENDPOINT",
         "model_env": "SOLACE_PUBLISHER_MODEL",
         "server_label": "solace-mcp",
-        "allowed_tools": ["github_commit_file", "github_open_pull_request"],
+        "allowed_tools": ["github_get_file", "github_commit_file", "github_open_pull_request"],
         "description": "Two-phase Solace config generator + publisher. Phase 1 generates a "
                         "masked-credential Solace JSON from an email request. Phase 2, only "
                         "after human approval, pushes it to a new GitHub branch and opens a PR.",
@@ -48,7 +48,7 @@ PLATFORMS = {
         "mcp_endpoint_env": "MULESOFT_MCP_ENDPOINT",
         "model_env": "MULESOFT_PUBLISHER_MODEL",
         "server_label": "mulesoft-mcp",
-        "allowed_tools": ["github_commit_file", "github_open_pull_request"],
+        "allowed_tools": ["github_get_file", "github_commit_file", "github_open_pull_request"],
         "description": "Two-phase MuleSoft onboarding YAML generator + publisher. Phase 1 "
                         "generates masked-credential app/dev/tst/prod YAML from an email "
                         "request. Phase 2, only after human approval, pushes them to a new "
@@ -62,7 +62,7 @@ PLATFORMS = {
         "mcp_endpoint_env": "BTP_MCP_ENDPOINT",
         "model_env": "BTP_PUBLISHER_MODEL",
         "server_label": "btp-mcp",
-        "allowed_tools": ["github_commit_file", "github_open_pull_request"],
+        "allowed_tools": ["github_get_file", "github_commit_file", "github_open_pull_request"],
         "description": "Two-phase BTP onboarding config generator + publisher. Phase 1 "
                         "generates a masked-credential btp_config.yaml (and optional "
                         "manifest.yml) from an email request. Phase 2, only after human "

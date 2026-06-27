@@ -1,0 +1,5 @@
+{
+  "from": "ops@acme.com",
+  "subject": "Add entitlement - Acme Corp DE subaccount",
+  "body": "Acme Corp DE's existing BTP subaccount needs the application-logs service added (lite plan), on top of whatever entitlements it already has. No change to the app deployment."
+}

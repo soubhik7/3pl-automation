@@ -8,13 +8,17 @@ Layer:   mcp-server (Execution Plane) + lightweight orchestration
 Purpose:  Hosts MCP tool servers + HTTP routes for all 3 onboarding platforms (Solace,
           MuleSoft, BTP) behind one shared Function App.
           1. Three MCP JSON-RPC tool servers (solace-mcp, mulesoft-mcp, btp-mcp), each
-             exposing the same 2 tools (github_commit_file, github_open_pull_request) —
-             served on separate routes because each platform's agent.yaml connects to its
-             own server_label, even though the tool implementations and this Function App
-             are shared across all 3. There is no branch-creation tool — each platform
-             commits to its own persistent feature branch (solace/onboarding,
-             mulesoft/onboarding, btp/onboarding), created once as a manual setup step,
-             never by the agent.
+             exposing the same 3 tools — served on separate routes because each
+             platform's agent.yaml connects to its own server_label, even though the tool
+             implementations and this Function App are shared across all 3:
+               - github_get_file (Phase 1, read-only): lets the agent tell a brand-new
+                 config apart from an update to an existing one, and merge into the real
+                 current content for the latter instead of guessing at it.
+               - github_commit_file, github_open_pull_request (Phase 2, the only
+                 side-effecting tools, called only after a human Approves).
+             There is no branch-creation tool — each platform commits to its own
+             persistent feature branch (solace/onboarding, mulesoft/onboarding,
+             btp/onboarding), created once as a manual setup step, never by the agent.
           2. Six plain HTTP routes that the Logic App calls directly:
              /api/{platform}-generate (Phase 1 — returns the generated config
              synchronously so the Logic App can show it in a Teams "post adaptive card
@@ -25,7 +29,8 @@ Purpose:  Hosts MCP tool servers + HTTP routes for all 3 onboarding platforms (S
              all live in the Logic App, not here — there is no webhook URL, approval
              token, or decision endpoint on this side.
 Used by:  The Logic App (solace/mulesoft/btp -generate/-publish routes) and the 3
-          publisher agents via MCP (github_commit_file/github_open_pull_request).
+          publisher agents via MCP (github_get_file/github_commit_file/
+          github_open_pull_request).
 Depends:  lib/github_client.py, lib/nosql_client.py, lib/foundry_client.py,
           lib/json_extract.py, lib/yaml_extract.py, tools/*.
 Importance: This is the only bridge between the email trigger, the agents, and GitHub
@@ -42,6 +47,7 @@ import azure.functions as func
 from lib.foundry_client import invoke_workflow
 from lib.json_extract import extract_json
 from lib.yaml_extract import validate_yaml
+from tools.github_get_file import github_get_file
 from tools.github_commit_file import github_commit_file
 from tools.github_open_pull_request import github_open_pull_request
 from tools.solace.save_solace_request import save_solace_request
@@ -54,6 +60,11 @@ from tools.btp.update_btp_request_status import update_btp_request_status
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 TOOLS = [
+    {"name": "github_get_file", "inputSchema": {"type": "object", "properties": {
+        "branchName": {"type": "string", "description": "This platform's persistent feature branch, e.g. solace/onboarding"},
+        "path": {"type": "string", "description": "e.g. solace-automation/config/3pl/acme-orders-dev.json"},
+    }, "required": ["branchName", "path"], "additionalProperties": False}},
+
     {"name": "github_commit_file", "inputSchema": {"type": "object", "properties": {
         "branchName": {"type": "string", "description": "This platform's persistent feature branch, e.g. solace/onboarding"},
         "path": {"type": "string", "description": "e.g. solace-automation/config/3pl/acme-orders-dev.json"},
@@ -71,6 +82,8 @@ TOOLS = [
 
 
 def _call_tool(name: str, args: dict):
+    if name == "github_get_file":
+        return github_get_file(args["branchName"], args["path"])
     if name == "github_commit_file":
         return github_commit_file(args["branchName"], args["path"], args["content"], args["message"])
     if name == "github_open_pull_request":
@@ -368,7 +381,8 @@ def btp_generate(req: func.HttpRequest) -> func.HttpResponse:
     {from, subject, body}. Returns {id, btpConfigYaml, manifestYaml, branchName,
     filePaths, summaryForApproval} synchronously — the Logic App uses this directly to
     populate its Teams "post adaptive card and wait for a response" action. manifestYaml
-    is absent unless a Cloud Foundry app deployment was requested."""
+    is absent unless a Cloud Foundry app deployment was requested or already exists;
+    btpConfigYaml is absent for a manifest-only update to an existing partner."""
     try:
         body = req.get_json()
     except ValueError:
@@ -393,7 +407,7 @@ def btp_generate(req: func.HttpRequest) -> func.HttpResponse:
         return func.HttpResponse(json.dumps({"status": "FAILED", "error": str(e)}),
                                   status_code=500, mimetype="application/json")
 
-    if not validate_yaml(generated.get("btpConfigYaml", "")):
+    if "btpConfigYaml" in generated and not validate_yaml(generated["btpConfigYaml"]):
         logging.warning("btp-generate: btpConfigYaml did not parse as valid YAML")
     if "manifestYaml" in generated and not validate_yaml(generated["manifestYaml"]):
         logging.warning("btp-generate: manifestYaml did not parse as valid YAML")
@@ -406,22 +420,25 @@ def btp_generate(req: func.HttpRequest) -> func.HttpResponse:
         "fromEmail": from_email,
         "subject": subject,
         "requestText": email_body,
-        "btpConfigYaml": generated.get("btpConfigYaml"),
-        "manifestYaml": generated.get("manifestYaml"),
         "branchName": generated.get("branchName"),
         "filePaths": generated.get("filePaths"),
         "summaryForApproval": generated.get("summaryForApproval", ""),
         "createdAt": datetime.now(timezone.utc).isoformat(),
     }
+    if "btpConfigYaml" in generated:
+        record["btpConfigYaml"] = generated["btpConfigYaml"]
+    if "manifestYaml" in generated:
+        record["manifestYaml"] = generated["manifestYaml"]
     save_btp_request(record)
 
     response_body = {
         "id": request_id,
-        "btpConfigYaml": generated.get("btpConfigYaml"),
         "branchName": generated.get("branchName"),
         "filePaths": generated.get("filePaths"),
         "summaryForApproval": generated.get("summaryForApproval", ""),
     }
+    if "btpConfigYaml" in generated:
+        response_body["btpConfigYaml"] = generated["btpConfigYaml"]
     if "manifestYaml" in generated:
         response_body["manifestYaml"] = generated["manifestYaml"]
 
@@ -433,20 +450,24 @@ def btp_publish(req: func.HttpRequest) -> func.HttpResponse:
     """Phase 2. Called by the Logic App only after its Teams wait-for-response action
     resolves to Approve. Body: {id, btpConfigYaml, manifestYaml, branchName, filePaths}
     — the exact values returned from /api/btp-generate, round-tripped by the Logic App
-    (manifestYaml may be absent)."""
+    (btpConfigYaml and/or manifestYaml may be absent — a manifest-only update omits the
+    former, an entitlements-only update omits the latter)."""
     try:
         body = req.get_json()
     except ValueError:
         return func.HttpResponse("Invalid JSON body", status_code=400)
 
     request_id = body.get("id", "")
-    publish_input = json.dumps({
+    publish_payload = {
         "phase": "publish",
-        "btpConfigYaml": body.get("btpConfigYaml"),
-        "manifestYaml": body.get("manifestYaml"),
         "branchName": body.get("branchName"),
         "filePaths": body.get("filePaths"),
-    })
+    }
+    if "btpConfigYaml" in body:
+        publish_payload["btpConfigYaml"] = body["btpConfigYaml"]
+    if "manifestYaml" in body:
+        publish_payload["manifestYaml"] = body["manifestYaml"]
+    publish_input = json.dumps(publish_payload)
 
     try:
         reply_text = invoke_workflow("btp-publish-workflow", publish_input)

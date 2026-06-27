@@ -9,12 +9,13 @@
   trigger URL — see "Master orchestrator" below for why). Responds `202 DISPATCHED` immediately
   after starting the requested children; it does not wait for any of them to finish, since each
   one can block for hours on its own Teams approval card.
-- `solace-mail-trigger-workflow` — Solace sub-workflow (JSON config), backed by the
-  `integration-pulse-solace-publisher` agent.
-- `mulesoft-mail-trigger-workflow` — MuleSoft sub-workflow (4 YAML files: app/dev/tst/prod), backed
-  by the `integration-pulse-mulesoft-publisher` agent.
-- `btp-mail-trigger-workflow` — BTP sub-workflow (btp_config.yaml + optional manifest.yml), backed
-  by the `integration-pulse-btp-publisher` agent.
+- `solace-mail-trigger-workflow` — Solace sub-workflow (JSON config; new domains and updates to
+  existing ones), backed by the `integration-pulse-solace-publisher` agent.
+- `mulesoft-mail-trigger-workflow` — MuleSoft sub-workflow (up to 4 YAML files: app/dev/tst/prod;
+  new onboardings and updates to existing ones), backed by the
+  `integration-pulse-mulesoft-publisher` agent.
+- `btp-mail-trigger-workflow` — BTP sub-workflow (btp_config.yaml and/or manifest.yml; new
+  onboardings and updates to existing ones), backed by the `integration-pulse-btp-publisher` agent.
 
 All 3 sub-workflows are structurally identical — same trigger shape, same 4-action pattern, same
 shared Function App and GitHub tools — they only differ in which agent/routes/file count they use.
@@ -144,9 +145,14 @@ depend on that detail.
 1. **manual** (HTTP trigger) — accepts `{from, subject, body}` via POST (called directly, or by the
    orchestrator's native child-workflow invocation).
 2. **Generate_{Solace_JSON,Mulesoft_YAML,BTP_Config}** — `POST /api/{platform}-generate` with the
-   trigger body. Returns `{id, <config>, branchName, <filePath(s)>, summaryForApproval}`.
+   trigger body. The agent behind this route reads the target file(s) first to tell a brand-new
+   config apart from an update to one that already exists, and merges into the real current
+   content for an update rather than overwriting it blind. Returns `{id, <config>, branchName,
+   <filePath(s)>, summaryForApproval}` — `<filePath(s)>` may be a subset (e.g. just one of
+   MuleSoft's 4 files) when only part of an existing config is changing.
 3. **Post_adaptive_card_and_wait_for_a_response** — shows the summary + generated config in Teams
-   with Approve/Reject buttons, pauses the run until one is clicked.
+   with Approve/Reject buttons, pauses the run until one is clicked. This is the only gate between
+   any request — new config or update — and GitHub; nothing reaches step 4 without it.
 4. **Decision_check** — if `decision == "approve"`, calls `POST /api/{platform}-publish` with the
    exact id/config/branchName/filePath(s) from step 2 (round-tripped, never re-derived) — this is
    what actually commits the file(s) to that platform's persistent feature branch

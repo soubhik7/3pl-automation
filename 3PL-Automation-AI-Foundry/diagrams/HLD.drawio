@@ -19,7 +19,7 @@
                 <mxCell id="n5" value="Logic App:&#xa;btp-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="620" y="600" width="220" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="n6" value="ip-3pl-mcp (Function App) — shared&#xa;solace-mcp / mulesoft-mcp / btp-mcp&#xa;+ 6 HTTP routes ({platform}-generate / -publish)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+                <mxCell id="n6" value="ip-3pl-mcp (Function App) — shared&#xa;solace-mcp / mulesoft-mcp / btp-mcp&#xa;+ 6 HTTP routes ({platform}-generate / -publish)&#xa;tools: github_get_file (read) / commit_file + open_pull_request (write)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="940" y="270" width="280" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n7" value="integration-pulse-&#xa;solace-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
@@ -67,13 +67,13 @@
                 <mxCell id="e8" value="1. /api/btp-generate -&gt; config&#xa;2. /api/btp-publish -&gt; branch+commit+PR" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n5" target="n6" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e9" value="Phase 1 generate / Phase 2 publish&#xa;(solace-generate-workflow / solace-publish-workflow)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n7" edge="1">
+                <mxCell id="e9" value="Phase 1 generate (reads existing config first, new-or-update) / Phase 2 publish&#xa;(solace-generate-workflow / solace-publish-workflow)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n7" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e10" value="Phase 1 generate / Phase 2 publish&#xa;(mulesoft-generate-workflow / mulesoft-publish-workflow)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n8" edge="1">
+                <mxCell id="e10" value="Phase 1 generate (reads existing config first, new-or-update) / Phase 2 publish&#xa;(mulesoft-generate-workflow / mulesoft-publish-workflow)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n8" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="e11" value="Phase 1 generate / Phase 2 publish&#xa;(btp-generate-workflow / btp-publish-workflow)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n9" edge="1">
+                <mxCell id="e11" value="Phase 1 generate (reads existing config first, new-or-update) / Phase 2 publish&#xa;(btp-generate-workflow / btp-publish-workflow)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n9" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e12" value="Adaptive Card (Approve / Reject)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n3" target="n11" edge="1">
@@ -98,6 +98,15 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e19" value="installation token (1hr, cached in memory) — minted from the App's Key Vault private key, never a stored PAT" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;dashed=1;startArrow=block;endArrow=block;" parent="1" source="n10" target="n13" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e20" value="Phase 1: github_get_file(&lt;slug&gt;.json) -&gt; NOT_FOUND (new domain) | OK (existing, merge update)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#82b366;dashed=1;startArrow=block;endArrow=block;" parent="1" source="n7" target="n10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e21" value="Phase 1: github_get_file(per candidate app/dev/tst/prod.yaml) -&gt; NOT_FOUND (new files) | OK (existing, merge update)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#82b366;dashed=1;startArrow=block;endArrow=block;" parent="1" source="n8" target="n10" edge="1">
+                    <mxGeometry relative="1" as="geometry"/>
+                </mxCell>
+                <mxCell id="e22" value="Phase 1: github_get_file(btp_config.yaml / manifest.yml) -&gt; NOT_FOUND (new subaccount) | OK (existing, merge update)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#82b366;dashed=1;startArrow=block;endArrow=block;" parent="1" source="n9" target="n10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
             </root>
