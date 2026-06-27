@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram id="hld" name="HLD – High Level Design">
-        <mxGraphModel dx="1091" dy="752" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+        <mxGraphModel dx="1762" dy="814" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -22,8 +22,8 @@
                 <mxCell id="h-sub-la" value="&lt;b&gt;Submission&#xa;Logic App&lt;/b&gt;&#xa;Validates &amp; stores config" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#c7d9f5;strokeColor=#2f75b5;fontSize=11;" parent="1" vertex="1">
                     <mxGeometry x="610" y="135" width="190" height="70" as="geometry"/>
                 </mxCell>
-                <mxCell id="h-blob" value="&lt;b&gt;Azure Blob Storage&lt;/b&gt;&#xa;/pending/{id}.json&#xa;/status/{id}-status.json" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
-                    <mxGeometry x="1130" y="100" width="200" height="110" as="geometry"/>
+                <mxCell id="h-blob" value="&lt;b&gt;Azure Cosmos DB&lt;/b&gt;&lt;div&gt;&lt;b&gt;Or&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;b&gt;&amp;nbsp;Azure Blob Storage&lt;/b&gt;&lt;br&gt;/pending/{id}.json&lt;br&gt;/status/{id}-status.json&lt;/div&gt;" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" parent="1" vertex="1">
+                    <mxGeometry x="1128" y="100" width="200" height="110" as="geometry"/>
                 </mxCell>
                 <mxCell id="h-a1" style="edgeStyle=orthogonalEdgeStyle;" parent="1" source="h-mgr" target="h-ui" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -190,7 +190,7 @@
         </mxGraphModel>
     </diagram>
     <diagram id="lld" name="LLD – Low Level Design">
-        <mxGraphModel dx="3726" dy="654" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2480" pageHeight="1754" math="0" shadow="0">
+        <mxGraphModel dx="4147" dy="731" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2480" pageHeight="1754" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
