@@ -1,0 +1,66 @@
+# SAP BTP per-partner config — worked example (structure to follow, not values to copy).
+# Same shape as the central btp-automation/config/btp_config.yaml, scoped to one partner's
+# subaccount instead of the shared trial account. Any client_id/client_secret/password field
+# MUST be the literal "<SET_VIA_KEY_VAULT>" placeholder — this file is committed to a public repo.
+
+global_account:
+  subdomain: acme-3pl-prod
+  guid: <SET_VIA_KEY_VAULT>
+  display_name: Acme 3PL Production
+
+subaccount:
+  guid: <SET_VIA_KEY_VAULT>
+  subdomain: acme-3pl-de
+  region: eu10
+  display_name: Acme 3PL - Germany
+
+cloud_foundry:
+  api_endpoint: https://api.cf.eu10.hana.ondemand.com
+  org_name: acme-3pl-de
+  org_guid: <SET_VIA_KEY_VAULT>
+  default_space: dev
+  region: eu10
+
+endpoints:
+  accounts_service: https://accounts-service.cfapps.eu10.hana.ondemand.com
+  entitlements_service: https://entitlements-service.cfapps.eu10.hana.ondemand.com
+  provisioning_service: https://provisioning-service.cfapps.eu10.hana.ondemand.com
+  xsuaa_api: https://acme-3pl-de.authentication.eu10.hana.ondemand.com
+  xsuaa_subaccount_api: https://acme-3pl-de.authentication.eu10.hana.ondemand.com
+
+auth:
+  cis_central:
+    client_id_env: "<SET_VIA_KEY_VAULT>"
+    client_secret_env: "<SET_VIA_KEY_VAULT>"
+    token_url: https://acme-3pl-de-ga.authentication.eu10.hana.ondemand.com/oauth/token
+    grant_type: client_credentials
+  xsuaa:
+    client_id_env: "<SET_VIA_KEY_VAULT>"
+    client_secret_env: "<SET_VIA_KEY_VAULT>"
+    token_url: https://acme-3pl-de.authentication.eu10.hana.ondemand.com/oauth/token
+    grant_type: client_credentials
+
+api_paths:
+  accounts: /accounts/v1
+  entitlements: /entitlements/v1
+  provisioning: /provisioning/v1
+  authorization: /sap/rest/authorization/v2
+
+defaults:
+  timeout_seconds: 30
+  retry_attempts: 3
+  retry_delay_seconds: 2
+  output_format: table
+  page_size: 100
+
+# Entitlements requested for this partner's subaccount (additive on top of any account defaults).
+entitlements:
+  - service: cloudfoundry
+    plan: standard
+  - service: destination
+    plan: lite
+
+# Only emit this section if the onboarding request explicitly describes a Cloud Foundry app
+# deployment — see templates/btp-manifest-template.yml for the matching manifest.yml shape.
+# cloud_foundry_apps:
+#   - acme-3pl-de

@@ -1,0 +1,16 @@
+kind: workflow
+trigger:
+  kind: OnConversationStart
+  id: trigger_wf
+  actions:
+    - kind: InvokeAzureAgent
+      id: step_publish
+      agent:
+        name: integration-pulse-mulesoft-publisher
+      conversationId: =System.ConversationId
+      input:
+        messages: =System.LastMessage.Text
+      output:
+        autoSend: true
+id: ""
+name: mulesoft-publish-workflow

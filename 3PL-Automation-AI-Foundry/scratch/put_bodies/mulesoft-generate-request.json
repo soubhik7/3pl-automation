@@ -1,0 +1,5 @@
+{
+  "from": "ops@royalcanin.com",
+  "subject": "MuleSoft NAV onboarding - Royal Canin France",
+  "body": "Please onboard Royal Canin France on the NAV connector. UAT host is azr-xxx1234.mars-ad.net, port 7124, username SVC_UAT_MULESOFT, company 'Company(UAT - Royal Canin France)', SOAP service InterfaceWebServices, routing code NAV_FM_IN_UAT_FRA. We need shipment (sal_008), sales return receipt (sal_011), and inventory (inv_003) transaction types enabled. Translation receiver is petc-rc-navision-3plspl-sys for despatchStock messages, mapping plant PLANT-FR1-PLANT-FR2 to spl_001, and unit of measure EA to UNIT."
+}

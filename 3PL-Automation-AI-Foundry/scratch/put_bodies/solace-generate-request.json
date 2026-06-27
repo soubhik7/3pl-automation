@@ -1,0 +1,5 @@
+{
+  "from": "ops@acme.com",
+  "subject": "New 3PL integration - Acme Corp DE",
+  "body": "We need a new Solace integration domain for Acme Corp in Germany, dev environment. Events: stock movement inbound, dispatch delivery outbound. A REST consumer at dev-api.acme.de should receive the dispatch delivery events over HTTPS on port 443 at /api/v1/events."
+}

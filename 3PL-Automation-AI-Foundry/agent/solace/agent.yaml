@@ -1,0 +1,30 @@
+# ============================================================
+# agent.yaml — Solace Publisher Agent Configuration
+# ============================================================
+# Part of: 3pl-automation Solace-publisher feature (fully isolated from the main
+#          Integration Pulse agents/MCP servers/Toolbox)
+#
+# Purpose:    Two-phase agent. Phase 1 generates a Solace integration-domain JSON from
+#             a free-text email request, following a fixed template, masking any
+#             credential field. Phase 2 (only after human approval) pushes the exact
+#             approved JSON to a new branch in soubhik7/3pl-automation and opens a PR.
+# Invoked by: solace-generate-workflow / solace-publish-workflow (this feature's own
+#             two single-step Foundry Workflows) — never invoked directly by name.
+# Tools:      github_create_branch, github_commit_file, github_open_pull_request — served
+#             by this feature's own dedicated MCP server (solace-mcp), not the main Toolbox.
+#             Shared tool implementations also back the mulesoft-mcp/btp-mcp sibling agents.
+# Importance: The only Solace agent authorised to push to soubhik7/3pl-automation.
+# ============================================================
+name: integration-pulse-solace-publisher
+model: ${SOLACE_PUBLISHER_MODEL:-gpt-4.1}
+description: "Two-phase Solace config generator + publisher. Phase 1 generates a masked-credential Solace JSON from an email request. Phase 2, only after human approval, pushes it to a new GitHub branch and opens a PR."
+instructions: "@system-prompt.md"
+
+tools:
+  - type: mcp
+    server_label: solace-mcp
+    server_url: ${SOLACE_MCP_ENDPOINT}
+    allowed_tools:
+      - github_create_branch     # create the feature branch (idempotent if it already exists)
+      - github_commit_file       # commit the approved Solace JSON to that branch
+      - github_open_pull_request # open a PR back to main (idempotent if one already exists)

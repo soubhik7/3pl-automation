@@ -1,0 +1,61 @@
+# MuleSoft 3PL onboarding config — worked example (structure to follow, not values to copy).
+# Modeled on the onboardingInput shape consumed by mulesoft-automation's
+# wf-mule-yaml-patch-management.json (NAV connector config + translation tables), re-expressed
+# as the 4 per-environment YAML files it patches: app.yaml (shared/base), dev.yaml, tst.yaml,
+# prod.yaml (environment overrides layered on top of app.yaml).
+
+app:
+  country_key: france
+  country_code: fr
+  partner_comment: Added France for SPL partner
+  created_by: integration-pulse-mulesoft-publisher
+  nav:
+    protocol: https
+    host: azr-xxx1234.mars-ad.net
+    port: "7124"
+    username: SVC_UAT_MULESOFT
+    password: "<SET_VIA_KEY_VAULT>"
+    domain: mars-ad.net
+    company: Company(UAT - Royal Canin France)
+    service: InterfaceWebServices
+    soap_port: "7124"
+    soap_path: /sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl
+    routing_code: NAV_FM_IN_UAT_FRA
+    use_common_cert: true
+    transaction_types:
+      sal_008: { enabled: true, type: SHIPMENT }
+      sal_011: { enabled: true, type: SALES_RETURN_RECEIPT }
+      pur_019: { enabled: true, type: RECADV }
+      inv_002: { enabled: true, type: RECLASSMENT }
+      inv_003: { enabled: true, type: INVENTORY }
+      inv_004: { enabled: true, type: STOCK_ADJUSTMENT }
+  translation:
+    receiver_name: petc-rc-navision-3plspl-sys
+    message_types: [despatchStock]
+    source_destination_combinations:
+      - value_from: PLANT-FR1-PLANT-FR2
+        value_to: spl_001
+    uom_mappings:
+      - value_from: EA
+        value_to: UNIT
+
+dev:
+  nav:
+    host: azr-xxx1234-dev.mars-ad.net
+    company: Company(DEV - Royal Canin France)
+    soap_path: /sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl
+    routing_code: NAV_FM_IN_DEV_FRA
+
+tst:
+  nav:
+    host: azr-xxx1234-tst.mars-ad.net
+    company: Company(TST - Royal Canin France)
+    soap_path: /sop_fra_tst_01/WS/TST - Royal Canin France/Codeunit/InterfaceWebServices?wsdl
+    routing_code: NAV_FM_IN_TST_FRA
+
+prod:
+  nav:
+    host: azr-xxx1234-prod.mars-ad.net
+    company: Company(PROD - Royal Canin France)
+    soap_path: /sop_fra_prod_01/WS/PROD - Royal Canin France/Codeunit/InterfaceWebServices?wsdl
+    routing_code: NAV_FM_IN_PROD_FRA

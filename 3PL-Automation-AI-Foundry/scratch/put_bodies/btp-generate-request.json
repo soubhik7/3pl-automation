@@ -1,0 +1,5 @@
+{
+  "from": "ops@acme.com",
+  "subject": "BTP subaccount onboarding - Acme Corp DE",
+  "body": "We need a new BTP subaccount for Acme Corp in Germany, region eu10, under our global account acme-3pl-prod. Cloud Foundry org acme-3pl-de, default space dev. Please also deploy a small Python Flask API app called acme-3pl-de-api that will receive integration events (256M memory, 1 instance, gunicorn). Entitlements: cloudfoundry standard plan and destination lite plan."
+}

@@ -1,0 +1,119 @@
+{
+  "config": {
+    "service": {
+      "serviceId": "ruj2y805m8u",
+      "name": "3pl-automation-dev",
+      "datacenterId": "aks-australiaeast",
+      "serviceTypeId": "developer",
+      "serviceClassId": "developer"
+    },
+    "eventPortal": {
+      "domainName": "3PL-3PL-003-DE",
+      "domainDescription": "3PL integration domain for SolaceDemo Co (DE)",
+      "schemas": [
+        {
+          "name": "StockMovementSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "stockMovement payload for SolaceDemo Co",
+          "usedByInterfaces": ["ITF_DEMO_001"]
+        },
+        {
+          "name": "DispatchDeliverySchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "dispatchDelivery payload for SolaceDemo Co",
+          "usedByInterfaces": ["ITF_DEMO_002"]
+        }
+      ],
+      "events": [
+        {
+          "name": "StockMovementInbound",
+          "version": "1.0.0",
+          "topic": "3pl/DE/3PL-003/stockMovement/in/{correlationId}",
+          "schemaRef": "StockMovementSchema",
+          "direction": "in",
+          "interfaces": ["ITF_DEMO_001"]
+        },
+        {
+          "name": "DispatchDeliveryOutbound",
+          "version": "1.0.0",
+          "topic": "3pl/DE/3PL-003/dispatchDelivery/out/{correlationId}",
+          "schemaRef": "DispatchDeliverySchema",
+          "direction": "out",
+          "interfaces": ["ITF_DEMO_002"]
+        }
+      ],
+      "applications": [
+        {
+          "name": "1NAV-NAV-EU-03",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": ["DispatchDeliveryOutbound"],
+          "consumes": ["StockMovementInbound"]
+        },
+        {
+          "name": "3PL-SolaceDemo-Co",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": ["StockMovementInbound"],
+          "consumes": ["DispatchDeliveryOutbound"]
+        }
+      ]
+    },
+    "clusterManagement": {
+      "vpnName": "msgvpn-ruj2y805m8u",
+      "clientProfiles": [{ "name": "cp-solacedemo-co-dev" }],
+      "aclProfiles": [
+        {
+          "name": "acl-solacedemo-co-dev",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "publishExceptions": ["3pl/DE/3PL-003/stockMovement/in/>"],
+          "subscribeExceptions": ["3pl/DE/3PL-003/dispatchDelivery/out/>"]
+        }
+      ],
+      "clientUsernames": [
+        {
+          "name": "svc-demo-3pl-dev",
+          "password": "<SET_VIA_KEY_VAULT>",
+          "clientProfile": "cp-solacedemo-co-dev",
+          "aclProfile": "acl-solacedemo-co-dev",
+          "enabled": true
+        }
+      ],
+      "queues": [
+        {
+          "name": "Q/3PL/3PL-003/DEV/stockMovement/in",
+          "accessType": "non-exclusive",
+          "subscriptions": ["3pl/DE/3PL-003/stockMovement/in/>"]
+        },
+        {
+          "name": "Q/3PL/3PL-003/DEV/dispatchDelivery/out",
+          "accessType": "non-exclusive",
+          "subscriptions": ["3pl/DE/3PL-003/dispatchDelivery/out/>"]
+        }
+      ],
+      "restDeliveryPoints": [
+        {
+          "name": "rdp-solacedemo-co-dev",
+          "clientProfile": "cp-solacedemo-co-dev",
+          "enabled": true,
+          "consumers": [
+            {
+              "name": "rest-consumer-mulesoft-dev",
+              "host": "dev-api.solarizedemo.de",
+              "port": 443,
+              "tlsEnabled": true,
+              "httpMethod": "post",
+              "httpRequestTarget": "/api/v1/events"
+            }
+          ],
+          "queueBindings": ["Q/3PL/3PL-003/DEV/dispatchDelivery/out"]
+        }
+      ]
+    }
+  },
+  "skipEventPortal": true,
+  "skipCluster": false
+}
