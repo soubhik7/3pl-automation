@@ -25,10 +25,34 @@ at the bottom of the LLD).
 1. A request (`{from, subject, body, platforms[]}`) hits `3pl-onboarding-orchestrator-workflow`,
    which fans out to 1–3 of the platform pipelines below.
 2. Each platform pipeline: agent **generate** phase (masked-credential config) → Cosmos audit
-   record → Teams approval card → agent **publish** phase (branch + commit + PR) on Approve.
-3. The AI-Foundry layer's job ends at "PR opened against `main`" — actual provisioning into
-   Solace Cloud / Anypoint Platform / BTP cockpit remains each platform's own existing automation
-   (e.g. `solace-automation`'s GitHub Actions), triggered independently once a PR merges.
+   record → Teams approval card → agent **publish** phase (commit + ensure-PR) on Approve.
+3. Publish commits straight to that platform's one **persistent feature branch**
+   (`solace/onboarding`, `mulesoft/onboarding`, `btp/onboarding`) — there is no per-request branch
+   and no branch-creation step; the 3 branches are created once, manually (see "One-time setup"
+   below), and every approved request just adds a commit (one file per partner/slug, so concurrent
+   requests never collide) to whichever platform's branch it belongs to, then ensures a PR is open
+   from that branch to `main` (idempotent — reuses the existing PR after the first request).
+4. The AI-Foundry layer's job ends at "commit added, PR open against `main`" — actual provisioning
+   into Solace Cloud / Anypoint Platform / BTP cockpit remains each platform's own existing
+   automation (e.g. `solace-automation`'s GitHub Actions), triggered independently once a PR merges.
+
+## One-time setup
+
+Two things need to exist before any agent can publish — neither is created by the automated flow:
+
+1. **The 3 persistent feature branches**, once, off `main`:
+   ```bash
+   for b in solace/onboarding mulesoft/onboarding btp/onboarding; do
+     git push origin main:refs/heads/$b
+   done
+   ```
+   After that, `mcp-server/lib/github_client.py` never creates a branch — every `github_commit_file`
+   call targets one of these 3 existing branches directly.
+2. **A GitHub App** installed on `soubhik7/3pl-automation` with `contents: write` and
+   `pull_requests: write` repository permissions (this is what the Function App authenticates as —
+   see "Environment variables" below; there is no PAT anywhere in this stack). Store its private
+   key as a secret in the Key Vault the Function App's managed identity can read, and grant that
+   identity a `get`-secrets access policy/role on the vault.
 
 ## Environment variables
 
@@ -38,7 +62,9 @@ at the bottom of the LLD).
 | `FOUNDRY_BEARER` | `agent/register.py` | Optional — falls back to `az account get-access-token`. |
 | `SOLACE_MCP_ENDPOINT` / `MULESOFT_MCP_ENDPOINT` / `BTP_MCP_ENDPOINT` | each platform's `agent.yaml` | Point at this Function App's `/api/{platform}-mcp` route. |
 | `SOLACE_PUBLISHER_MODEL` / `MULESOFT_PUBLISHER_MODEL` / `BTP_PUBLISHER_MODEL` | each platform's `agent.yaml` | Default `gpt-4.1` if unset. |
-| `GITHUB_TOKEN` / `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BASE_BRANCH` | `mcp-server/lib/github_client.py` | Shared across all 3 platforms. `GITHUB_BASE_BRANCH` defaults to `main`. |
+| `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BASE_BRANCH` | `mcp-server/lib/github_client.py` | Shared across all 3 platforms. `GITHUB_BASE_BRANCH` defaults to `main`. No `GITHUB_TOKEN` — see the 4 GitHub App vars below instead. |
+| `GITHUB_APP_ID` / `GITHUB_APP_INSTALLATION_ID` | `mcp-server/lib/github_client.py` | Identify the GitHub App + its installation on this repo (from the "One-time setup" step above). |
+| `GITHUB_APP_PRIVATE_KEY_VAULT_URL` / `GITHUB_APP_PRIVATE_KEY_SECRET_NAME` | `mcp-server/lib/github_client.py` | Key Vault URL + secret name holding the GitHub App's private key. Fetched via this Function App's managed identity (`DefaultAzureCredential`) and exchanged for a short-lived (1 hour) installation token — cached in memory, never written to an App Setting. `GITHUB_APP_PRIVATE_KEY_SECRET_NAME` defaults to `github-app-private-key`. |
 | `COSMOS_ENDPOINT` / `COSMOS_NOSQL_KEY` / `COSMOS_DATABASE` | `mcp-server/lib/nosql_client.py` | Shared Cosmos account (default database `integration-pulse`). |
 | `COSMOS_NOSQL_CONTAINER_SOLACE_REQUESTS` / `..._MULESOFT_REQUESTS` / `..._BTP_REQUESTS` | `mcp-server/lib/nosql_client.py` | Default to `solace_requests`/`mulesoft_requests`/`btp_requests`. **The 2 new containers must be provisioned manually** in the existing Cosmos account before the MuleSoft/BTP routes will work. |
 
@@ -47,4 +73,5 @@ at the bottom of the LLD).
 This is a code restructure only — nothing here has been deployed or pushed. See
 [`logic-app/README.md`](logic-app/README.md) for the manual Kudu VFS deployment steps (Teams
 connection auth, Cosmos container provisioning, workflow upload) needed to bring the MuleSoft/BTP
-pipelines and the orchestrator live alongside the already-deployed Solace pipeline.
+pipelines and the orchestrator live alongside the already-deployed Solace pipeline. Complete the
+"One-time setup" above (3 branches + GitHub App) before any platform's publish phase will work.

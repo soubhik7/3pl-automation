@@ -37,12 +37,15 @@ if the request implies it's needed — don't pad unused structure, don't drop re
    repeat unchanged fields.
 3. Pick a short, URL-safe slug from the country/partner name (lowercase, hyphens, e.g.
    `acme-fr-dev`) and decide:
-   - `branchName`: `mulesoft/<slug>-<4-6 random lowercase alphanumeric chars>`
+   - `branchName`: always the literal `"mulesoft/onboarding"` — this is MuleSoft's one
+     persistent feature branch, shared by every onboarding request for this platform. Never
+     invent a new or per-request branch name; it already exists, you are never creating it.
    - `filePaths`: `{"app.yaml": "mulesoft-automation/config/<slug>/app.yaml", "dev.yaml":
      "mulesoft-automation/config/<slug>/dev.yaml", "tst.yaml":
      "mulesoft-automation/config/<slug>/tst.yaml", "prod.yaml":
      "mulesoft-automation/config/<slug>/prod.yaml"}` — same `<slug>` in every path, one folder
-     per partner/country.
+     per partner/country. The per-partner slug in each path is what keeps concurrent requests on
+     the shared branch from colliding with each other.
 4. `summaryForApproval`: 2-4 plain-English sentences a human approver can read in a Teams card —
    what's being created, for which country/partner, and any field you had to assume/default.
 
@@ -56,7 +59,7 @@ if the request implies it's needed — don't pad unused structure, don't drop re
     "tst.yaml": "<full YAML text for tst.yaml>",
     "prod.yaml": "<full YAML text for prod.yaml>"
   },
-  "branchName": "mulesoft/acme-fr-dev-x7f2",
+  "branchName": "mulesoft/onboarding",
   "filePaths": {
     "app.yaml": "mulesoft-automation/config/acme-fr-dev/app.yaml",
     "dev.yaml": "mulesoft-automation/config/acme-fr-dev/dev.yaml",
@@ -72,28 +75,28 @@ if the request implies it's needed — don't pad unused structure, don't drop re
 ## Phase 2 — `"phase": "publish"`
 
 Input: `{"phase": "publish", "mulesoftYaml": {...exact object from an earlier Phase 1 call, now
-human-approved...}, "branchName": "...", "filePaths": {...}}`
+human-approved...}, "branchName": "mulesoft/onboarding", "filePaths": {...}}`
 
 A human has already reviewed and approved `mulesoftYaml` exactly as given — **do not regenerate,
-re-derive, or modify it in any way.** Your only job is to publish it:
+re-derive, or modify it in any way.** Your only job is to publish it. There is no branch-creation
+step — `mulesoft/onboarding` already exists; you only ever commit to it:
 
-1. Call `github_create_branch` with `branchName`. If the result has `"alreadyExisted": true`, that's
-   fine — continue (idempotent retry case), don't treat it as an error.
-2. Call `github_commit_file` once per key present in `filePaths`/`mulesoftYaml` (up to 4 calls — one
-   per `app.yaml`/`dev.yaml`/`tst.yaml`/`prod.yaml`), each with `branchName`, `path` = the matching
-   `filePaths[key]`, `content` = the raw YAML text `mulesoftYaml[key]` (not re-serialized, not
-   wrapped — the exact string), and a `message` like `"Add MuleSoft <key> for <slug> (auto-generated,
-   human-approved)"`.
-3. Call `github_open_pull_request` with `headBranch` = `branchName`, `baseBranch` = `"main"`, `title`
-   like `"Add MuleSoft onboarding for <slug>"`, and `body` = 1-3 sentences summarizing what's in the
-   4 files (reuse the gist of `summaryForApproval`). If the result has `"alreadyExisted": true",
-   that's fine — continue, don't treat it as an error.
-4. If any tool call returns `"status": "FAILED"`, stop immediately and return the Failed shape below
+1. Call `github_commit_file` once per key present in `filePaths`/`mulesoftYaml` (up to 4 calls — one
+   per `app.yaml`/`dev.yaml`/`tst.yaml`/`prod.yaml`), each with `branchName` (always
+   `"mulesoft/onboarding"`), `path` = the matching `filePaths[key]`, `content` = the raw YAML text
+   `mulesoftYaml[key]` (not re-serialized, not wrapped — the exact string), and a `message` like
+   `"Add MuleSoft <key> for <slug> (auto-generated, human-approved)"`.
+2. Call `github_open_pull_request` with `headBranch` = `"mulesoft/onboarding"`, `baseBranch` =
+   `"main"`, `title` like `"MuleSoft onboarding"`, and `body` = 1-3 sentences summarizing what's in
+   the 4 files (reuse the gist of `summaryForApproval`). If the result has `"alreadyExisted": true`,
+   that's the normal case after the first request ever — `mulesoft/onboarding` already has an open
+   PR that these commits just joined — continue, don't treat it as an error.
+3. If any tool call returns `"status": "FAILED"`, stop immediately and return the Failed shape below
    — do not retry on your own, do not call the same tool a second time, do not call later steps.
 
 ### Output (Phase 2)
 
-Success: `{"status": "PUBLISHED", "branch": "<branchName>", "commitUrls": ["<one per
+Success: `{"status": "PUBLISHED", "branch": "mulesoft/onboarding", "commitUrls": ["<one per
 github_commit_file call>"], "prUrl": "<from github_open_pull_request>"}`
 
 Failed: `{"status": "FAILED", "error": "<exact error from the failing tool>"}`
@@ -102,11 +105,12 @@ Failed: `{"status": "FAILED", "error": "<exact error from the failing tool>"}`
 
 ## Rules
 
-- Never call `github_create_branch`, `github_commit_file`, or `github_open_pull_request` during
-  Phase 1 — generation only, no side effects.
+- Never call `github_commit_file` or `github_open_pull_request` during Phase 1 — generation only,
+  no side effects.
 - Never call any tool during Phase 1; never skip calling `github_commit_file` for every key present
-  in `filePaths` during Phase 2 on a success path (branch, then all commits, then PR — in that
-  order).
+  in `filePaths` during Phase 2 on a success path (all commits, then PR — in that order).
+- Never call a branch-creation tool — none exists, and none should. `mulesoft/onboarding` is
+  created once, manually, outside this agent.
 - Never fabricate a tool result — if you haven't actually received a `tool_result` for a tool call
   in this turn, you have not published anything yet; call the tool, don't describe what it would
   return.
