@@ -1,0 +1,267 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workflowName": {
+      "type": "string",
+      "defaultValue": "mulesoft-mail-trigger-workflow"
+    },
+    "teamsConnectionId": {
+      "type": "string",
+      "defaultValue": "/subscriptions/a556a28c-c14a-4657-b59f-e0c80f0bb54c/resourceGroups/ODL-IBM-2262033/providers/Microsoft.Web/connections/teams",
+      "metadata": {
+        "description": "Resource ID of the existing 'teams' API connection (already authenticated for the Standard deployment) — reused as-is, no new connection needed."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[parameters('workflowName')]",
+      "location": "canadacentral",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "from": { "type": "string" },
+                    "subject": { "type": "string" },
+                    "body": { "type": "string" }
+                  },
+                  "required": ["from", "subject", "body"]
+                }
+              }
+            }
+          },
+          "actions": {
+            "Response_Acknowledged": {
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": 202,
+                "body": {
+                  "status": "RECEIVED",
+                  "platform": "mulesoft",
+                  "note": "Generation, Teams approval, and publish continue asynchronously in this run (Teams approval can take hours, far longer than an HTTP caller should wait). Poll the mulesoft_requests Cosmos container for the record matching this request for final status."
+                }
+              },
+              "runAfter": {}
+            },
+            "Generate_Mulesoft_YAML": {
+              "type": "Http",
+              "inputs": {
+                "method": "POST",
+                "uri": "https://ip-solace-mcp.azurewebsites.net/api/mulesoft-generate",
+                "headers": {
+                  "Content-Type": "application/json"
+                },
+                "body": {
+                  "from": "@triggerBody()?['from']",
+                  "subject": "@triggerBody()?['subject']",
+                  "body": "@triggerBody()?['body']"
+                }
+              },
+              "runAfter": {}
+            },
+            "Post_adaptive_card_and_wait_for_a_response": {
+              "type": "ApiConnectionWebhook",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['teams']['connectionId']"
+                  }
+                },
+                "path": "/flowbot/actions/cardWithResponse/recipienttypes/channel",
+                "body": {
+                  "recipient": {
+                    "groupId": "<TEAM_ID — fill in via the designer's Team/Channel picker>",
+                    "channelId": "<CHANNEL_ID — fill in via the designer's Team/Channel picker>"
+                  },
+                  "messageBody": {
+                    "type": "AdaptiveCard",
+                    "version": "1.4",
+                    "body": [
+                      {
+                        "type": "TextBlock",
+                        "size": "Medium",
+                        "weight": "Bolder",
+                        "text": "MuleSoft Onboarding - Approval Needed"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{body('Generate_Mulesoft_YAML')?['summaryForApproval']}",
+                        "wrap": true
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "app.yaml",
+                        "weight": "Bolder",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{body('Generate_Mulesoft_YAML')?['mulesoftYaml']?['app.yaml']}",
+                        "wrap": true,
+                        "fontType": "Monospace",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "dev.yaml",
+                        "weight": "Bolder",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{body('Generate_Mulesoft_YAML')?['mulesoftYaml']?['dev.yaml']}",
+                        "wrap": true,
+                        "fontType": "Monospace",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "tst.yaml",
+                        "weight": "Bolder",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{body('Generate_Mulesoft_YAML')?['mulesoftYaml']?['tst.yaml']}",
+                        "wrap": true,
+                        "fontType": "Monospace",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "prod.yaml",
+                        "weight": "Bolder",
+                        "size": "Small"
+                      },
+                      {
+                        "type": "TextBlock",
+                        "text": "@{body('Generate_Mulesoft_YAML')?['mulesoftYaml']?['prod.yaml']}",
+                        "wrap": true,
+                        "fontType": "Monospace",
+                        "size": "Small"
+                      }
+                    ],
+                    "actions": [
+                      {
+                        "type": "Action.Submit",
+                        "title": "Approve",
+                        "data": {
+                          "decision": "approve"
+                        }
+                      },
+                      {
+                        "type": "Action.Submit",
+                        "title": "Reject",
+                        "data": {
+                          "decision": "reject"
+                        }
+                      }
+                    ]
+                  },
+                  "shouldUpdateCard": true
+                }
+              },
+              "runAfter": {
+                "Generate_Mulesoft_YAML": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Decision_check": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  {
+                    "equals": [
+                      "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['decision'], '')",
+                      "approve"
+                    ]
+                  }
+                ]
+              },
+              "actions": {
+                "Publish_to_GitHub": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "https://ip-solace-mcp.azurewebsites.net/api/mulesoft-publish",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "id": "@body('Generate_Mulesoft_YAML')?['id']",
+                      "mulesoftYaml": "@body('Generate_Mulesoft_YAML')?['mulesoftYaml']",
+                      "branchName": "@body('Generate_Mulesoft_YAML')?['branchName']",
+                      "filePaths": "@body('Generate_Mulesoft_YAML')?['filePaths']"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {
+                "Post_adaptive_card_and_wait_for_a_response": [
+                  "Succeeded"
+                ]
+              }
+            },
+            "Compose_Final_Status": {
+              "type": "Compose",
+              "inputs": {
+                "platform": "mulesoft",
+                "decision": "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['decision'], 'none')",
+                "publishResult": "@coalesce(body('Publish_to_GitHub'), json('null'))"
+              },
+              "runAfter": {
+                "Decision_check": [
+                  "Succeeded",
+                  "Failed",
+                  "Skipped"
+                ]
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "teams": {
+                "connectionId": "[parameters('teamsConnectionId')]",
+                "connectionName": "teams",
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', resourceGroup().location, '/managedApis/teams')]"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "workflowResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Logic/workflows', parameters('workflowName'))]"
+    }
+  }
+}

@@ -1,5 +1,13 @@
 # 3PL onboarding Logic App workflows — Logic App (Standard)
 
+> **Cost note:** Logic Apps Standard bills a flat ~$150–170/month for its hosting plan whether or
+> not anything runs. None of the 4 workflows below need a Standard-only feature, so
+> [`consumption/`](consumption/) has the same 4 workflows reshaped as Logic Apps **Consumption**
+> resources (billed per action, no idle cost) — read that folder's README for the trade-offs (HTTP
+> fan-out instead of native child-workflow calls, immediate-ack instead of a final response) and
+> deployment/cutover steps. The Standard docs below stay accurate for the one workflow already
+> live; treat Consumption as the default for anything not yet deployed.
+
 **Lives in:** the pre-existing `3pl-automation` Logic App (Standard) resource in `ODL-IBM-2262033`
 (region `canadacentral`). This app now hosts 4 workflows:
 
@@ -58,10 +66,12 @@ depend on that detail.
   `3pl-onboarding-orchestrator-workflow.json` are new** — written in this folder but not yet deployed
   to the live app at all (no `mulesoft-mail-trigger-workflow`/`btp-mail-trigger-workflow`/
   `3pl-onboarding-orchestrator-workflow` workflow exists in `ODL-IBM-2262033` yet).
-- ✅ `Microsoft.Web/connections/gmail` and `.../teams` exist in `ODL-IBM-2262033`, **not yet
-  authenticated**. (`gmail` is unused by any of the 4 workflows — only `teams` is actually used, by
-  each platform's approval-card action. Delete the `gmail` connection resource if you don't plan to
-  use it elsewhere.)
+- ✅ `Microsoft.Web/connections/gmail` and `.../teams` exist in `ODL-IBM-2262033`. `gmail` is unused
+  by the 4 workflows *in this folder* — **but do not delete it.** A separate, already-live,
+  standalone Consumption Logic App named `solace-mail-trigger` (its own resource, not one of these
+  4) polls Gmail every minute via this exact connection and feeds the real production Solace flow.
+  Deleting `gmail` breaks that. `teams` is used by each platform's approval-card action here and
+  needs authenticating (not yet done as of this writing).
 - ⏸️ **Everything below is yours to finish manually** — `connections.json` and `parameters.json` in
   this folder are scaffolds, not yet deployed; the same `teams` connection is shared by all 3
   platforms' approval cards plus the orchestrator (which needs no connection of its own — it only
@@ -70,8 +80,8 @@ depend on that detail.
 ## Remaining manual steps
 
 1. **Authenticate the `teams` connection.** Portal → Resource group `ODL-IBM-2262033` → resource
-   `teams` (type "API Connection") → **Edit API connection** → sign in. (You can delete `gmail` if
-   unused, or leave it — it costs nothing idle.)
+   `teams` (type "API Connection") → **Edit API connection** → sign in. Leave `gmail` alone — see
+   the warning above, it's load-bearing for the live `solace-mail-trigger` Consumption Logic App.
 
 2. **Get the connection's key and runtime URL** (only works once step 1 is done):
    ```bash
@@ -90,8 +100,9 @@ depend on that detail.
 
 4. **Fill in `connections.json`** in this folder — replace the `teams` entry's
    `connectionRuntimeUrl` placeholder with the real value from step 2 (the `connection.id`/`api.id`
-   are already correct). You can delete the `gmail` entry entirely since it's unused by the deployed
-   workflow now.
+   are already correct). The `gmail` entry in this file is unused by these 4 workflows and can stay
+   as a scaffold or be removed from this file — that's unrelated to the actual `gmail` *connection
+   resource* in Azure, which must not be deleted (see warning above).
 
 5. **Replace the Teams `groupId`/`channelId` placeholders** in all 3 mail-trigger workflows'
    `Post_adaptive_card_and_wait_for_a_response` actions with the real Team/Channel to receive
@@ -120,11 +131,11 @@ depend on that detail.
    them. See the root `README.md`'s env var table for the container-name override env vars.
 
 8. **Set the 2 new MCP endpoint app settings** on the Function App hosting `mcp-server/`
-   (`ip-3pl-mcp`, separate from this Logic App resource) — `MULESOFT_MCP_ENDPOINT` and
+   (`ip-solace-mcp`, separate from this Logic App resource) — `MULESOFT_MCP_ENDPOINT` and
    `BTP_MCP_ENDPOINT`, both pointing at that same Function App's `/api/mulesoft-mcp`/`/api/btp-mcp`
    routes (parallel to the existing `SOLACE_MCP_ENDPOINT` → `/api/solace-mcp`).
 
-9. **Complete the root `README.md`'s "One-time setup"** on the `ip-3pl-mcp` Function App before any
+9. **Complete the root `README.md`'s "One-time setup"** on the `ip-solace-mcp` Function App before any
    platform's publish phase will work: push the 3 persistent feature branches
    (`solace/onboarding`, `mulesoft/onboarding`, `btp/onboarding`) and install the GitHub App that
    `mcp-server/lib/github_client.py` authenticates as (no `GITHUB_TOKEN`/PAT is configured anywhere

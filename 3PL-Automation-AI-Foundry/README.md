@@ -23,7 +23,7 @@ at the bottom of the LLD).
 |---|---|
 | `agent/` | One `agent.yaml` + `system-prompt.md` + `workflows/*.yaml` triple per platform (`solace/`, `mulesoft/`, `btp/`), plus the shared `register.py` that registers all 3 to Azure AI Foundry. |
 | `mcp-server/` | One Azure Functions app (`function_app.py`) hosting 3 MCP routes (`solace-mcp`/`mulesoft-mcp`/`btp-mcp`) and 6 HTTP routes (`{platform}-generate`/`{platform}-publish`). `lib/` has the platform-agnostic GitHub/Foundry/Cosmos clients; `tools/` has the MCP tool implementations — shared GitHub tools (`github_get_file` read-only for Phase 1, `github_commit_file`/`github_open_pull_request` for Phase 2) at the top level, per-platform Cosmos audit-trail tools in `solace/`/`mulesoft/`/`btp/`. |
-| `logic-app/` | Azure Logic App (Standard) workflows: `3pl-onboarding-orchestrator-workflow` (the main entry point — fans out to 1-3 platform sub-workflows) plus one mail-trigger sub-workflow per platform. See `logic-app/README.md` for deployment status and manual steps. |
+| `logic-app/` | Azure Logic App workflows: `3pl-onboarding-orchestrator-workflow` (the main entry point — fans out to 1-3 platform sub-workflows) plus one mail-trigger sub-workflow per platform. Written against Standard (one shared app); `logic-app/consumption/` has the same 4 workflows as Consumption-tier resources instead, recommended for cost (no idle hosting charge — see that folder's README). See `logic-app/README.md` for deployment status and manual steps. |
 | `templates/` | Worked-example config shapes substituted into each platform's `system-prompt.md` via `{{TEMPLATE}}` (and `{{MANIFEST_TEMPLATE}}` for BTP's optional Cloud Foundry app case). |
 | `scratch/put_bodies/` | Sample request/response JSON for all 6 `-generate`/`-publish` HTTP routes — useful as curl/Postman fixtures. |
 
@@ -84,5 +84,7 @@ Two things need to exist before any agent can publish — neither is created by 
 This is a code restructure only — nothing here has been deployed or pushed. See
 [`logic-app/README.md`](logic-app/README.md) for the manual Kudu VFS deployment steps (Teams
 connection auth, Cosmos container provisioning, workflow upload) needed to bring the MuleSoft/BTP
-pipelines and the orchestrator live alongside the already-deployed Solace pipeline. Complete the
+pipelines and the orchestrator live alongside the already-deployed Solace pipeline — or, to avoid
+paying for an always-on Logic Apps Standard plan, deploy [`logic-app/consumption/`](logic-app/consumption/README.md)
+instead, which has the same 4 workflows as pay-per-action Consumption resources. Complete the
 "One-time setup" above (3 branches + GitHub App) before any platform's publish phase will work.

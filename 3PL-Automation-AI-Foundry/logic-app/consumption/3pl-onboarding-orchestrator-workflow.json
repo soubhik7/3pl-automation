@@ -1,0 +1,194 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workflowName": {
+      "type": "string",
+      "defaultValue": "3pl-onboarding-orchestrator-workflow"
+    },
+    "solaceWorkflowCallbackUrl": {
+      "type": "string",
+      "defaultValue": "<FILL IN — deploy solace-mail-trigger-workflow.json first, then run the listCallbackUrl command in consumption/README.md>",
+      "metadata": {
+        "description": "HTTP trigger callback URL (with SAS) of the already-deployed solace-mail-trigger-workflow Consumption Logic App."
+      }
+    },
+    "mulesoftWorkflowCallbackUrl": {
+      "type": "string",
+      "defaultValue": "<FILL IN — deploy mulesoft-mail-trigger-workflow.json first, then run the listCallbackUrl command in consumption/README.md>",
+      "metadata": {
+        "description": "HTTP trigger callback URL (with SAS) of the already-deployed mulesoft-mail-trigger-workflow Consumption Logic App."
+      }
+    },
+    "btpWorkflowCallbackUrl": {
+      "type": "string",
+      "defaultValue": "<FILL IN — deploy btp-mail-trigger-workflow.json first, then run the listCallbackUrl command in consumption/README.md>",
+      "metadata": {
+        "description": "HTTP trigger callback URL (with SAS) of the already-deployed btp-mail-trigger-workflow Consumption Logic App."
+      }
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[parameters('workflowName')]",
+      "location": "canadacentral",
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {
+            "solaceWorkflowCallbackUrl": { "type": "String", "defaultValue": "" },
+            "mulesoftWorkflowCallbackUrl": { "type": "String", "defaultValue": "" },
+            "btpWorkflowCallbackUrl": { "type": "String", "defaultValue": "" }
+          },
+          "triggers": {
+            "manual": {
+              "type": "Request",
+              "kind": "Http",
+              "inputs": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "from": { "type": "string" },
+                    "subject": { "type": "string" },
+                    "body": { "type": "string" },
+                    "platforms": {
+                      "type": "array",
+                      "items": { "type": "string", "enum": ["solace", "mulesoft", "btp"] },
+                      "description": "Which of the 3 pipelines to fan out to for this request — 1, 2, or all 3."
+                    }
+                  },
+                  "required": ["from", "subject", "body", "platforms"]
+                }
+              }
+            }
+          },
+          "actions": {
+            "Dispatch_Solace": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  { "contains": ["@triggerBody()?['platforms']", "solace"] }
+                ]
+              },
+              "actions": {
+                "Invoke_Solace_Subflow": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('solaceWorkflowCallbackUrl')",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "from": "@triggerBody()?['from']",
+                      "subject": "@triggerBody()?['subject']",
+                      "body": "@triggerBody()?['body']"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {}
+            },
+            "Dispatch_MuleSoft": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  { "contains": ["@triggerBody()?['platforms']", "mulesoft"] }
+                ]
+              },
+              "actions": {
+                "Invoke_MuleSoft_Subflow": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('mulesoftWorkflowCallbackUrl')",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "from": "@triggerBody()?['from']",
+                      "subject": "@triggerBody()?['subject']",
+                      "body": "@triggerBody()?['body']"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {}
+            },
+            "Dispatch_BTP": {
+              "type": "If",
+              "expression": {
+                "and": [
+                  { "contains": ["@triggerBody()?['platforms']", "btp"] }
+                ]
+              },
+              "actions": {
+                "Invoke_BTP_Subflow": {
+                  "type": "Http",
+                  "inputs": {
+                    "method": "POST",
+                    "uri": "@parameters('btpWorkflowCallbackUrl')",
+                    "headers": {
+                      "Content-Type": "application/json"
+                    },
+                    "body": {
+                      "from": "@triggerBody()?['from']",
+                      "subject": "@triggerBody()?['subject']",
+                      "body": "@triggerBody()?['body']"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              },
+              "else": {
+                "actions": {}
+              },
+              "runAfter": {}
+            },
+            "Response_Dispatched": {
+              "type": "Response",
+              "kind": "Http",
+              "inputs": {
+                "statusCode": 202,
+                "body": {
+                  "status": "DISPATCHED",
+                  "platforms": "@triggerBody()?['platforms']",
+                  "note": "Each requested platform's sub-workflow acknowledges this call within ~1s (its own Response_Acknowledged action), then keeps running on its own — Teams approval and publish happen asynchronously and may take hours. Check the matching {platform}_requests Cosmos record for final per-platform status."
+                }
+              },
+              "runAfter": {
+                "Dispatch_Solace": ["Succeeded", "Skipped"],
+                "Dispatch_MuleSoft": ["Succeeded", "Skipped"],
+                "Dispatch_BTP": ["Succeeded", "Skipped"]
+              }
+            }
+          },
+          "outputs": {}
+        },
+        "parameters": {
+          "solaceWorkflowCallbackUrl": { "value": "[parameters('solaceWorkflowCallbackUrl')]" },
+          "mulesoftWorkflowCallbackUrl": { "value": "[parameters('mulesoftWorkflowCallbackUrl')]" },
+          "btpWorkflowCallbackUrl": { "value": "[parameters('btpWorkflowCallbackUrl')]" }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "workflowResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Logic/workflows', parameters('workflowName'))]"
+    }
+  }
+}
