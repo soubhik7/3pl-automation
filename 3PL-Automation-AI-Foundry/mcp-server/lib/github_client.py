@@ -17,16 +17,19 @@ Purpose:  Minimal wrapper over GitHub's REST API for the three operations these 
           automated flow. Every request — new or updating an existing partner/slug — just
           commits to its platform's existing branch (one file per partner/slug, so
           concurrent requests never collide) and ensures a PR is open.
-Auth:     No PAT/long-lived token is configured anywhere. This Function App authenticates
-          to GitHub as a GitHub App: its private key lives in Azure Key Vault (never in an
-          App Setting), fetched at call time via this Function App's system-assigned
-          Managed Identity, then exchanged for a short-lived (1 hour) installation access
-          token. The installation token is cached in memory and refreshed automatically —
-          callers never see or manage a token directly.
-Depends:  GITHUB_OWNER, GITHUB_REPO, GITHUB_BASE_BRANCH env vars; GITHUB_APP_ID,
-          GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY_VAULT_URL,
-          GITHUB_APP_PRIVATE_KEY_SECRET_NAME env vars (GitHub App auth — see README's env
-          var table); PyJWT, cryptography, azure-keyvault-secrets, azure-identity.
+Auth:     Two paths, tried in order. (1) GITHUB_TOKEN, a classic PAT App Setting — used as-is
+          if set; this is the live setting today, kept deliberately so this deployment
+          doesn't depend on a GitHub App being created first. (2) GitHub App: private key in
+          Azure Key Vault (never an App Setting), fetched via this Function App's
+          system-assigned Managed Identity and exchanged for a short-lived (1 hour)
+          installation token, cached in memory. Path (2) only engages once GITHUB_TOKEN is
+          unset AND the 4 GitHub App env vars below are set — at that point this file needs
+          no further changes to switch over. See README's env var table and "One-time setup"
+          for migrating from (1) to (2).
+Depends:  GITHUB_OWNER, GITHUB_REPO, GITHUB_BASE_BRANCH env vars; GITHUB_TOKEN (path 1) or
+          GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY_VAULT_URL,
+          GITHUB_APP_PRIVATE_KEY_SECRET_NAME (path 2); PyJWT, cryptography,
+          azure-keyvault-secrets, azure-identity (path 2 only).
 Importance: Every function here must NEVER raise — callers (the github_* tools) return
             its result directly as the MCP tool result, and a raised exception would be
             converted into a JSON-RPC error, which kills the whole agent turn (see
@@ -93,11 +96,20 @@ def _get_installation_token() -> str:
     return _cached_token
 
 
+def _get_auth_token() -> str:
+    """PAT first (GITHUB_TOKEN, today's live setting), GitHub App second. Raises on failure
+    either way — _request catches it and converts to a normal FAILED result."""
+    pat = os.environ.get("GITHUB_TOKEN", "")
+    if pat:
+        return pat
+    return _get_installation_token()
+
+
 def _request(method: str, path: str, body: dict | None = None) -> tuple[int, dict]:
     try:
-        token = _get_installation_token()
+        token = _get_auth_token()
     except Exception as e:
-        return 0, {"message": f"could not acquire GitHub App installation token: {e}"}
+        return 0, {"message": f"could not acquire a GitHub auth token: {e}"}
 
     url = f"{_API}{path}"
     data = json.dumps(body).encode() if body is not None else None

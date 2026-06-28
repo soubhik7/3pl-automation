@@ -19,8 +19,7 @@ import requests
 import yaml
 
 _HERE = pathlib.Path(__file__).parent
-_REPO_ROOT = _HERE.parent.parent
-_TEMPLATES_DIR = _REPO_ROOT / "3pl-automation" / "templates"
+_TEMPLATES_DIR = _HERE.parent / "templates"
 
 _PROJECT_ENDPOINT = os.environ.get(
     "FOUNDRY_PROJECT_ENDPOINT",

@@ -30,7 +30,7 @@
         "type": "Http",
         "inputs": {
           "method": "POST",
-          "uri": "https://ip-3pl-mcp.azurewebsites.net/api/mulesoft-generate",
+          "uri": "https://ip-solace-mcp.azurewebsites.net/api/mulesoft-generate",
           "headers": {
             "Content-Type": "application/json"
           },
@@ -167,7 +167,7 @@
             "type": "Http",
             "inputs": {
               "method": "POST",
-              "uri": "https://ip-3pl-mcp.azurewebsites.net/api/mulesoft-publish",
+              "uri": "https://ip-solace-mcp.azurewebsites.net/api/mulesoft-publish",
               "headers": {
                 "Content-Type": "application/json"
               },

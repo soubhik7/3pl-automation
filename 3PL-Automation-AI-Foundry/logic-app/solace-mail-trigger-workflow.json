@@ -30,7 +30,7 @@
         "type": "Http",
         "inputs": {
           "method": "POST",
-          "uri": "https://ip-3pl-mcp.azurewebsites.net/api/solace-generate",
+          "uri": "https://ip-solace-mcp.azurewebsites.net/api/solace-generate",
           "headers": {
             "Content-Type": "application/json"
           },
@@ -122,7 +122,7 @@
             "type": "Http",
             "inputs": {
               "method": "POST",
-              "uri": "https://ip-3pl-mcp.azurewebsites.net/api/solace-publish",
+              "uri": "https://ip-solace-mcp.azurewebsites.net/api/solace-publish",
               "headers": {
                 "Content-Type": "application/json"
               },
