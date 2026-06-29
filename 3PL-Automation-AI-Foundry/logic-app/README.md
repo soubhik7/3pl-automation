@@ -164,15 +164,26 @@ depend on that detail.
    content for an update rather than overwriting it blind. Returns `{id, <config>, branchName,
    <filePath(s)>, summaryForApproval}` — `<filePath(s)>` may be a subset (e.g. just one of
    MuleSoft's 4 files) when only part of an existing config is changing.
-3. **Post_adaptive_card_and_wait_for_a_response** — shows the summary + generated config in Teams
-   with Approve/Reject buttons, pauses the run until one is clicked. This is the only gate between
-   any request — new config or update — and GitHub; nothing reaches step 4 without it.
+3. **Post_adaptive_card_and_wait_for_a_response** — shows the request in a redesigned, structured
+   Teams card (header strip with a platform-colored icon, a `FactSet` with requester/subject/file
+   metadata, the summary, and the generated config in its own shaded monospace block), pauses the
+   run until Approve or Reject is clicked. This is the only gate between any request — new config
+   or update — and GitHub; nothing reaches step 4 without it.
+
+   The card also carries one editable field — **`branchName`**, an `Input.Text` pre-filled with the
+   agent's suggested branch (normally the platform's persistent `solace/onboarding` /
+   `mulesoft/onboarding` / `btp/onboarding`) but editable by whoever is approving. Adaptive Card
+   `Action.Submit` merges every `Input.*` value into the same `data` object as the button's own
+   `decision` field, so the value the approver leaves in that box at the moment they click
+   Approve/Reject — not the value the Generate step originally suggested — is what flows to step 4.
+   **The target branch must already exist in the repo** — nothing in this flow (or the GitHub tools
+   behind `/api/{platform}-publish`) creates branches, so typing in a branch that doesn't exist yet
+   will fail at the commit step.
 4. **Decision_check** — if `decision == "approve"`, calls `POST /api/{platform}-publish` with the
-   exact id/config/branchName/filePath(s) from step 2 (round-tripped, never re-derived) — this is
-   what actually commits the file(s) to that platform's persistent feature branch
-   (`solace/onboarding`/`mulesoft/onboarding`/`btp/onboarding` — already exists, never created
-   here) and ensures a PR is open from it to `main`. On reject, the run just ends without touching
-   GitHub.
+   config/filePath(s) from step 2 plus `branchName` taken from the card response in step 3
+   (falling back to step 2's suggested branch only if the field somehow comes back empty) — this is
+   what actually commits the file(s) to that branch and ensures a PR is open from it to `main`. On
+   reject, the run just ends without touching GitHub.
 5. **Response_Final_Status** — always runs (`Succeeded`/`Failed`/`Skipped` from `Decision_check`),
    returns `{platform, decision, publishResult}` — read by a direct test caller, or ignored by the
    orchestrator (which has already responded to its own caller by this point).
