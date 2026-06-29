@@ -4,10 +4,10 @@ get_btp_request.py — MCP tool: read back a pending BTP-request record by id.
 Part of: 3pl-automation BTP-publisher feature
 Layer:   mcp-server / tools
 
-Purpose:  Reads a single document from the "btp_requests" Cosmos NoSQL container. Used
-          by /api/btp-publish to load the generated YAML before acting on an
-          Approve/Reject click.
-Used by:  /api/btp-publish HTTP route.
+Purpose:  Reads a single document from the "btp_requests" Cosmos NoSQL container.
+Used by:  update_btp_request_status.py (which the /api/btp-publish route calls after
+          the Logic App's Teams approval resolves, to load the existing record before
+          patching its status).
 Depends:  lib/nosql_client.py.
 """
 from lib.nosql_client import get_container

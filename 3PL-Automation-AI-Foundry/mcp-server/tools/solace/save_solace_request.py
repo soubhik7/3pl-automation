@@ -7,7 +7,7 @@ Layer:   mcp-server / tools
 Purpose:  Upserts a request-tracking document into the dedicated "solace_requests"
           Cosmos NoSQL container (partition key /tenantId). Used right after Phase 1
           generates a Solace JSON, before the Teams approval card is sent.
-Used by:  /api/solace-intake HTTP route (not the agent itself).
+Used by:  /api/solace-generate HTTP route (not the agent itself).
 Depends:  lib/nosql_client.py.
 """
 from lib.nosql_client import get_container

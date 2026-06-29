@@ -26,8 +26,12 @@
 #             ../../README.md "One-time setup"), never by the agent. Same tool
 #             implementations as the Solace/BTP agents, exposed on a separate MCP route.
 # Auth:       github_get_file/github_commit_file/github_open_pull_request authenticate to
-#             GitHub as a GitHub App (private key in Key Vault, fetched via this Function
-#             App's managed identity) — no PAT is configured anywhere in this stack.
+#             GitHub. Live today: a classic PAT in the GITHUB_TOKEN App Setting on the
+#             Function App. Coded but not yet active: a GitHub App whose private key
+#             would live in Key Vault, fetched via this Function App's managed identity —
+#             blocked for now because Key Vault denies secret access to every identity in
+#             this subscription (see ../../deployment/README.md). No code change needed
+#             to switch once Key Vault access is granted — see mcp-server/lib/github_client.py.
 # Importance: The only MuleSoft agent authorised to push to soubhik7/3pl-automation.
 # ============================================================
 name: integration-pulse-mulesoft-publisher

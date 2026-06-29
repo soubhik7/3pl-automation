@@ -5,9 +5,9 @@ Part of: 3pl-automation MuleSoft-publisher feature
 Layer:   mcp-server / tools
 
 Purpose:  Reads a single document from the "mulesoft_requests" Cosmos NoSQL container.
-          Used by /api/mulesoft-publish to load the generated YAML before acting on an
-          Approve/Reject click.
-Used by:  /api/mulesoft-publish HTTP route.
+Used by:  update_mulesoft_request_status.py (which the /api/mulesoft-publish route calls
+          after the Logic App's Teams approval resolves, to load the existing record
+          before patching its status).
 Depends:  lib/nosql_client.py.
 """
 from lib.nosql_client import get_container

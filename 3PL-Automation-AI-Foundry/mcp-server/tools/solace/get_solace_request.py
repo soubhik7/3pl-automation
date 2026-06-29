@@ -5,9 +5,9 @@ Part of: 3pl-automation Solace-publisher feature
 Layer:   mcp-server / tools
 
 Purpose:  Reads a single document from the "solace_requests" Cosmos NoSQL container.
-          Used by /api/solace-decision to load the generated JSON + approval token
-          before acting on an Approve/Reject click.
-Used by:  /api/solace-decision HTTP route.
+Used by:  update_solace_request_status.py (which the /api/solace-publish route calls
+          after the Logic App's Teams approval resolves, to load the existing record
+          before patching its status).
 Depends:  lib/nosql_client.py.
 """
 from lib.nosql_client import get_container
