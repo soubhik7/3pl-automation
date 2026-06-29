@@ -6,7 +6,7 @@ Layer:   mcp-server / tools
 
 Purpose:  Reads the existing record, merges in the new status and any extra fields
           (e.g. githubCommitUrl after a successful publish), and upserts it back.
-Used by:  /api/solace-decision HTTP route, after Approve/Reject is acted on.
+Used by:  /api/solace-publish HTTP route, after the Logic App's Teams approval resolves.
 Depends:  lib/nosql_client.py, get_solace_request.py.
 """
 from lib.nosql_client import get_container

@@ -58,12 +58,18 @@ Two things need to exist before any agent can publish — neither is created by 
    ```
    After that, `mcp-server/lib/github_client.py` never creates a branch — every `github_commit_file`
    call targets one of these 3 existing branches directly.
-2. **A GitHub App** installed on `soubhik7/3pl-automation` with `contents: write` (covers both
-   `github_get_file`'s reads and `github_commit_file`'s writes — GitHub's "write" permission level
-   includes read) and `pull_requests: write` repository permissions (this is what the Function App
-   authenticates as — see "Environment variables" below; there is no PAT anywhere in this stack).
-   Store its private key as a secret in the Key Vault the Function App's managed identity can
-   read, and grant that identity a `get`-secrets access policy/role on the vault.
+2. **GitHub auth for the Function App.** Two supported paths, tried in this order by
+   `mcp-server/lib/github_client.py` — see "Environment variables" below:
+   - **Live today:** a classic PAT in the `GITHUB_TOKEN` App Setting. Simplest path, used because
+     Key Vault (needed for path 2 below) currently denies secret access to every identity in this
+     subscription — see [`deployment/README.md`](deployment/README.md) for the live deployment
+     state and why.
+   - **Coded, not yet active:** a GitHub App installed on `soubhik7/3pl-automation` with
+     `contents: write` (covers both `github_get_file`'s reads and `github_commit_file`'s writes —
+     GitHub's "write" permission level includes read) and `pull_requests: write` repository
+     permissions, with its private key stored in a Key Vault the Function App's managed identity
+     can read (`get`-secrets access policy/role on that vault). Activates automatically — no code
+     change — once `GITHUB_TOKEN` is unset and the 4 `GITHUB_APP_*` vars below are set.
 
 ## Environment variables
 
@@ -73,18 +79,49 @@ Two things need to exist before any agent can publish — neither is created by 
 | `FOUNDRY_BEARER` | `agent/register.py` | Optional — falls back to `az account get-access-token`. |
 | `SOLACE_MCP_ENDPOINT` / `MULESOFT_MCP_ENDPOINT` / `BTP_MCP_ENDPOINT` | each platform's `agent.yaml` | Point at this Function App's `/api/{platform}-mcp` route. |
 | `SOLACE_PUBLISHER_MODEL` / `MULESOFT_PUBLISHER_MODEL` / `BTP_PUBLISHER_MODEL` | each platform's `agent.yaml` | Default `gpt-4.1` if unset. |
-| `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BASE_BRANCH` | `mcp-server/lib/github_client.py` | Shared across all 3 platforms. `GITHUB_BASE_BRANCH` defaults to `main`. No `GITHUB_TOKEN` — see the 4 GitHub App vars below instead. |
-| `GITHUB_APP_ID` / `GITHUB_APP_INSTALLATION_ID` | `mcp-server/lib/github_client.py` | Identify the GitHub App + its installation on this repo (from the "One-time setup" step above). |
+| `GITHUB_OWNER` / `GITHUB_REPO` / `GITHUB_BASE_BRANCH` | `mcp-server/lib/github_client.py` | Shared across all 3 platforms. `GITHUB_BASE_BRANCH` defaults to `main`. |
+| `GITHUB_TOKEN` | `mcp-server/lib/github_client.py` | Classic PAT — checked first; used as-is if set. **This is the live auth path today** (see "One-time setup" above). |
+| `GITHUB_APP_ID` / `GITHUB_APP_INSTALLATION_ID` | `mcp-server/lib/github_client.py` | Identify the GitHub App + its installation on this repo (from the "One-time setup" step above). Only used once `GITHUB_TOKEN` is unset. |
 | `GITHUB_APP_PRIVATE_KEY_VAULT_URL` / `GITHUB_APP_PRIVATE_KEY_SECRET_NAME` | `mcp-server/lib/github_client.py` | Key Vault URL + secret name holding the GitHub App's private key. Fetched via this Function App's managed identity (`DefaultAzureCredential`) and exchanged for a short-lived (1 hour) installation token — cached in memory, never written to an App Setting. `GITHUB_APP_PRIVATE_KEY_SECRET_NAME` defaults to `github-app-private-key`. |
 | `COSMOS_ENDPOINT` / `COSMOS_NOSQL_KEY` / `COSMOS_DATABASE` | `mcp-server/lib/nosql_client.py` | Shared Cosmos account (default database `integration-pulse`). |
 | `COSMOS_NOSQL_CONTAINER_SOLACE_REQUESTS` / `..._MULESOFT_REQUESTS` / `..._BTP_REQUESTS` | `mcp-server/lib/nosql_client.py` | Default to `solace_requests`/`mulesoft_requests`/`btp_requests`. **The 2 new containers must be provisioned manually** in the existing Cosmos account before the MuleSoft/BTP routes will work. |
 
 ## Deployment
 
-This is a code restructure only — nothing here has been deployed or pushed. See
-[`logic-app/README.md`](logic-app/README.md) for the manual Kudu VFS deployment steps (Teams
-connection auth, Cosmos container provisioning, workflow upload) needed to bring the MuleSoft/BTP
-pipelines and the orchestrator live alongside the already-deployed Solace pipeline — or, to avoid
-paying for an always-on Logic Apps Standard plan, deploy [`logic-app/consumption/`](logic-app/consumption/README.md)
-instead, which has the same 4 workflows as pay-per-action Consumption resources. Complete the
-"One-time setup" above (3 branches + GitHub App) before any platform's publish phase will work.
+This has been deployed against a real Azure subscription + AI Foundry project — see
+[`deployment/README.md`](deployment/README.md) for the live resource names, what's actually
+running today, and `deployment/deploy.py` for re-running any step idempotently. See
+[`logic-app/README.md`](logic-app/README.md) for the Logic Apps Standard design notes, or
+[`logic-app/consumption/README.md`](logic-app/consumption/README.md) for the Consumption-tier
+version that's actually live (no idle hosting charge). Complete the "One-time setup" above (3
+branches + GitHub auth) before any platform's publish phase will work.
+
+## Extending this
+
+- **Change what's generated for an existing platform** (e.g. a new field, a different naming
+  rule): edit that platform's `templates/<platform>-template.{json,yaml}` (the worked example the
+  agent follows) and the "Hard rules" section of `agent/<platform>/system-prompt.md`. No
+  Function App code change needed — re-run `python deployment/deploy.py agents` to re-register
+  the updated prompt with Foundry.
+- **Change a tool's behavior** (e.g. how `github_commit_file` picks a commit message, or add a
+  new GitHub operation): edit `mcp-server/lib/github_client.py` (the real logic) and/or the thin
+  wrapper in `mcp-server/tools/`, then update the matching entry in the `TOOLS` list in
+  `mcp-server/function_app.py` (the `description`/`inputSchema` the agent actually sees — keep
+  this accurate, it's the only thing standing between the agent and guessing at a tool's
+  contract). Redeploy with `python deployment/deploy.py function-app`.
+- **Add a 4th platform**: mirror the Solace/MuleSoft/BTP pattern throughout — a new
+  `agent/<platform>/` triple (`agent.yaml`, `system-prompt.md`, `workflows/*.yaml`), a new
+  `templates/<platform>-template.*`, a new `<platform>-mcp`/`<platform>-generate`/
+  `<platform>-publish` route triple in `mcp-server/function_app.py` (reusing the existing
+  `github_*` tools as-is), new `mcp-server/tools/<platform>/{save,get,update}_<platform>_request.py`
+  Cosmos audit-trail tools (copy the existing platform's 3 files and rename), a new Cosmos
+  container, a new persistent branch (`<platform>/onboarding`), a new Logic App mail-trigger
+  workflow under `logic-app/consumption/`, and a new `PLATFORMS` entry in `agent/register.py`.
+  Every file in this list has a same-shaped sibling for an existing platform — copy that one and
+  adjust, rather than writing from scratch.
+- **Tool-level instructions live in two places, both load-bearing**: the `TOOLS` list in
+  `mcp-server/function_app.py` (what the agent's MCP client actually sees per tool call — name,
+  description, parameter schema) and each platform's `system-prompt.md` (when/why to call which
+  tool, in what order, with what data). Keep both in sync with the real code in
+  `mcp-server/lib/`/`mcp-server/tools/` — a stale tool description is a direct cause of agent
+  hallucination (the agent has no other source of truth for what a tool does or expects).

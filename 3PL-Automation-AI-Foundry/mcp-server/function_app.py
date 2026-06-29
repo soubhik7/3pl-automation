@@ -60,24 +60,54 @@ from tools.btp.update_btp_request_status import update_btp_request_status
 app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 
 TOOLS = [
-    {"name": "github_get_file", "inputSchema": {"type": "object", "properties": {
-        "branchName": {"type": "string", "description": "This platform's persistent feature branch, e.g. solace/onboarding"},
-        "path": {"type": "string", "description": "e.g. solace-automation/config/3pl/acme-orders-dev.json"},
-    }, "required": ["branchName", "path"], "additionalProperties": False}},
+    {
+        "name": "github_get_file",
+        "description": (
+            "Read-only. Checks whether a file already exists on this platform's persistent "
+            "branch and returns its current content if so. Call this FIRST in Phase 1 "
+            "(generate), before producing any config — its result is what tells you whether "
+            "the request is a brand-new config (NOT_FOUND) or an update to one that already "
+            "exists (OK, with the real current content to merge into). Never call this during "
+            "Phase 2 (publish) — Phase 1 already did the lookup and Phase 2 just publishes "
+            "what was approved. Has no side effects and is safe to call freely."
+        ),
+        "inputSchema": {"type": "object", "properties": {
+            "branchName": {"type": "string", "description": "This platform's one persistent feature branch (the literal value your system prompt names — e.g. solace/onboarding, mulesoft/onboarding, or btp/onboarding). Never a per-request or invented branch name; this branch already exists."},
+            "path": {"type": "string", "description": "Repo-relative path to the specific partner/slug's config file, following this platform's path convention from your system prompt (e.g. <platform>-automation/config/<slug>/<file>)."},
+        }, "required": ["branchName", "path"], "additionalProperties": False}},
 
-    {"name": "github_commit_file", "inputSchema": {"type": "object", "properties": {
-        "branchName": {"type": "string", "description": "This platform's persistent feature branch, e.g. solace/onboarding"},
-        "path": {"type": "string", "description": "e.g. solace-automation/config/3pl/acme-orders-dev.json"},
-        "content": {"type": "string", "description": "Full file content (pretty-printed JSON or raw YAML text)"},
-        "message": {"type": "string", "description": "Commit message"},
-    }, "required": ["branchName", "path", "content", "message"], "additionalProperties": False}},
+    {
+        "name": "github_commit_file",
+        "description": (
+            "Side-effecting. Creates the file if it doesn't exist on this branch yet, or "
+            "updates it in place if it does (the GitHub Contents API handles both — you don't "
+            "need to know which case applies). Only call this in Phase 2 (publish), after a "
+            "human has approved the exact content — never in Phase 1, and never with content "
+            "that wasn't the exact human-approved value."
+        ),
+        "inputSchema": {"type": "object", "properties": {
+            "branchName": {"type": "string", "description": "This platform's one persistent feature branch — the same value used in the matching github_get_file call for this file."},
+            "path": {"type": "string", "description": "Repo-relative path to commit to — the same path used in the matching github_get_file call for this file."},
+            "content": {"type": "string", "description": "The full file content to write, exactly as approved (pretty-printed JSON text for Solace, raw YAML text for MuleSoft/BTP) — not re-derived, not partially patched client-side."},
+            "message": {"type": "string", "description": "Commit message, e.g. \"Add <platform> config for <slug> (auto-generated, human-approved)\" or \"Update ...\" for an existing file."},
+        }, "required": ["branchName", "path", "content", "message"], "additionalProperties": False}},
 
-    {"name": "github_open_pull_request", "inputSchema": {"type": "object", "properties": {
-        "headBranch": {"type": "string"},
-        "baseBranch": {"type": "string", "description": "Defaults to main if omitted"},
-        "title": {"type": "string"},
-        "body": {"type": "string", "description": "PR description (Markdown), optional"},
-    }, "required": ["headBranch", "title"], "additionalProperties": False}},
+    {
+        "name": "github_open_pull_request",
+        "description": (
+            "Side-effecting, idempotent. Opens a pull request from this platform's persistent "
+            "branch back to the base branch, or reuses the existing one if this branch already "
+            "has an open PR (the normal case after the first request ever on a given platform — "
+            "treat the resulting alreadyExisted:true as success, not an error). Only call this "
+            "in Phase 2 (publish), after the matching github_commit_file call(s) for this "
+            "request have succeeded."
+        ),
+        "inputSchema": {"type": "object", "properties": {
+            "headBranch": {"type": "string", "description": "This platform's persistent feature branch to open the PR from — the same value just committed to."},
+            "baseBranch": {"type": "string", "description": "Branch to open the PR against. Defaults to \"main\" if omitted."},
+            "title": {"type": "string", "description": "Short PR title, e.g. \"Solace onboarding\" / \"MuleSoft onboarding\" / \"BTP onboarding\"."},
+            "body": {"type": "string", "description": "PR description (Markdown), optional — typically a 1-3 sentence summary of what's in the config."},
+        }, "required": ["headBranch", "title"], "additionalProperties": False}},
 ]
 
 
