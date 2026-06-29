@@ -104,10 +104,13 @@ depend on that detail.
    as a scaffold or be removed from this file — that's unrelated to the actual `gmail` *connection
    resource* in Azure, which must not be deleted (see warning above).
 
-5. **Replace the Teams `groupId`/`channelId` placeholders** in all 3 mail-trigger workflows'
-   `Post_adaptive_card_and_wait_for_a_response` actions with the real Team/Channel to receive
-   approvals (`solace-mail-trigger-workflow.json`, `mulesoft-mail-trigger-workflow.json`,
-   `btp-mail-trigger-workflow.json` — same Team/Channel or different ones, your call).
+5. ✅ Done — all 3 mail-trigger workflows' `Post_adaptive_card_and_wait_for_a_response` actions now
+   post to the same Teams **group chat** (`recipient.recipient`:
+   `19:397123a1657a4e0b85d6b48fc68bd89e@thread.v2`), using the real Designer-exported connector
+   shape (`host.connection.referenceName`, `body.notificationUrl` + nested `body.body`, `path`
+   ending in `/location/.../$subscriptions`) — see the Confidence note below for what changed. If a
+   different chat/team/channel should receive approvals, update that one `recipient` value (and the
+   `location` segment of `path` if switching away from "Group chat") in all 3 files.
 
 6. **Deploy `connections.json`, `parameters.json`, and the 4 workflow files** via the same Kudu VFS
    pattern (`PUT` with header `If-Match: *`):
@@ -176,7 +179,11 @@ depend on that detail.
 
 ## Confidence note
 
-The Teams action's `path`/`body` shape (recipient type, `messageBody` as object vs. string) is
-reconstructed from the general connector pattern, not live-validated — once the connection is
-authenticated, the Designer may want to reshape that one node; trust its generated shape over this
-file's guess for just that node if they disagree.
+The Teams action's `path`/`body` shape was originally reconstructed from the general connector
+pattern, not live-validated. It's since been replaced with the real Designer-exported shape for
+"Post adaptive card and wait for a response" targeting a **Group chat** recipient:
+`host.connection.referenceName` (not the Consumption-style `$parameters('$connections')`
+indirection), a `body.notificationUrl`/`body.body` wrapper (`body.body.messageBody` holds the
+Adaptive Card, `body.body.updateMessage` replaces the old `shouldUpdateCard` flag, `body.body.recipient.recipient`
+holds the chat ID), and a `path` ending `/location/@{encodeURIComponent('Group chat')}/$subscriptions`.
+This is now consistent across all 3 mail-trigger workflows.

@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="HLD - 3PL Onboarding (Solace + MuleSoft + BTP)" id="hld-3pl-onboarding">
-        <mxGraphModel dx="3660" dy="1925" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="3604" dy="1814" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2000" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -8,40 +8,34 @@
                     <mxGeometry x="-20" y="140" width="110" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n2" value="Logic App (Consumption)&#xa;3pl-onboarding-orchestrator-workflow&#xa;(main orchestrator)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="-85" y="490" width="240" height="70" as="geometry"/>
-                </mxCell>
-                <mxCell id="n3" value="Logic App:&#xa;solace-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="620" y="40" width="220" height="80" as="geometry"/>
+                    <mxGeometry x="210" y="180" width="240" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="n4" value="Logic App:&#xa;mulesoft-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="620" y="320" width="220" height="80" as="geometry"/>
+                    <mxGeometry x="560" y="175" width="220" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n5" value="Logic App:&#xa;btp-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="620" y="600" width="220" height="80" as="geometry"/>
+                    <mxGeometry x="560" y="30" width="220" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n6" value="ip-solace-mcp (Function App) — shared&#xa;solace-mcp / mulesoft-mcp / btp-mcp&#xa;+ 6 HTTP routes ({platform}-generate / -publish)&#xa;tools: github_get_file (read) / commit_file + open_pull_request (write)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1100" y="280" width="280" height="220" as="geometry"/>
+                    <mxGeometry x="1000" y="105" width="280" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n7" value="integration-pulse-&#xa;solace-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1490" y="20" width="230" height="80" as="geometry"/>
-                </mxCell>
-                <mxCell id="n8" value="integration-pulse-&#xa;mulesoft-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1250" y="-140" width="230" height="80" as="geometry"/>
+                    <mxGeometry x="1580" y="330" width="230" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n9" value="integration-pulse-&#xa;btp-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="1770" y="140" width="230" height="80" as="geometry"/>
+                    <mxGeometry x="1570" y="180" width="230" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n10" value="GitHub soubhik7/3pl-automation&#xa;3 persistent branches (solace/mulesoft/btp-onboarding)&#xa;commit to existing branch + ensure PR open" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="2390" y="-110" width="240" height="220" as="geometry"/>
+                    <mxGeometry x="2000" y="80" width="240" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n11" value="Microsoft Teams&#xa;(Adaptive Card approval — one card per platform)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" parent="1" vertex="1">
-                    <mxGeometry x="380" y="-260" width="220" height="70" as="geometry"/>
+                    <mxGeometry x="860" y="-170" width="220" height="70" as="geometry"/>
                 </mxCell>
                 <mxCell id="n12" value="Cosmos DB (audit only)&#xa;solace_requests / mulesoft_requests / btp_requests" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="1240" y="710" width="280" height="80" as="geometry"/>
+                    <mxGeometry x="1100" y="570" width="280" height="80" as="geometry"/>
                 </mxCell>
                 <mxCell id="n13" value="GitHub App + Key Vault&#xa;(auth — no PAT anywhere)&#xa;private key in Key Vault, fetched via&#xa;this Function App&#39;s managed identity" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=12;dashed=1;" parent="1" vertex="1">
-                    <mxGeometry x="2390" y="-290" width="240" height="100" as="geometry"/>
+                    <mxGeometry x="2090" y="-300" width="240" height="100" as="geometry"/>
                 </mxCell>
                 <mxCell id="e1" value="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;" parent="1" source="n1" target="n2" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -50,16 +44,29 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e3" value="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;" parent="1" source="n2" target="n3" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="330" y="380"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e4" value="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;" parent="1" source="n2" target="n4" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e5" value="3" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;" parent="1" source="n2" target="n5" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="330" y="70"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e6" value="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n3" target="n6" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="890" y="380"/>
+                            <mxPoint x="890" y="215"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e7" value="4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n4" target="n6" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -68,22 +75,20 @@
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
                 <mxCell id="e9" value="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n7" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1390" y="215"/>
+                            <mxPoint x="1390" y="390"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
-                <mxCell id="e10" value="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n8" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="e11" value="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n6" target="n9" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="e12" value="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n3" target="n11" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="e13" value="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n4" target="n11" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="e14" value="6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;" parent="1" source="n5" target="n11" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="e11" value="5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" source="n6" target="n9" edge="1">
+                    <mxGeometry relative="1" as="geometry">
+                        <Array as="points">
+                            <mxPoint x="1380" y="210"/>
+                            <mxPoint x="1755" y="210"/>
+                        </Array>
+                    </mxGeometry>
                 </mxCell>
                 <mxCell id="e15" value="8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#d79b00;startArrow=block;endArrow=block;" parent="1" source="n7" target="n10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
@@ -109,30 +114,91 @@
                 <mxCell id="e22" value="7" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#82b366;dashed=1;startArrow=block;endArrow=block;" parent="1" source="n9" target="n10" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-            
-                <mxCell id="leg_title" value="Reference legend (HLD)" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;" parent="1" vertex="1"><mxGeometry x="-85" y="650" width="680" height="24" as="geometry"/></mxCell>
-                <mxCell id="leg_h_ref" value="Ref" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1"><mxGeometry x="-85" y="674" width="50" height="26" as="geometry"/></mxCell>
-                <mxCell id="leg_h_desc" value="Step" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="674" width="630" height="26" as="geometry"/></mxCell>
-                <mxCell id="leg_r1_ref" value="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="700" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r1_desc" value="Requester &#8594; Orchestrator: HTTP POST {from, subject, body, platforms[]}" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="700" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r2_ref" value="2" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="734" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r2_desc" value="Orchestrator &#8594; Requester: 202 DISPATCHED (fire-and-acknowledge, doesn&#39;t wait for any pipeline)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="734" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r3_ref" value="3" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="768" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r3_desc" value="Orchestrator fan-out: invoke child workflow if platform is in platforms[] (solace / mulesoft / btp)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="768" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r4_ref" value="4" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="802" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r4_desc" value="Sub-workflow &#8594; Function App: POST /api/{platform}-generate -&gt; config; POST /api/{platform}-publish -&gt; branch+commit+PR" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="802" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r5_ref" value="5" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="836" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r5_desc" value="Function App &#8594; Foundry agent: Phase 1 generate (reads existing config first) / Phase 2 publish" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="836" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r6_ref" value="6" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="870" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r6_desc" value="Sub-workflow &#8594; Teams: post Adaptive Card (Approve / Reject) &#8212; one per platform" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="870" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r7_ref" value="7" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="904" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r7_desc" value="Phase 1 read: github_get_file(...) -&gt; NOT_FOUND (new) | OK (existing, merge update)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="904" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r8_ref" value="8" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="938" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r8_desc" value="Phase 2 write: commit_file(...) -&gt; platform&#39;s persistent branch + ensure PR open (solace x1, mulesoft x4, btp x1-2 files)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="938" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r9_ref" value="9" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="972" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r9_desc" value="Audit: GENERATED -&gt; PUBLISHED/REJECTED written to the matching per-platform Cosmos container" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="972" width="630" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r10_ref" value="10" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1"><mxGeometry x="-85" y="1006" width="50" height="34" as="geometry"/></mxCell>
-                <mxCell id="leg_r10_desc" value="GitHub App auth: installation token (1hr, cached) minted from Key Vault private key &#8212; never a stored PAT" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1"><mxGeometry x="-35" y="1006" width="630" height="34" as="geometry"/></mxCell>
+                <mxCell id="leg_title" value="Reference legend (HLD)" style="text;html=1;align=left;verticalAlign=middle;fontSize=13;fontStyle=1;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="650" width="680" height="24" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_h_ref" value="Ref" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="674" width="50" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_h_desc" value="Step" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;fontStyle=1;fillColor=#f5f5f5;strokeColor=#666666;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="674" width="630" height="26" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r1_ref" value="1" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="700" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r1_desc" value="Requester → Orchestrator: HTTP POST {from, subject, body, platforms[]}" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="700" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r2_ref" value="2" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="734" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r2_desc" value="Orchestrator → Requester: 202 DISPATCHED (fire-and-acknowledge, doesn&#39;t wait for any pipeline)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="734" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r3_ref" value="3" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="768" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r3_desc" value="Orchestrator fan-out: invoke child workflow if platform is in platforms[] (solace / mulesoft / btp)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="768" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r4_ref" value="4" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="802" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r4_desc" value="Sub-workflow → Function App: POST /api/{platform}-generate -&gt; config; POST /api/{platform}-publish -&gt; branch+commit+PR" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="802" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r5_ref" value="5" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="836" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r5_desc" value="Function App → Foundry agent: Phase 1 generate (reads existing config first) / Phase 2 publish" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="836" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r6_ref" value="6" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="870" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r6_desc" value="Sub-workflow → Teams: post Adaptive Card (Approve / Reject) — one per platform" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="870" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r7_ref" value="7" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="904" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r7_desc" value="Phase 1 read: github_get_file(...) -&gt; NOT_FOUND (new) | OK (existing, merge update)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="904" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r8_ref" value="8" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="938" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r8_desc" value="Phase 2 write: commit_file(...) -&gt; platform&#39;s persistent branch + ensure PR open (solace x1, mulesoft x4, btp x1-2 files)" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="938" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r9_ref" value="9" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="972" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r9_desc" value="Audit: GENERATED -&gt; PUBLISHED/REJECTED written to the matching per-platform Cosmos container" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="972" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r10_ref" value="10" style="rounded=0;whiteSpace=wrap;html=1;align=center;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;" parent="1" vertex="1">
+                    <mxGeometry x="-85" y="1006" width="50" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="leg_r10_desc" value="GitHub App auth: installation token (1hr, cached) minted from Key Vault private key — never a stored PAT" style="rounded=0;whiteSpace=wrap;html=1;align=left;verticalAlign=middle;fontSize=10;strokeColor=#666666;fillColor=#ffffff;spacingLeft=4;" parent="1" vertex="1">
+                    <mxGeometry x="-35" y="1006" width="630" height="34" as="geometry"/>
+                </mxCell>
+                <mxCell id="n3" value="Logic App:&#xa;solace-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="560" y="340" width="220" height="80" as="geometry"/>
+                </mxCell>
+                <mxCell id="4" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;fontSize=11;strokeColor=#000000;startArrow=block;endArrow=block;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" parent="1" target="n8" edge="1" source="n6">
+                    <mxGeometry relative="1" as="geometry">
+                        <mxPoint x="1380" y="180" as="sourcePoint"/>
+                        <mxPoint x="1645" y="20" as="targetPoint"/>
+                        <Array as="points">
+                            <mxPoint x="1380" y="215"/>
+                            <mxPoint x="1380" y="40"/>
+                        </Array>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="n8" value="integration-pulse-&#xa;mulesoft-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">
+                    <mxGeometry x="1570" y="20" width="230" height="80" as="geometry"/>
+                </mxCell>
             </root>
         </mxGraphModel>
     </diagram>
