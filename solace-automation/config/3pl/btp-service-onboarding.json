@@ -16,7 +16,9 @@
           "type": "jsonSchema",
           "version": "1.0.0",
           "description": "BTP payload for onboarding",
-          "usedByInterfaces": ["ITF_BTP_ONBOARD_001"]
+          "usedByInterfaces": [
+            "ITF_BTP_ONBOARD_001"
+          ]
         }
       ],
       "events": [
@@ -26,7 +28,9 @@
           "topic": "3pl/DE/BTP-SERVICE/btp/in/{correlationId}",
           "schemaRef": "BTPMessageSchema",
           "direction": "in",
-          "interfaces": ["ITF_BTP_ONBOARD_001"]
+          "interfaces": [
+            "ITF_BTP_ONBOARD_001"
+          ]
         }
       ],
       "applications": [
@@ -34,7 +38,9 @@
           "name": "BTP-Service-App",
           "type": "standard",
           "version": "1.0.0",
-          "produces": ["BTPInboundEvent"],
+          "produces": [
+            "BTPInboundEvent"
+          ],
           "consumes": []
         }
       ]
@@ -51,7 +57,9 @@
           "name": "acl-btp-service-onboarding",
           "publishDefault": "disallow",
           "subscribeDefault": "disallow",
-          "publishExceptions": ["3pl/DE/BTP-SERVICE/btp/in/>"],
+          "publishExceptions": [
+            "3pl/DE/BTP-SERVICE/btp/in/>"
+          ],
           "subscribeExceptions": []
         }
       ],
@@ -68,7 +76,9 @@
         {
           "name": "Q/3PL/BTP-SERVICE/DEV/btp/in",
           "accessType": "non-exclusive",
-          "subscriptions": ["3pl/DE/BTP-SERVICE/btp/in/>"]
+          "subscriptions": [
+            "3pl/DE/BTP-SERVICE/btp/in/>"
+          ]
         }
       ],
       "restDeliveryPoints": []
