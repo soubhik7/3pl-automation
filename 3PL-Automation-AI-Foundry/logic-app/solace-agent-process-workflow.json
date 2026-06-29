@@ -1,0 +1,297 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "contentVersion": "1.0.0.0",
+        "parameters": {},
+        "triggers": {
+            "manual": {
+                "type": "Request",
+                "kind": "Http",
+                "inputs": {
+                    "schema": {
+                        "type": "object",
+                        "properties": {
+                            "from": {
+                                "type": "string"
+                            },
+                            "subject": {
+                                "type": "string"
+                            },
+                            "body": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "from",
+                            "subject",
+                            "body"
+                        ]
+                    }
+                }
+            }
+        },
+        "actions": {
+            "Generate_Solace_JSON": {
+                "type": "Http",
+                "inputs": {
+                    "uri": "https://ip-solace-mcp.azurewebsites.net/api/solace-generate",
+                    "method": "POST",
+                    "headers": {
+                        "Content-Type": "application/json"
+                    },
+                    "body": {
+                        "from": "@triggerBody()?['from']",
+                        "subject": "@triggerBody()?['subject']",
+                        "body": "@triggerBody()?['body']"
+                    },
+                    "retryPolicy": {
+                        "type": "none"
+                    }
+                },
+                "runAfter": {}
+            },
+            "Build_Adaptive_Card": {
+                "type": "Compose",
+                "inputs": {
+                    "type": "AdaptiveCard",
+                    "version": "1.4",
+                    "body": [
+                        {
+                            "type": "Container",
+                            "style": "emphasis",
+                            "bleed": true,
+                            "items": [
+                                {
+                                    "type": "ColumnSet",
+                                    "columns": [
+                                        {
+                                            "type": "Column",
+                                            "width": "auto",
+                                            "verticalContentAlignment": "Center",
+                                            "items": [
+                                                {
+                                                    "type": "TextBlock",
+                                                    "text": "🟦",
+                                                    "size": "ExtraLarge",
+                                                    "spacing": "None"
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "type": "Column",
+                                            "width": "stretch",
+                                            "verticalContentAlignment": "Center",
+                                            "items": [
+                                                {
+                                                    "type": "TextBlock",
+                                                    "text": "Solace Request",
+                                                    "size": "Large",
+                                                    "weight": "Bolder",
+                                                    "spacing": "None"
+                                                },
+                                                {
+                                                    "type": "TextBlock",
+                                                    "text": "Approval needed",
+                                                    "size": "Small",
+                                                    "isSubtle": true,
+                                                    "spacing": "None"
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Container",
+                            "spacing": "Medium",
+                            "items": [
+                                {
+                                    "type": "FactSet",
+                                    "facts": [
+                                        {
+                                            "title": "Requester",
+                                            "value": "@{triggerBody()?['from']}"
+                                        },
+                                        {
+                                            "title": "Subject",
+                                            "value": "@{triggerBody()?['subject']}"
+                                        },
+                                        {
+                                            "title": "File",
+                                            "value": "@{body('Generate_Solace_JSON')?['filePath']}"
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "Input.Text",
+                                    "id": "branchName",
+                                    "label": "Feature branch to publish to",
+                                    "value": "@{body('Generate_Solace_JSON')?['branchName']}",
+                                    "isRequired": true,
+                                    "errorMessage": "Enter the GitHub feature branch this config should be committed to."
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Container",
+                            "spacing": "Medium",
+                            "separator": true,
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "Summary",
+                                    "weight": "Bolder",
+                                    "size": "Small"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "@{body('Generate_Solace_JSON')?['summaryForApproval']}",
+                                    "wrap": true,
+                                    "spacing": "Small"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "Container",
+                            "style": "emphasis",
+                            "spacing": "Medium",
+                            "separator": true,
+                            "items": [
+                                {
+                                    "type": "TextBlock",
+                                    "text": "solaceJson",
+                                    "weight": "Bolder",
+                                    "size": "Small"
+                                },
+                                {
+                                    "type": "TextBlock",
+                                    "text": "@{string(body('Generate_Solace_JSON')?['solaceJson'])}",
+                                    "wrap": true,
+                                    "fontType": "Monospace",
+                                    "size": "Small",
+                                    "spacing": "Small"
+                                }
+                            ]
+                        }
+                    ],
+                    "actions": [
+                        {
+                            "type": "Action.Submit",
+                            "title": "✅ Approve",
+                            "style": "positive",
+                            "data": {
+                                "decision": "approve"
+                            }
+                        },
+                        {
+                            "type": "Action.Submit",
+                            "title": "❌ Reject",
+                            "style": "destructive",
+                            "data": {
+                                "decision": "reject"
+                            }
+                        }
+                    ]
+                },
+                "runAfter": {
+                    "Generate_Solace_JSON": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Post_adaptive_card_and_wait_for_a_response": {
+                "type": "ApiConnectionWebhook",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "teams-1"
+                        }
+                    },
+                    "body": {
+                        "notificationUrl": "@listCallbackUrl()",
+                        "body": {
+                            "messageBody": "@{string(outputs('Build_Adaptive_Card'))}",
+                            "updateMessage": "Thanks for your response!",
+                            "recipient": {
+                                "to": "odl_user_2262033@sandboxailabs1009.onmicrosoft.com"
+                            }
+                        }
+                    },
+                    "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions",
+                    "retryPolicy": {
+                        "type": "none"
+                    }
+                },
+                "runAfter": {
+                    "Build_Adaptive_Card": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Decision_check": {
+                "type": "If",
+                "expression": {
+                    "and": [
+                        {
+                            "equals": [
+                                "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['decision'], '')",
+                                "approve"
+                            ]
+                        }
+                    ]
+                },
+                "actions": {
+                    "Publish_to_GitHub": {
+                        "type": "Http",
+                        "inputs": {
+                            "uri": "https://ip-solace-mcp.azurewebsites.net/api/solace-publish",
+                            "method": "POST",
+                            "headers": {
+                                "Content-Type": "application/json"
+                            },
+                            "body": {
+                                "id": "@body('Generate_Solace_JSON')?['id']",
+                                "solaceJson": "@body('Generate_Solace_JSON')?['solaceJson']",
+                                "branchName": "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['branchName'], body('Generate_Solace_JSON')?['branchName'])",
+                                "filePath": "@body('Generate_Solace_JSON')?['filePath']"
+                            },
+                            "retryPolicy": {
+                                "type": "none"
+                            }
+                        }
+                    }
+                },
+                "else": {
+                    "actions": {}
+                },
+                "runAfter": {
+                    "Post_adaptive_card_and_wait_for_a_response": [
+                        "Succeeded"
+                    ]
+                }
+            },
+            "Response_Final_Status": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                    "statusCode": 200,
+                    "body": {
+                        "platform": "solace",
+                        "decision": "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['decision'], 'none')",
+                        "publishResult": "@coalesce(body('Publish_to_GitHub'), json('null'))"
+                    }
+                },
+                "runAfter": {
+                    "Decision_check": [
+                        "Succeeded",
+                        "Failed",
+                        "Skipped"
+                    ]
+                }
+            }
+        },
+        "outputs": {}
+    },
+    "kind": "Stateful"
+}
