@@ -12,7 +12,7 @@ or to reproduce this in another resource group) without repeating the discovery 
 |---|---|
 | Subscription | `Sandbox AI DS - 1003669` (`a556a28c-c14a-4657-b59f-e0c80f0bb54c`) |
 | Resource group | `ODL-IBM-2262033` |
-| Function App | **`ip-solace-mcp`** (`ip-solace-mcp.azurewebsites.net`) — not `ip-3pl-mcp`. This repo's docs/diagrams briefly drifted to the wrong name mid-session; fixed everywhere as part of this deployment. Azure Web Apps can't be renamed in place, so this is the permanent name. |
+| Function App | **`ip-3pl-mcp`** (`ip-3pl-mcp.azurewebsites.net`) — renamed from the original `ip-solace-mcp` once the app outgrew Solace-only scope. Azure Web Apps can't be renamed in place, so this was done as create-new + cutover + delete-old (see "Function App rename" below), not an in-place rename. |
 | Function App plan | `EastUSLinuxDynamicPlan` (Consumption, Python 3.11, Linux) |
 | AI Foundry project | `integration-pulse-found-resource` / project `integration-pulse-proj`, endpoint `https://integration-pulse-found-resource.services.ai.azure.com/api/projects/integration-pulse-proj` |
 | Foundry model | `gpt-4.1` (already deployed on the Foundry resource) |
@@ -23,7 +23,7 @@ or to reproduce this in another resource group) without repeating the discovery 
 
 ## What's actually deployed now
 
-- `ip-solace-mcp` is running the current `mcp-server/` code (all 6 HTTP routes + 3 MCP routes +
+- `ip-3pl-mcp` is running the current `mcp-server/` code (all 6 HTTP routes + 3 MCP routes +
   the `github_get_file`/`github_commit_file`/`github_open_pull_request` tool set).
 - 3 persistent branches exist on GitHub: `solace/onboarding`, `mulesoft/onboarding`,
   `btp/onboarding` (empty, off `main`).
@@ -40,6 +40,32 @@ or to reproduce this in another resource group) without repeating the discovery 
 - All 3 `-generate` routes smoke-tested end-to-end through the real Foundry agents (Phase 1 only —
   see "Intentionally not automated" below).
 
+## Function App rename (`ip-solace-mcp` → `ip-3pl-mcp`)
+
+The shared MCP Function App outgrew its Solace-only name once it started hosting the MuleSoft
+and BTP routes too, so it was renamed. Azure Web Apps can't be renamed in place, so this was a
+create-new + cutover + delete-old, not an in-place rename:
+
+1. Created a new Function App `ip-3pl-mcp` (same plan `EastUSLinuxDynamicPlan`, same storage
+   account `integrationpulsestore`, same Linux/Python 3.11 stack) plus its own dedicated
+   `ip-3pl-mcp` Application Insights component, alongside the still-running `ip-solace-mcp`.
+2. Copied every app setting across (`GITHUB_TOKEN`, `GITHUB_OWNER`/`GITHUB_REPO`/`GITHUB_BASE_BRANCH`,
+   `COSMOS_*`, `FOUNDRY_PROJECT_ENDPOINT`) and pointed `APPLICATIONINSIGHTS_CONNECTION_STRING` at
+   the new component.
+3. Zip-deployed `mcp-server/` to the new app and health-checked it before touching anything live.
+4. Re-pointed every real consumer at the new hostname: the 3 Consumption mail-trigger workflows
+   (`solace-mail-trigger-workflow`, `mulesoft-mail-trigger-workflow`, `btp-mail-trigger-workflow`),
+   **and** the standalone `solace-mail-trigger` Gmail-triggered Logic App (see below — its 2 HTTP
+   actions hit the Function App directly), and re-registered the 3 Foundry agents so
+   `SOLACE_MCP_ENDPOINT`/`MULESOFT_MCP_ENDPOINT`/`BTP_MCP_ENDPOINT` resolve to `ip-3pl-mcp`.
+5. Only deleted the old `ip-solace-mcp` app (+ its Application Insights component) after the new
+   one was verified healthy and every known consumer was re-pointed.
+
+Platform-specific names were deliberately left alone — `agent/solace/`, the `solace_requests`
+Cosmos container, the `solace/onboarding` branch, the `solace-mcp` MCP route, etc. all still mean
+"the Solace platform," which is a different thing from "the shared hub," so they don't get
+renamed to `3pl`.
+
 ## What's deliberately untouched
 
 - **The standalone `solace-mail-trigger` Consumption Logic App** (no `-workflow` suffix) — this
@@ -54,10 +80,13 @@ or to reproduce this in another resource group) without repeating the discovery 
   and friends) — a completely separate "Builder → Provisioner" pattern-deployment system.
   `register.py` only ever touches the 3 names it's hardcoded to use.
 - **Key Vault** — both `integration-pulse-kv` and `integratkeyvaultc82f9d17` block secret
-  read/write for every identity tested here, including subscription Owner. This looks like a
-  deliberate sandbox guardrail, not a misconfiguration. Net effect: the GitHub App + Key Vault
-  auth path in `mcp-server/lib/github_client.py` is fully coded and ready, but cannot be
-  finished from this environment — see "Remaining manual steps".
+  read/write for every identity tested here, including subscription Owner (re-confirmed live
+  during the Function App rename above — still `Forbidden` on `secrets/readMetadata` for the
+  current sandbox identity). This looks like a deliberate sandbox guardrail, not a
+  misconfiguration. Net effect: the GitHub App + Key Vault auth path in
+  `mcp-server/lib/github_client.py` is fully coded and ready, but cannot be finished from this
+  environment — the existing `GITHUB_TOKEN` app setting (PAT) was carried over to `ip-3pl-mcp`
+  as-is rather than blocking the rename on it. See "Remaining manual steps".
 
 ## Intentionally not automated
 
@@ -97,7 +126,7 @@ python3 deployment/deploy.py smoke-test       # just confirm the 3 -generate rou
 
 Requires: `az` CLI logged into the right subscription, `requests`+`pyyaml` importable (for
 `agent/register.py`), and either `GITHUB_TOKEN` in the environment or the existing
-`GITHUB_TOKEN` app setting on `ip-solace-mcp` (the script reads that as a fallback — it never
+`GITHUB_TOKEN` app setting on `ip-3pl-mcp` (the script reads that as a fallback — it never
 prints the value).
 
 Every step checks-before-creating: branches/containers/Logic Apps already present are skipped,

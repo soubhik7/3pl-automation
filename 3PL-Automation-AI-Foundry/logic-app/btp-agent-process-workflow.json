@@ -34,7 +34,7 @@
             "Generate_BTP_Config": {
                 "type": "Http",
                 "inputs": {
-                    "uri": "https://ip-solace-mcp.azurewebsites.net/api/btp-generate",
+                    "uri": "https://ip-3pl-mcp.azurewebsites.net/api/btp-generate",
                     "method": "POST",
                     "headers": {
                         "Content-Type": "application/json"
@@ -262,7 +262,7 @@
                     "Publish_to_GitHub": {
                         "type": "Http",
                         "inputs": {
-                            "uri": "https://ip-solace-mcp.azurewebsites.net/api/btp-publish",
+                            "uri": "https://ip-3pl-mcp.azurewebsites.net/api/btp-publish",
                             "method": "POST",
                             "headers": {
                                 "Content-Type": "application/json"

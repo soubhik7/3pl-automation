@@ -16,7 +16,7 @@
                 <mxCell id="n5" value="Logic App:&#xa;btp-mail-trigger-workflow (sub-workflow)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="560" y="30" width="220" height="80" as="geometry"/>
                 </mxCell>
-                <mxCell id="n6" value="ip-solace-mcp (Function App) — shared&#xa;solace-mcp / mulesoft-mcp / btp-mcp&#xa;+ 6 HTTP routes ({platform}-generate / -publish)&#xa;tools: github_get_file (read) / commit_file + open_pull_request (write)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+                <mxCell id="n6" value="ip-3pl-mcp (Function App) — shared&#xa;solace-mcp / mulesoft-mcp / btp-mcp&#xa;+ 6 HTTP routes ({platform}-generate / -publish)&#xa;tools: github_get_file (read) / commit_file + open_pull_request (write)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
                     <mxGeometry x="1000" y="105" width="280" height="220" as="geometry"/>
                 </mxCell>
                 <mxCell id="n7" value="integration-pulse-&#xa;solace-publisher (Foundry)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=12;" parent="1" vertex="1">

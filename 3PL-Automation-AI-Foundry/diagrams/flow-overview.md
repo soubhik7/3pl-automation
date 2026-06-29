@@ -73,7 +73,7 @@ flowchart TD
 
 ## Shared infrastructure (not platform-specific)
 
-One Azure Functions app (`mcp-server/`, deployed as `ip-solace-mcp.azurewebsites.net`) hosts all 3
+One Azure Functions app (`mcp-server/`, deployed as `ip-3pl-mcp.azurewebsites.net`) hosts all 3
 platforms' MCP tool servers and HTTP routes:
 
 ```mermaid

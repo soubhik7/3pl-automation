@@ -27,6 +27,7 @@ Vault (blocked for this subscription's identities by design — see README).
 import json
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 import time
@@ -34,11 +35,15 @@ import urllib.error
 import urllib.request
 import zipfile
 
+_AZ_BIN = shutil.which("az") or "az"  # Windows: az resolves to az.CMD, which
+                                       # subprocess can't find via a bare "az" without shell=True
+
 # --- Real, already-confirmed resource identities for this deployment ----------------------
 SUBSCRIPTION_ID = "a556a28c-c14a-4657-b59f-e0c80f0bb54c"
 RESOURCE_GROUP = "ODL-IBM-2262033"
-FUNCTION_APP_NAME = "ip-solace-mcp"  # the REAL deployed name — do not rename to ip-3pl-mcp,
-                                     # Azure Web Apps cannot be renamed in place
+FUNCTION_APP_NAME = "ip-3pl-mcp"  # renamed from the original ip-solace-mcp (Azure Web Apps
+                                   # can't be renamed in place, so this was a create-new app +
+                                   # cutover + delete-old, not an in-place rename)
 FUNCTION_APP_BASE_URL = f"https://{FUNCTION_APP_NAME}.azurewebsites.net"
 COSMOS_ACCOUNT = "integration-pulse-nosql"
 COSMOS_DATABASE = "integration-pulse"
@@ -68,7 +73,7 @@ _AGENT_DIR = _REPO_ROOT / "agent"
 def _az(*args: str, timeout: int = 120) -> str:
     """Run an az CLI command, return stdout. Raises on non-zero exit."""
     result = subprocess.run(
-        ["az", *args], capture_output=True, text=True, timeout=timeout,
+        [_AZ_BIN, *args], capture_output=True, text=True, timeout=timeout,
     )
     if result.returncode != 0:
         raise RuntimeError(f"az {' '.join(args)} failed:\n{result.stderr}")
@@ -270,7 +275,7 @@ def step_logic_apps() -> None:
     ]
     for name in mail_triggers:
         existing = subprocess.run(
-            ["az", "resource", "show", "--ids",
+            [_AZ_BIN, "resource", "show", "--ids",
              f"/subscriptions/{SUBSCRIPTION_ID}/resourceGroups/{RESOURCE_GROUP}"
              f"/providers/Microsoft.Logic/workflows/{name}"],
             capture_output=True, text=True,
@@ -289,7 +294,7 @@ def step_logic_apps() -> None:
 
     orchestrator_name = "3pl-onboarding-orchestrator-workflow"
     existing = subprocess.run(
-        ["az", "resource", "show", "--ids",
+        [_AZ_BIN, "resource", "show", "--ids",
          f"/subscriptions/{SUBSCRIPTION_ID}/resourceGroups/{RESOURCE_GROUP}"
          f"/providers/Microsoft.Logic/workflows/{orchestrator_name}"],
         capture_output=True, text=True,
@@ -298,14 +303,21 @@ def step_logic_apps() -> None:
     if existing.returncode == 0:
         print(f"  {orchestrator_name} already exists — redeploying to refresh callback URLs "
               "(harmless, same resource)")
+    # Callback URLs contain `&` (SAS query string) — passed as a bare `key=value` CLI arg this
+    # gets split into multiple commands by cmd.exe when az.CMD re-invokes through it on Windows.
+    # A parameters file sidesteps cmd.exe's argument parsing entirely.
+    params_path = _HERE / "_build" / "orchestrator-params.json"
+    params_path.parent.mkdir(exist_ok=True)
+    params_path.write_text(json.dumps({
+        "solaceWorkflowCallbackUrl": {"value": callback_urls["solace-mail-trigger-workflow"]},
+        "mulesoftWorkflowCallbackUrl": {"value": callback_urls["mulesoft-mail-trigger-workflow"]},
+        "btpWorkflowCallbackUrl": {"value": callback_urls["btp-mail-trigger-workflow"]},
+    }))
     _az(
         "deployment", "group", "create", "-g", RESOURCE_GROUP,
         "--template-file", str(_LOGIC_APP_CONSUMPTION_DIR / f"{orchestrator_name}.json"),
         "--name", f"deploy-orchestrator-{int(time.time())}",
-        "--parameters",
-        f"solaceWorkflowCallbackUrl={callback_urls['solace-mail-trigger-workflow']}",
-        f"mulesoftWorkflowCallbackUrl={callback_urls['mulesoft-mail-trigger-workflow']}",
-        f"btpWorkflowCallbackUrl={callback_urls['btp-mail-trigger-workflow']}",
+        "--parameters", f"@{params_path}",
         timeout=300,
     )
     print(f"  deployed {orchestrator_name}")

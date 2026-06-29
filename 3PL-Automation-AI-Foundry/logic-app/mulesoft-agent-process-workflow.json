@@ -34,7 +34,7 @@
             "Generate_Mulesoft_YAML": {
                 "type": "Http",
                 "inputs": {
-                    "uri": "https://ip-solace-mcp.azurewebsites.net/api/mulesoft-generate",
+                    "uri": "https://ip-3pl-mcp.azurewebsites.net/api/mulesoft-generate",
                     "method": "POST",
                     "headers": {
                         "Content-Type": "application/json"
@@ -304,7 +304,7 @@
                     "Publish_to_GitHub": {
                         "type": "Http",
                         "inputs": {
-                            "uri": "https://ip-solace-mcp.azurewebsites.net/api/mulesoft-publish",
+                            "uri": "https://ip-3pl-mcp.azurewebsites.net/api/mulesoft-publish",
                             "method": "POST",
                             "headers": {
                                 "Content-Type": "application/json"

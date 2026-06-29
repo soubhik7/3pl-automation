@@ -12,11 +12,15 @@ Platform defaults to "all" if omitted.
 """
 import os
 import pathlib
+import shutil
 import subprocess
 import sys
 
 import requests
 import yaml
+
+_AZ_BIN = shutil.which("az") or "az"  # Windows: az resolves to az.CMD, which
+                                       # subprocess can't find via a bare "az" without shell=True
 
 _HERE = pathlib.Path(__file__).parent
 _TEMPLATES_DIR = _HERE.parent / "templates"
@@ -74,7 +78,7 @@ def _bearer_headers() -> dict:
     token = os.environ.get("FOUNDRY_BEARER")
     if not token:
         token = subprocess.check_output(
-            ["az", "account", "get-access-token", "--resource", "https://ai.azure.com",
+            [_AZ_BIN, "account", "get-access-token", "--resource", "https://ai.azure.com",
              "--query", "accessToken", "-o", "tsv"],
             text=True,
         ).strip()

@@ -134,11 +134,11 @@ depend on that detail.
    them. See the root `README.md`'s env var table for the container-name override env vars.
 
 8. **Set the 2 new MCP endpoint app settings** on the Function App hosting `mcp-server/`
-   (`ip-solace-mcp`, separate from this Logic App resource) — `MULESOFT_MCP_ENDPOINT` and
+   (`ip-3pl-mcp`, separate from this Logic App resource) — `MULESOFT_MCP_ENDPOINT` and
    `BTP_MCP_ENDPOINT`, both pointing at that same Function App's `/api/mulesoft-mcp`/`/api/btp-mcp`
    routes (parallel to the existing `SOLACE_MCP_ENDPOINT` → `/api/solace-mcp`).
 
-9. **Complete the root `README.md`'s "One-time setup"** on the `ip-solace-mcp` Function App before any
+9. **Complete the root `README.md`'s "One-time setup"** on the `ip-3pl-mcp` Function App before any
    platform's publish phase will work: push the 3 persistent feature branches
    (`solace/onboarding`, `mulesoft/onboarding`, `btp/onboarding`) and install the GitHub App that
    `mcp-server/lib/github_client.py` authenticates as (no `GITHUB_TOKEN`/PAT is configured anywhere
