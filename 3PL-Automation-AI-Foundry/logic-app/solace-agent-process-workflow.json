@@ -34,7 +34,7 @@
             "Generate_Solace_JSON": {
                 "type": "Http",
                 "inputs": {
-                    "uri": "https://ip-solace-mcp.azurewebsites.net/api/solace-generate",
+                    "uri": "https://ip-3pl-mcp.azurewebsites.net/api/solace-generate",
                     "method": "POST",
                     "headers": {
                         "Content-Type": "application/json"
@@ -245,7 +245,7 @@
                     "Publish_to_GitHub": {
                         "type": "Http",
                         "inputs": {
-                            "uri": "https://ip-solace-mcp.azurewebsites.net/api/solace-publish",
+                            "uri": "https://ip-3pl-mcp.azurewebsites.net/api/solace-publish",
                             "method": "POST",
                             "headers": {
                                 "Content-Type": "application/json"
