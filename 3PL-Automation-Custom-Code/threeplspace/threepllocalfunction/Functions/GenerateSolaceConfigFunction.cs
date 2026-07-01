@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Extensions.Workflows;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SolaceConfigGenerator.Models;
 using SolaceConfigGenerator.Services;
 
@@ -14,12 +15,9 @@ public class GenerateSolaceConfigFunction
     private static readonly CsvParser CsvParser = new();
     private static readonly SolaceConfigBuilder ConfigBuilder = new();
 
-    private readonly ILogger<GenerateSolaceConfigFunction> _logger;
-
-    public GenerateSolaceConfigFunction(ILogger<GenerateSolaceConfigFunction> logger)
-    {
-        _logger = logger;
-    }
+    // The custom-code host's DI container (SDK 1.3.0) doesn't register ILogger<T>/ILoggerFactory,
+    // so this can't take either as a constructor dependency without failing to activate.
+    private readonly ILogger<GenerateSolaceConfigFunction> _logger = NullLogger<GenerateSolaceConfigFunction>.Instance;
 
     [Function("GenerateSolaceConfig")]
     public Task<GenerateSolaceConfigResponse> Run([WorkflowActionTrigger] string csvContent)
