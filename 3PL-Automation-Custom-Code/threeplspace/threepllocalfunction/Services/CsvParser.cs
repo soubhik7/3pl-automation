@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using SolaceConfigGenerator.Models;
+using ThreePlLocalFunction.Shared;
 
 namespace SolaceConfigGenerator.Services;
 
@@ -75,7 +75,7 @@ public sealed class CsvParser
 
     private static CsvRow ParseRow(string line, int rowIndex)
     {
-        var fields = SplitCsvLine(line);
+        var fields = CsvLineSplitter.Split(line);
 
         if (fields.Count < ColumnCount)
             throw new FormatException(
@@ -171,58 +171,6 @@ public sealed class CsvParser
                     QueueEgressEnabled:     kv.Value.EgressEnabled ?? "",
                     QueueMaxRedeliveryCount: kv.Value.MaxRedeliveryCount ?? ""))
         );
-    }
-
-    // RFC 4180 CSV field splitter — handles quoted fields and escaped double-quotes ("")
-    private static List<string> SplitCsvLine(string line)
-    {
-        var fields = new List<string>();
-        var current = new StringBuilder();
-        var inQuotes = false;
-
-        for (int i = 0; i < line.Length; i++)
-        {
-            char c = line[i];
-
-            if (inQuotes)
-            {
-                if (c == '"')
-                {
-                    if (i + 1 < line.Length && line[i + 1] == '"')
-                    {
-                        current.Append('"');
-                        i++; // consume escaped quote
-                    }
-                    else
-                    {
-                        inQuotes = false;
-                    }
-                }
-                else
-                {
-                    current.Append(c);
-                }
-            }
-            else
-            {
-                if (c == '"')
-                {
-                    inQuotes = true;
-                }
-                else if (c == ',')
-                {
-                    fields.Add(current.ToString());
-                    current.Clear();
-                }
-                else
-                {
-                    current.Append(c);
-                }
-            }
-        }
-
-        fields.Add(current.ToString()); // last field has no trailing comma
-        return fields;
     }
 
     private sealed class MessageTypeAccumulator
