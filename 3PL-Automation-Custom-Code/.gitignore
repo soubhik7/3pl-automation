@@ -1,0 +1,28 @@
+# ── .NET build artifacts ──────────────────────────────────────────────────────
+bin/
+obj/
+*.user
+
+# ── Secrets & local settings ──────────────────────────────────────────────────
+local.settings.json
+appsettings.json
+appsettings.*.json
+
+# ── Azure Functions / Logic Apps Standard local runtime ───────────────────────
+.debug
+__blobstorage__
+__queuestorage__
+__azurite_db*__.json
+workflow-designtime/
+
+# Custom-code output copied into the Logic App at build/publish time
+# (regenerated from threepllocalfunction — see TriggerPublishOnBuild target)
+threeplspace/three3pllogicapp/lib/custom/
+
+# Built-in connector SDKs, downloaded on demand by the Logic Apps tooling
+threeplspace/three3pllogicapp/lib/builtinOperationSdks/
+
+# ── IDE / workspace ────────────────────────────────────────────────────────────
+*.code-workspace
+.vs/
+.DS_Store
