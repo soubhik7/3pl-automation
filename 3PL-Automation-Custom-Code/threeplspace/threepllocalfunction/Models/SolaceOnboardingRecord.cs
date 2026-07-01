@@ -3,15 +3,49 @@ using System.Collections.Generic;
 namespace SolaceConfigGenerator.Models;
 
 /// <summary>
-/// CSV columns (pipe-delimited topics within each topic cell):
-/// Brand, Env, SystemName, ThreePLCode, EncryptedPassword,
-/// DespatchStockTopics, SourcingStockTopics, ReturnStockTopics, StockMovementTopics, Action
-///
-/// Action is optional (10th column). Blank/absent defaults to "FullOnboarding".
-/// See SolaceConfigBuilder for the recognized Action values and which JSON sections each produces.
-///
-/// Example row:
-/// petc,rc,navision,3plpnp,"![+ycEERpRxxm5RfqLRNxBXw==]","topic1|topic2","topic1|topic2","topic1","topic1",FullOnboarding
+/// Raw client-profile flag overrides from the CSV. Each field is the literal cell value
+/// ("" if not supplied) — SolaceConfigBuilder decides the default when a field is blank,
+/// nothing is hardcoded at the model layer.
+/// </summary>
+public sealed record ClientProfileOverrides(
+    string AllowGuaranteedMsgSendEnabled,
+    string AllowGuaranteedMsgReceiveEnabled,
+    string CompressionEnabled,
+    string ReplicationAllowClientConnectWhenStandbyEnabled,
+    string AllowTransactedSessionsEnabled,
+    string AllowBridgeConnectionsEnabled,
+    string AllowGuaranteedEndpointCreateEnabled,
+    string AllowSharedSubscriptionsEnabled);
+
+/// <summary>Raw ACL default-action overrides from the CSV — "" means not supplied.</summary>
+public sealed record AclOverrides(
+    string ClientConnectDefaultAction,
+    string PublishTopicDefaultAction,
+    string SubscribeShareNameDefaultAction,
+    string SubscribeTopicDefaultAction);
+
+/// <summary>Raw client-user flag overrides from the CSV — "" means not supplied.</summary>
+public sealed record ClientUserOverrides(
+    string Enabled,
+    string GuaranteedEndpointPermissionOverrideEnabled,
+    string SubscriptionManagerEnabled);
+
+/// <summary>
+/// One MessageType's topics plus its main queue's overrides ("" means not supplied,
+/// falls back to SolaceConfigBuilder's default). The dead-message queue's permission
+/// ("consume") is not an override — that's the structural definition of a DMQ, not a
+/// business policy value.
+/// </summary>
+public sealed record MessageTypeEntry(
+    IReadOnlyList<string> Topics,
+    string QueuePermission,
+    string QueueEgressEnabled,
+    string QueueMaxRedeliveryCount);
+
+/// <summary>
+/// One onboarding/change record, built by grouping CSV rows that share the same
+/// Brand/Env/SystemName/ThreePLCode. See CsvParser for the CSV's row format —
+/// it's one row per topic, not one row per record.
 /// </summary>
 public sealed record SolaceOnboardingRecord(
     string Brand,
@@ -19,11 +53,11 @@ public sealed record SolaceOnboardingRecord(
     string SystemName,
     string ThreePLCode,
     string EncryptedPassword,
-    IReadOnlyList<string> DespatchStockTopics,
-    IReadOnlyList<string> SourcingStockTopics,
-    IReadOnlyList<string> ReturnStockTopics,
-    IReadOnlyList<string> StockMovementTopics,
-    string Action = ""
+    string Action,
+    ClientProfileOverrides ClientProfile,
+    AclOverrides Acl,
+    ClientUserOverrides ClientUser,
+    IReadOnlyDictionary<string, MessageTypeEntry> MessageTypes
 )
 {
     // Drives all Solace resource names: {Brand}-{Env}-{SystemName}-{ThreePLCode}-sys
