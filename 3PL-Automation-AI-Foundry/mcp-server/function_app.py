@@ -57,7 +57,14 @@ from tools.mulesoft.update_mulesoft_request_status import update_mulesoft_reques
 from tools.btp.save_btp_request import save_btp_request
 from tools.btp.update_btp_request_status import update_btp_request_status
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+# FUNCTION (not ANONYMOUS): every route here is either side-effecting (-publish commits
+# to GitHub and opens PRs) or exposes those same side-effecting tools via MCP
+# (tools/call). The Teams approval gate lives entirely in the Logic App's own workflow
+# logic, not here, so anonymous access would let anyone who finds the host URL call
+# -publish or the MCP tool routes directly and skip approval entirely. Callers (the
+# Logic App's HTTP actions, each platform's MCP client config) must pass this
+# function's key.
+app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 TOOLS = [
     {

@@ -149,8 +149,12 @@ public sealed class MuleSoftCsvParser
             throw new FormatException(
                 $"Row {rowIndex + 1} has {fields.Count} column(s); expected {ColumnCount}. Row content: {line}");
 
+        // Strip embedded CR/LF from every field: these values are rendered as single-line
+        // YAML scalars, and a bare '\r' surviving here (this file is only split on '\n')
+        // would be read as a real line break by a YAML consumer, letting it inject new
+        // keys into the generated config.
         for (var i = 0; i < fields.Count; i++)
-            fields[i] = fields[i].Trim();
+            fields[i] = fields[i].Replace("\r", "").Replace("\n", "").Trim();
 
         return new CsvRow(
             CountryKey:              fields[0],

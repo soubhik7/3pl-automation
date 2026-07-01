@@ -794,6 +794,18 @@ let generatedJSON = null;
 function ts() { return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
 function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
 function slug(s) { return s.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''); }
+// Escapes text placed inside HTML markup/attributes built via innerHTML template literals.
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// Escapes a value embedded inside a single-quoted JS string literal within an inline
+// onclick="...('VALUE')" attribute: first neutralizes the JS string (\, '), then
+// HTML-entity-escapes the result so the HTML attribute parser can't be broken out of
+// (entities are decoded back to real characters before the JS handler is compiled, so
+// order matters — JS-escape first, HTML-escape second).
+function escapeAttr(s) {
+  return escapeHtml(String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"));
+}
 function extractHost(url) {
   if (!url) return '';
   try { return new URL(url.startsWith('http') ? url : 'https://' + url).hostname; } catch(e) { return url.split('/')[0]; }
@@ -807,8 +819,8 @@ function renderPartners(filter) {
   document.getElementById('sb-partners').innerHTML = names.map(name => {
     const s = partners[name].status;
     const isDemo = name === 'SolaceDemo Co';
-    return `<div class="sbp ${activePartner===name?'active':''}" onclick="openPartner('${name}')">
-      <i class="ti ti-${isDemo?'flask':'truck'}"></i>${name}${isDemo?'<span style="font-size:9px;font-weight:700;background:#e8f4ff;color:#1971c2;border-radius:4px;padding:1px 5px;margin-left:4px;letter-spacing:.03em;">DEMO</span>':''}
+    return `<div class="sbp ${activePartner===name?'active':''}" onclick="openPartner('${escapeAttr(name)}')">
+      <i class="ti ti-${isDemo?'flask':'truck'}"></i>${escapeHtml(name)}${isDemo?'<span style="font-size:9px;font-weight:700;background:#e8f4ff;color:#1971c2;border-radius:4px;padding:1px 5px;margin-left:4px;letter-spacing:.03em;">DEMO</span>':''}
       <span class="sbd ${s==='done'?'done':s==='partial'?'partial':''}"></span>
     </div>`;
   }).join('');
@@ -827,7 +839,7 @@ function openPartner(name) {
   updateGenBtn();
   selectFormEnv('dev');
   if (agentMode === 'update' && document.getElementById('agent').classList.contains('visible'))
-    botMsg(`<strong>${name}</strong> selected. Click an interface on the left to edit.`);
+    botMsg(`<strong>${escapeHtml(name)}</strong> selected. Click an interface on the left to edit.`);
   if (agentMode === 'new-itf' && document.getElementById('agent').classList.contains('visible') && !tempItfId)
     startNewItfFlow();
 }
@@ -839,9 +851,9 @@ function renderItfList(pname) {
     const filled = allFields.filter(k => d[k]).length;
     const dotCls = filled === allFields.length && filled > 0 ? 'done' : filled > 0 ? 'partial' : '';
     const m = itfMeta[id] || {dir:'in'};
-    return `<div class="sbi ${activeItfId===id?'active':''}" onclick="clickItf('${id}')">
+    return `<div class="sbi ${activeItfId===id?'active':''}" onclick="clickItf('${escapeAttr(id)}')">
       <span class="sbi-dot ${dotCls}"></span>
-      <span class="sbi-id">${id}</span>
+      <span class="sbi-id">${escapeHtml(id)}</span>
       <span class="sbi-dir ${m.dir}">${m.dir==='in'?'IN':'OUT'}</span>
     </div>`;
   }).join('');
@@ -854,7 +866,7 @@ function clickItf(id) {
   showDetailForItf(id);
   updateGenBtn();
   if (agentMode === 'update' && document.getElementById('agent').classList.contains('visible'))
-    botMsg(`Editing <strong>${id}</strong> for <strong>${activePartner}</strong>. Which field? or say "fill all fields".`);
+    botMsg(`Editing <strong>${escapeHtml(id)}</strong> for <strong>${escapeHtml(activePartner)}</strong>. Which field? or say "fill all fields".`);
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1435,12 +1447,14 @@ function startNewItfFlow() {
   tempItfId = 'NEW_PENDING'; tempItfData = {};
   showBlankDetail('New Interface');
   agentQueue = getQuestionsForEnv(activeFormEnv); pendingQ = agentQueue.shift();
-  botMsg(`Creating a new interface for <strong>${activePartner}</strong>. ${pendingQ.q}`);
+  botMsg(`Creating a new interface for <strong>${escapeHtml(activePartner)}</strong>. ${pendingQ.q}`);
   highlightField(pendingQ.k); autoSwitchTab(pendingQ.k);
   if (pendingQ.hints && pendingQ.hints.length) setQR(pendingQ.hints);
 }
 
 function botMsg(txt) {
+  // txt is a developer-authored template (may contain intentional <strong> tags) with
+  // untrusted values already escapeHtml()'d at each call site before interpolation.
   const c = document.getElementById('ag-msgs'), d = document.createElement('div');
   d.className = 'msg bot';
   d.innerHTML = `<div class="bbl">${txt}</div><div class="mtime">${ts()}</div>`;
@@ -1448,9 +1462,10 @@ function botMsg(txt) {
   replaceIconsIn(d);
 }
 function usrMsg(txt) {
+  // Always raw end-user chat input — must be escaped, never treated as markup.
   const c = document.getElementById('ag-msgs'), d = document.createElement('div');
   d.className = 'msg usr';
-  d.innerHTML = `<div class="bbl">${txt}</div><div class="mtime">${ts()}</div>`;
+  d.innerHTML = `<div class="bbl">${escapeHtml(txt)}</div><div class="mtime">${ts()}</div>`;
   c.appendChild(d); c.scrollTop = c.scrollHeight;
   replaceIconsIn(d);
 }
@@ -1467,7 +1482,7 @@ function handleReply(v) {
   /* ── UPDATE mode ── */
   if (agentMode === 'update') {
     if (!activePartner) { botMsg('Please select a <strong>3PL partner</strong> first.'); return; }
-    if (!activeItfId)   { botMsg(`<strong>${activePartner}</strong> selected. Now click an <strong>interface</strong> on the left.`); return; }
+    if (!activeItfId)   { botMsg(`<strong>${escapeHtml(activePartner)}</strong> selected. Now click an <strong>interface</strong> on the left.`); return; }
     if (pendingQ) {
       liveSetField(pendingQ.k, v); pendingQ = null;
       if (agentQueue.length > 0) {
@@ -1508,7 +1523,7 @@ function handleReply(v) {
         const next=agentQueue.shift(); pendingQ=next; highlightField(next.k); autoSwitchTab(next.k); botMsg(next.q); if(next.hints&&next.hints.length)setQR(next.hints);
       } else {
         partners[activePartner].status='partial'; renderPartners(); renderItfList(activePartner);
-        botMsg(`Interface <strong>${tempItfId}</strong> created! Add another?`);
+        botMsg(`Interface <strong>${escapeHtml(tempItfId)}</strong> created! Add another?`);
         setQR(['Add another interface','Done']);
         tempItfId=null;tempItfData={};pendingQ=null;
       }
@@ -1528,7 +1543,7 @@ function handleReply(v) {
       tempItfId='NEW_PENDING'; tempItfData={};
       showBlankDetail('New Interface');
       agentQueue=getQuestionsForEnv(activeFormEnv); pendingQ=agentQueue.shift();
-      botMsg(`<strong>${pname}</strong> added! Let's set up the first interface. ${pendingQ.q}`);
+      botMsg(`<strong>${escapeHtml(pname)}</strong> added! Let's set up the first interface. ${pendingQ.q}`);
       highlightField(pendingQ.k); autoSwitchTab(pendingQ.k);
       if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints);
       return;
@@ -1555,7 +1570,7 @@ function handleReply(v) {
         const next=agentQueue.shift();pendingQ=next;highlightField(next.k);autoSwitchTab(next.k);botMsg(next.q);if(next.hints&&next.hints.length)setQR(next.hints);
       } else {
         partners[activePartner].status='partial';renderPartners();renderItfList(activePartner);
-        botMsg(`Interface <strong>${tempItfId}</strong> done. Add another for <strong>${activePartner}</strong>?`);
+        botMsg(`Interface <strong>${escapeHtml(tempItfId)}</strong> done. Add another for <strong>${escapeHtml(activePartner)}</strong>?`);
         setQR(['Add another interface','Finish onboarding']);
         tempItfId=null;tempItfData={};pendingQ=null;
       }
@@ -1567,7 +1582,7 @@ function handleReply(v) {
         if(pendingQ.hints&&pendingQ.hints.length)setQR(pendingQ.hints);
       } else {
         partners[activePartner].status='partial';renderPartners();
-        botMsg(`Onboarding for <strong>${activePartner}</strong> saved. Use the <strong>Generate Config</strong> button to export the JSON.`);
+        botMsg(`Onboarding for <strong>${escapeHtml(activePartner)}</strong> saved. Use the <strong>Generate Config</strong> button to export the JSON.`);
         pendingQ=null; updateGenBtn();
       }
     }
@@ -1788,8 +1803,8 @@ function renderCustomQueues() {
   if (badge) { badge.style.display = 'inline'; badge.textContent = customQueues.length; }
   list.innerHTML = customQueues.map((q, i) => `
     <div class="cq-item">
-      <span class="cq-item-name" title="${q.name}">${q.name}</span>
-      <span class="cq-item-sub"  title="${q.subscriptions[0]||''}">${q.subscriptions[0] || '<em style="color:#adb5bd">no subscription</em>'}</span>
+      <span class="cq-item-name" title="${escapeHtml(q.name)}">${escapeHtml(q.name)}</span>
+      <span class="cq-item-sub"  title="${escapeHtml(q.subscriptions[0]||'')}">${q.subscriptions[0] ? escapeHtml(q.subscriptions[0]) : '<em style="color:#adb5bd">no subscription</em>'}</span>
       <button class="cq-del" onclick="removeCustomQueue(${i})" title="Remove queue"><i class="ti ti-trash"></i></button>
     </div>`).join('');
   replaceIconsIn(list);
@@ -1951,9 +1966,9 @@ function renderApprovalCards() {
     const schCount  = s.config && s.config.eventPortal && s.config.eventPortal.schemas ? s.config.eventPortal.schemas.length : '—';
     const evCount   = s.config && s.config.eventPortal && s.config.eventPortal.events  ? s.config.eventPortal.events.length  : '—';
     return `
-    <div class="approval-card" id="ac-${s.submissionId}">
+    <div class="approval-card" id="ac-${escapeHtml(s.submissionId)}">
       <div class="ac-header">
-        <div><div class="ac-partner">${s.partnerName || s.partnerID}</div><div class="ac-id">${s.submissionId}</div></div>
+        <div><div class="ac-partner">${escapeHtml(s.partnerName || s.partnerID)}</div><div class="ac-id">${escapeHtml(s.submissionId)}</div></div>
         <div class="ac-time">${timeAgo(s.submittedAt)}</div>
       </div>
       <div class="ac-stats">
@@ -1962,13 +1977,13 @@ function renderApprovalCards() {
         <span class="ac-stat"><i class="ti ti-bolt"></i>${evCount} events</span>
       </div>
       <div class="ac-actions">
-        <button class="ac-btn approve" id="ac-appbtn-${s.submissionId}" onclick="approveSubmission('${s.submissionId}','${s.blobPath}','${s.statusPath}')"><i class="ti ti-check"></i> Approve</button>
-        <button class="ac-btn review"  onclick="toggleAcJson('${s.submissionId}')"><i class="ti ti-code"></i> Review JSON</button>
-        <button class="ac-btn review"  onclick="copyAcJson('${s.submissionId}', this)"><i class="ti ti-copy"></i> Copy JSON</button>
-        <button class="ac-btn reject"  onclick="rejectSubmission('${s.submissionId}')"><i class="ti ti-x"></i> Reject</button>
+        <button class="ac-btn approve" id="ac-appbtn-${escapeHtml(s.submissionId)}" onclick="approveSubmission('${escapeAttr(s.submissionId)}','${escapeAttr(s.blobPath)}','${escapeAttr(s.statusPath)}')"><i class="ti ti-check"></i> Approve</button>
+        <button class="ac-btn review"  onclick="toggleAcJson('${escapeAttr(s.submissionId)}')"><i class="ti ti-code"></i> Review JSON</button>
+        <button class="ac-btn review"  onclick="copyAcJson('${escapeAttr(s.submissionId)}', this)"><i class="ti ti-copy"></i> Copy JSON</button>
+        <button class="ac-btn reject"  onclick="rejectSubmission('${escapeAttr(s.submissionId)}')"><i class="ti ti-x"></i> Reject</button>
       </div>
-      <div class="ac-status" id="ac-status-${s.submissionId}"></div>
-      <pre class="ac-json-preview" id="ac-json-${s.submissionId}">${JSON.stringify(s.config, null, 2)}</pre>
+      <div class="ac-status" id="ac-status-${escapeHtml(s.submissionId)}"></div>
+      <pre class="ac-json-preview" id="ac-json-${escapeHtml(s.submissionId)}">${escapeHtml(JSON.stringify(s.config, null, 2))}</pre>
     </div>`;
   }).join('');
   replaceIconsIn(el);
@@ -2079,7 +2094,7 @@ function renderProgressChips() {
     return;
   }
   el.innerHTML = list.map(s =>
-    `<span class="ps-chip ${s.submissionId===activeProgressId?'active':''}" onclick="showProgressFor('${s.submissionId}')">${s.partnerName || s.partnerID}<span class="ps-chip-delete" onclick="deleteSubmissionFromHistory('${s.submissionId}', event)" title="Remove from history"><i class="ti ti-x"></i></span></span>`
+    `<span class="ps-chip ${s.submissionId===activeProgressId?'active':''}" onclick="showProgressFor('${escapeAttr(s.submissionId)}')">${escapeHtml(s.partnerName || s.partnerID)}<span class="ps-chip-delete" onclick="deleteSubmissionFromHistory('${escapeAttr(s.submissionId)}', event)" title="Remove from history"><i class="ti ti-x"></i></span></span>`
   ).join('');
   replaceIconsIn(el);
   if (!activeProgressId || !list.find(s => s.submissionId === activeProgressId)) {
@@ -2118,8 +2133,8 @@ function renderProgressPanel(sub, liveStatus) {
       <div class="svc-icon ${iconCls}"><i class="ti ${icon}"></i></div>
       <div class="svc-body">
         <div class="svc-name">${name}</div>
-        <div class="svc-msg">${svc.message || ''}</div>
-        ${svc.serviceId ? `<div class="svc-msg" style="margin-top:2px;font-family:var(--font-mono);font-size:10px;color:var(--teal-m)">serviceId: ${svc.serviceId}</div>` : ''}
+        <div class="svc-msg">${escapeHtml(svc.message || '')}</div>
+        ${svc.serviceId ? `<div class="svc-msg" style="margin-top:2px;font-family:var(--font-mono);font-size:10px;color:var(--teal-m)">serviceId: ${escapeHtml(svc.serviceId)}</div>` : ''}
       </div>
       <span class="svc-badge ${svc.status}">${svc.status.replace('_',' ')}</span>
     </div>`).join('');
@@ -2129,7 +2144,7 @@ function renderProgressPanel(sub, liveStatus) {
   pContainer.innerHTML = `
     <div class="progress-panel">
       <div class="pp-header">
-        <div><div class="pp-partner">${sub.partnerName || sub.partnerID}</div><div class="pp-id">${sub.submissionId}</div></div>
+        <div><div class="pp-partner">${escapeHtml(sub.partnerName || sub.partnerID)}</div><div class="pp-id">${escapeHtml(sub.submissionId)}</div></div>
         <span class="overall-badge ${overall}">${overall.replace('_',' ')}</span>
       </div>
       <div class="pp-meta-row">
@@ -2144,7 +2159,7 @@ function renderProgressPanel(sub, liveStatus) {
         <button class="ac-btn review" onclick="togglePpJson()" style="font-size: 11px; padding: 4px 8px;"><i class="ti ti-code"></i> View JSON Config</button>
         <button class="ac-btn review" onclick="copyPpJson(this)" style="font-size: 11px; padding: 4px 8px;"><i class="ti ti-copy"></i> Copy JSON Config</button>
       </div>
-      <pre class="ac-json-preview" id="pp-json-preview" style="margin-top:12px; max-height: 250px; overflow-y: auto;">${JSON.stringify(sub.config, null, 2)}</pre>
+      <pre class="ac-json-preview" id="pp-json-preview" style="margin-top:12px; max-height: 250px; overflow-y: auto;">${escapeHtml(JSON.stringify(sub.config, null, 2))}</pre>
     </div>`;
   replaceIconsIn(pContainer);
 }

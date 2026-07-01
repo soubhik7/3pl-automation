@@ -63,6 +63,9 @@ public static class GitHubBranchPublisher
         if (filesByRepoPath.Count == 0)
             throw new ArgumentException("At least one file must be supplied to push.", nameof(filesByRepoPath));
 
+        foreach (var path in filesByRepoPath.Keys)
+            Guard.RequireSafeRepoPath(path, nameof(filesByRepoPath));
+
         var repo = $"{repoOwner}/{repoName}";
         var filesPushed = new List<string>();
 

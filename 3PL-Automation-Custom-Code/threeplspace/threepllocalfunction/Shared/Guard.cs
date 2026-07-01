@@ -26,4 +26,24 @@ public static class Guard
         if (string.IsNullOrWhiteSpace(value))
             throw new ArgumentException($"{paramName} must not be empty.");
     }
+
+    /// <summary>
+    /// Rejects repo-relative paths that could escape the intended directory (e.g. a
+    /// "../../.github/workflows/x.yml" prefix reaching outside the configs folder) once
+    /// handed to GitHub's Contents API. Requires a relative path using '/' separators,
+    /// with no empty, '.', or '..' segments.
+    /// </summary>
+    public static void RequireSafeRepoPath(string? value, string paramName)
+    {
+        RequireNotBlank(value, paramName);
+
+        if (value!.StartsWith('/') || value.Contains('\\'))
+            throw new ArgumentException($"{paramName} must be a relative repo path using '/' separators.");
+
+        foreach (var segment in value.Split('/'))
+        {
+            if (segment.Length == 0 || segment is "." or "..")
+                throw new ArgumentException($"{paramName} must not contain empty, '.', or '..' path segments.");
+        }
+    }
 }
