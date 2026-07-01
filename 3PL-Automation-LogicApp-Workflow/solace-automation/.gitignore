@@ -1,6 +1,8 @@
 # ── Secrets & context ─────────────────────────────────────────────────────────
-.solace-context.json        # persisted token + SEMP creds (never commit)
-.env                        # local environment overrides
+# .solace-context.json: persisted token + SEMP creds (never commit)
+# .env: local environment overrides
+.solace-context.json
+.env
 
 # ── Python ────────────────────────────────────────────────────────────────────
 __pycache__/
