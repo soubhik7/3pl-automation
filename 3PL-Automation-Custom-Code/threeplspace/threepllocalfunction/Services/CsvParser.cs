@@ -11,7 +11,10 @@ namespace SolaceConfigGenerator.Services;
 ///
 /// Expected columns (order matters, header row required):
 ///   Brand, Env, SystemName, ThreePLCode, EncryptedPassword,
-///   DespatchStockTopics, SourcingStockTopics, ReturnStockTopics, StockMovementTopics
+///   DespatchStockTopics, SourcingStockTopics, ReturnStockTopics, StockMovementTopics, Action
+///
+/// Action (10th column) is optional — omit it, or leave it blank, for the default
+/// "FullOnboarding" scenario. See SolaceConfigBuilder for recognized Action values.
 ///
 /// Topic cells contain pipe-delimited ( | ) topic strings.
 /// Cells with commas or pipes must be quoted per RFC 4180.
@@ -19,7 +22,7 @@ namespace SolaceConfigGenerator.Services;
 public sealed class CsvParser
 {
     private const char TopicDelimiter = '|';
-    private const int ExpectedColumnCount = 9;
+    private const int RequiredColumnCount = 9;
 
     public IReadOnlyList<SolaceOnboardingRecord> Parse(string csvContent)
     {
@@ -37,9 +40,9 @@ public sealed class CsvParser
     {
         var fields = SplitCsvLine(line);
 
-        if (fields.Count < ExpectedColumnCount)
+        if (fields.Count < RequiredColumnCount)
             throw new FormatException(
-                $"Row {rowIndex + 2} has {fields.Count} column(s); expected {ExpectedColumnCount}. " +
+                $"Row {rowIndex + 2} has {fields.Count} column(s); expected at least {RequiredColumnCount}. " +
                 $"Row content: {line}");
 
         return new SolaceOnboardingRecord(
@@ -51,7 +54,8 @@ public sealed class CsvParser
             DespatchStockTopics:   SplitTopics(fields[5]),
             SourcingStockTopics:   SplitTopics(fields[6]),
             ReturnStockTopics:     SplitTopics(fields[7]),
-            StockMovementTopics:   SplitTopics(fields[8])
+            StockMovementTopics:   SplitTopics(fields[8]),
+            Action:                fields.Count > 9 ? fields[9].Trim() : string.Empty
         );
     }
 
