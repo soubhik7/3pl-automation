@@ -4,6 +4,7 @@
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <OutputType>Library</OutputType>
     <PlatformTarget>AnyCPU</PlatformTarget>
+    <Nullable>enable</Nullable>
     <LogicAppFolderToPublish>$(MSBuildProjectDirectory)\..\three3pllogicapp</LogicAppFolderToPublish>
     <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     <SelfContained>false</SelfContained>
@@ -27,12 +28,12 @@
     <MakeDir Directories="$(OutputPath)" Condition="!Exists('$(OutputPath)')" />
   </Target>
 
-  <!-- Triggers Publish after Build so the SDK's CopyFilesAfterPublish target copies assemblies to lib/custom/net10.0 -->
+  <!-- Triggers Publish after Build so the SDK's CopyFilesAfterPublish target copies assemblies to lib/custom/net8 -->
   <Target Name="TriggerPublishOnBuild" AfterTargets="Build">
     <CallTarget Targets="Publish" />
   </Target>
 
-  <!-- Workaround: Host resolves custom code from lib/custom/net472/ but build outputs to lib/custom/net10.0/.
+  <!-- Workaround: Host resolves custom code from lib/custom/net472/ but build outputs to lib/custom/net8/.
        Copy published output to net472 folder as well so the host can find it. -->
   <Target Name="CopyToNet472Folder" AfterTargets="CopyFilesAfterPublish">
     <ItemGroup>

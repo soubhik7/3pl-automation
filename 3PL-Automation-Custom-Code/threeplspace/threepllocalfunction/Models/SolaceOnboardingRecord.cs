@@ -5,10 +5,13 @@ namespace SolaceConfigGenerator.Models;
 /// <summary>
 /// CSV columns (pipe-delimited topics within each topic cell):
 /// Brand, Env, SystemName, ThreePLCode, EncryptedPassword,
-/// DespatchStockTopics, SourcingStockTopics, ReturnStockTopics, StockMovementTopics
+/// DespatchStockTopics, SourcingStockTopics, ReturnStockTopics, StockMovementTopics, Action
+///
+/// Action is optional (10th column). Blank/absent defaults to "FullOnboarding".
+/// See SolaceConfigBuilder for the recognized Action values and which JSON sections each produces.
 ///
 /// Example row:
-/// petc,rc,navision,3plpnp,"![+ycEERpRxxm5RfqLRNxBXw==]","topic1|topic2","topic1|topic2","topic1","topic1"
+/// petc,rc,navision,3plpnp,"![+ycEERpRxxm5RfqLRNxBXw==]","topic1|topic2","topic1|topic2","topic1","topic1",FullOnboarding
 /// </summary>
 public sealed record SolaceOnboardingRecord(
     string Brand,
@@ -19,7 +22,8 @@ public sealed record SolaceOnboardingRecord(
     IReadOnlyList<string> DespatchStockTopics,
     IReadOnlyList<string> SourcingStockTopics,
     IReadOnlyList<string> ReturnStockTopics,
-    IReadOnlyList<string> StockMovementTopics
+    IReadOnlyList<string> StockMovementTopics,
+    string Action = ""
 )
 {
     // Drives all Solace resource names: {Brand}-{Env}-{SystemName}-{ThreePLCode}-sys
