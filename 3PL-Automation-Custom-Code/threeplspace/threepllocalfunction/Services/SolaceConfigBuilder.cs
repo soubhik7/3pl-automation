@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using SolaceConfigGenerator.Models;
 
 namespace SolaceConfigGenerator.Services;
@@ -21,14 +22,29 @@ internal enum SolaceSections
 
 public sealed class SolaceConfigBuilder
 {
-    // Fixed message types that drive queue and subscription creation
-    private static readonly string[] MessageTypes =
-    [
-        "despatchstock",
-        "sourcingstock",
-        "returnstock",
-        "stockmovement"
-    ];
+    // Every value below is a fallback used only when the CSV leaves that field blank —
+    // the CSV always wins. See CsvParser for the columns that supply these overrides.
+    private const bool DefaultAllowGuaranteedMsgSendEnabled = true;
+    private const bool DefaultAllowGuaranteedMsgReceiveEnabled = true;
+    private const bool DefaultCompressionEnabled = true;
+    private const bool DefaultReplicationAllowClientConnectWhenStandbyEnabled = false;
+    private const bool DefaultAllowTransactedSessionsEnabled = true;
+    private const bool DefaultAllowBridgeConnectionsEnabled = true;
+    private const bool DefaultAllowGuaranteedEndpointCreateEnabled = true;
+    private const bool DefaultAllowSharedSubscriptionsEnabled = false;
+
+    private const string DefaultClientConnectDefaultAction = "allow";
+    private const string DefaultPublishTopicDefaultAction = "disallow";
+    private const string DefaultSubscribeShareNameDefaultAction = "allow";
+    private const string DefaultSubscribeTopicDefaultAction = "disallow";
+
+    private const bool DefaultClientUserEnabled = true;
+    private const bool DefaultGuaranteedEndpointPermissionOverrideEnabled = true;
+    private const bool DefaultSubscriptionManagerEnabled = true;
+
+    private const string DefaultQueuePermission = "no-access";
+    private const bool DefaultQueueEgressEnabled = true;
+    private const int DefaultQueueMaxRedeliveryCount = 4;
 
     // Built as plain Dictionary<string, object> rather than typed POCOs: the workflow
     // host's serializer reflects over raw property names and always writes nulls,
@@ -40,6 +56,11 @@ public sealed class SolaceConfigBuilder
     {
         var sections = ResolveSections(record.Action);
 
+        if (sections.HasFlag(SolaceSections.Queue) && record.MessageTypes.Count == 0)
+            throw new FormatException(
+                $"Action '{record.Action}' needs at least one MessageType/Topic row " +
+                $"for record '{record.NamingPrefix}', but none were given.");
+
         var prefix  = record.NamingPrefix;      // e.g. petc-rc-navision-3plpnp-sys
         var cpName  = $"{prefix}-cp";           // client profile name
         var aclName = $"{prefix}-acl";          // ACL profile name
@@ -48,19 +69,19 @@ public sealed class SolaceConfigBuilder
         var config = new Dictionary<string, object>();
 
         if (sections.HasFlag(SolaceSections.ClientProfile))
-            config["clientProfile"] = BuildClientProfile(cpName);
+            config["clientProfile"] = BuildClientProfile(cpName, record.ClientProfile);
 
         if (sections.HasFlag(SolaceSections.Acl))
-            config["ACL"] = BuildAcl(aclName);
+            config["ACL"] = BuildAcl(aclName, record.Acl);
 
         if (sections.HasFlag(SolaceSections.ClientUser))
-            config["ClientUser"] = BuildClientUser(aclName, cpName, cuName, record.EncryptedPassword);
+            config["ClientUser"] = BuildClientUser(aclName, cpName, cuName, record.EncryptedPassword, record.ClientUser);
 
         if (sections.HasFlag(SolaceSections.Queue))
-            config["Queue"] = BuildQueues(prefix, cuName);
+            config["Queue"] = BuildQueues(prefix, cuName, record.MessageTypes);
 
         if (sections.HasFlag(SolaceSections.Subscription))
-            config["Subscription"] = BuildSubscriptions(prefix, record);
+            config["Subscription"] = BuildSubscriptions(prefix, record.MessageTypes);
 
         return config;
     }
@@ -81,42 +102,62 @@ public sealed class SolaceConfigBuilder
 
     // ── Sections ──────────────────────────────────────────────────────────────
 
-    private static Dictionary<string, object> BuildClientProfile(string cpName) => new()
+    private static Dictionary<string, object> BuildClientProfile(string cpName, ClientProfileOverrides o) => new()
     {
         ["create"] = new List<object>
         {
             new Dictionary<string, object>
             {
                 ["name"] = cpName,
-                ["allowGuaranteedMsgSendEnabled"] = true,
-                ["allowGuaranteedMsgReceiveEnabled"] = true,
-                ["compressionEnabled"] = true,
-                ["replicationAllowClientConnectWhenStandbyEnabled"] = false,
-                ["allowTransactedSessionsEnabled"] = true,
-                ["allowBridgeConnectionsEnabled"] = true,
-                ["allowGuaranteedEndpointCreateEnabled"] = true,
-                ["allowSharedSubscriptionsEnabled"] = false
+                ["allowGuaranteedMsgSendEnabled"] = ResolveBool(
+                    o.AllowGuaranteedMsgSendEnabled, DefaultAllowGuaranteedMsgSendEnabled,
+                    nameof(o.AllowGuaranteedMsgSendEnabled)),
+                ["allowGuaranteedMsgReceiveEnabled"] = ResolveBool(
+                    o.AllowGuaranteedMsgReceiveEnabled, DefaultAllowGuaranteedMsgReceiveEnabled,
+                    nameof(o.AllowGuaranteedMsgReceiveEnabled)),
+                ["compressionEnabled"] = ResolveBool(
+                    o.CompressionEnabled, DefaultCompressionEnabled, nameof(o.CompressionEnabled)),
+                ["replicationAllowClientConnectWhenStandbyEnabled"] = ResolveBool(
+                    o.ReplicationAllowClientConnectWhenStandbyEnabled,
+                    DefaultReplicationAllowClientConnectWhenStandbyEnabled,
+                    nameof(o.ReplicationAllowClientConnectWhenStandbyEnabled)),
+                ["allowTransactedSessionsEnabled"] = ResolveBool(
+                    o.AllowTransactedSessionsEnabled, DefaultAllowTransactedSessionsEnabled,
+                    nameof(o.AllowTransactedSessionsEnabled)),
+                ["allowBridgeConnectionsEnabled"] = ResolveBool(
+                    o.AllowBridgeConnectionsEnabled, DefaultAllowBridgeConnectionsEnabled,
+                    nameof(o.AllowBridgeConnectionsEnabled)),
+                ["allowGuaranteedEndpointCreateEnabled"] = ResolveBool(
+                    o.AllowGuaranteedEndpointCreateEnabled, DefaultAllowGuaranteedEndpointCreateEnabled,
+                    nameof(o.AllowGuaranteedEndpointCreateEnabled)),
+                ["allowSharedSubscriptionsEnabled"] = ResolveBool(
+                    o.AllowSharedSubscriptionsEnabled, DefaultAllowSharedSubscriptionsEnabled,
+                    nameof(o.AllowSharedSubscriptionsEnabled))
             }
         }
     };
 
-    private static Dictionary<string, object> BuildAcl(string aclName) => new()
+    private static Dictionary<string, object> BuildAcl(string aclName, AclOverrides o) => new()
     {
         ["create_ACL"] = new List<object>
         {
             new Dictionary<string, object>
             {
                 ["aclProfileName"] = aclName,
-                ["clientConnectDefaultAction"] = "allow",
-                ["publishTopicDefaultAction"] = "disallow",
-                ["subscribeShareNameDefaultAction"] = "allow",
-                ["subscribeTopicDefaultAction"] = "disallow"
+                ["clientConnectDefaultAction"] = ResolveString(
+                    o.ClientConnectDefaultAction, DefaultClientConnectDefaultAction),
+                ["publishTopicDefaultAction"] = ResolveString(
+                    o.PublishTopicDefaultAction, DefaultPublishTopicDefaultAction),
+                ["subscribeShareNameDefaultAction"] = ResolveString(
+                    o.SubscribeShareNameDefaultAction, DefaultSubscribeShareNameDefaultAction),
+                ["subscribeTopicDefaultAction"] = ResolveString(
+                    o.SubscribeTopicDefaultAction, DefaultSubscribeTopicDefaultAction)
             }
         }
     };
 
     private static Dictionary<string, object> BuildClientUser(
-        string aclName, string cpName, string cuName, string encryptedPassword) => new()
+        string aclName, string cpName, string cuName, string encryptedPassword, ClientUserOverrides o) => new()
     {
         ["create"] = new List<object>
         {
@@ -125,67 +166,101 @@ public sealed class SolaceConfigBuilder
                 ["aclProfileName"] = aclName,
                 ["clientProfileName"] = cpName,
                 ["clientUsername"] = cuName,
-                ["enabled"] = true,
-                ["guaranteedEndpointPermissionOverrideEnabled"] = true,
+                ["enabled"] = ResolveBool(o.Enabled, DefaultClientUserEnabled, nameof(o.Enabled)),
+                ["guaranteedEndpointPermissionOverrideEnabled"] = ResolveBool(
+                    o.GuaranteedEndpointPermissionOverrideEnabled,
+                    DefaultGuaranteedEndpointPermissionOverrideEnabled,
+                    nameof(o.GuaranteedEndpointPermissionOverrideEnabled)),
                 ["password"] = encryptedPassword,
-                ["subscriptionManagerEnabled"] = true
+                ["subscriptionManagerEnabled"] = ResolveBool(
+                    o.SubscriptionManagerEnabled, DefaultSubscriptionManagerEnabled,
+                    nameof(o.SubscriptionManagerEnabled))
             }
         }
     };
 
-    private static Dictionary<string, object> BuildQueues(string prefix, string cuName)
+    // One DMQ + one main queue per distinct MessageType present in the record's rows —
+    // not a fixed list, so a brand-new MessageType value just needs new CSV rows.
+    // The DMQ's "consume" permission isn't an override: that's what makes it a DMQ.
+    private static Dictionary<string, object> BuildQueues(
+        string prefix, string cuName, IReadOnlyDictionary<string, MessageTypeEntry> messageTypes)
     {
-        var queues = new List<object>(MessageTypes.Length * 2);
+        var queues = new List<object>();
 
-        // Dead message queues first (no deadMsgQueue/maxRedeliveryCount keys at all, permission = consume)
-        foreach (var msgType in MessageTypes)
+        foreach (var (messageType, _) in messageTypes)
         {
             queues.Add(new Dictionary<string, object>
             {
-                ["queueName"] = $"dmq-{prefix}-{msgType}",
+                ["queueName"] = $"dmq-{prefix}-{Slugify(messageType)}",
                 ["owner"] = cuName,
                 ["permission"] = "consume",
                 ["egressEnabled"] = true
             });
         }
 
-        // Regular queues pointing to their DMQ (permission = no-access, maxRedeliveryCount = 4)
-        foreach (var msgType in MessageTypes)
+        foreach (var (messageType, entry) in messageTypes)
         {
+            var slug = Slugify(messageType);
+
             queues.Add(new Dictionary<string, object>
             {
-                ["queueName"] = $"q-{prefix}-{msgType}",
-                ["deadMsgQueue"] = $"dmq-{prefix}-{msgType}",
+                ["queueName"] = $"q-{prefix}-{slug}",
+                ["deadMsgQueue"] = $"dmq-{prefix}-{slug}",
                 ["owner"] = cuName,
-                ["permission"] = "no-access",
-                ["egressEnabled"] = true,
-                ["maxRedeliveryCount"] = 4
+                ["permission"] = ResolveString(entry.QueuePermission, DefaultQueuePermission),
+                ["egressEnabled"] = ResolveBool(
+                    entry.QueueEgressEnabled, DefaultQueueEgressEnabled, nameof(entry.QueueEgressEnabled)),
+                ["maxRedeliveryCount"] = ResolveInt(
+                    entry.QueueMaxRedeliveryCount, DefaultQueueMaxRedeliveryCount,
+                    nameof(entry.QueueMaxRedeliveryCount))
             });
         }
 
         return new Dictionary<string, object> { ["create"] = queues };
     }
 
-    private static Dictionary<string, object> BuildSubscriptions(string prefix, SolaceOnboardingRecord record)
+    private static Dictionary<string, object> BuildSubscriptions(
+        string prefix, IReadOnlyDictionary<string, MessageTypeEntry> messageTypes)
     {
-        var entries = new List<object>(MessageTypes.Length);
+        var entries = new List<object>();
 
-        AddIfAny(entries, $"q-{prefix}-despatchstock",  record.DespatchStockTopics);
-        AddIfAny(entries, $"q-{prefix}-sourcingstock",  record.SourcingStockTopics);
-        AddIfAny(entries, $"q-{prefix}-returnstock",    record.ReturnStockTopics);
-        AddIfAny(entries, $"q-{prefix}-stockmovement",  record.StockMovementTopics);
+        foreach (var (messageType, entry) in messageTypes)
+        {
+            if (entry.Topics.Count == 0) continue;
+
+            entries.Add(new Dictionary<string, object>
+            {
+                ["queueName"] = $"q-{prefix}-{Slugify(messageType)}",
+                ["SUBSCRIPTION_LIST"] = new List<string>(entry.Topics)
+            });
+        }
 
         return new Dictionary<string, object> { ["create"] = entries };
     }
 
-    private static void AddIfAny(List<object> entries, string queueName, IReadOnlyList<string> topics)
-    {
-        if (topics.Count == 0) return;
+    // Normalizes a MessageType value (e.g. "DespatchStock") into the lowercase slug
+    // used in resource names (e.g. "despatchstock") — case-insensitive on input.
+    private static string Slugify(string messageType) => messageType.Trim().ToLowerInvariant();
 
-        entries.Add(new Dictionary<string, object>
-        {
-            ["queueName"] = queueName,
-            ["SUBSCRIPTION_LIST"] = new List<string>(topics)
-        });
+    // ── CSV override resolution — blank cell = default, non-blank = must parse ────
+
+    private static bool ResolveBool(string raw, bool defaultValue, string fieldName)
+    {
+        if (raw.Length == 0) return defaultValue;
+
+        if (bool.TryParse(raw, out var parsed)) return parsed;
+
+        throw new FormatException($"'{raw}' is not a valid true/false value for {fieldName}.");
     }
+
+    private static int ResolveInt(string raw, int defaultValue, string fieldName)
+    {
+        if (raw.Length == 0) return defaultValue;
+
+        if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)) return parsed;
+
+        throw new FormatException($"'{raw}' is not a valid whole number for {fieldName}.");
+    }
+
+    private static string ResolveString(string raw, string defaultValue) => raw.Length == 0 ? defaultValue : raw;
 }

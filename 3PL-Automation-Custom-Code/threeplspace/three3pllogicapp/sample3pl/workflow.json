@@ -7,7 +7,7 @@
         "inputs": {
           "functionName": "GenerateSolaceConfig",
           "parameters": {
-            "csvContent": "@coalesce(triggerBody()?['csvContent'], 'Brand,Env,SystemName,ThreePLCode,EncryptedPassword,DespatchStockTopics,SourcingStockTopics,ReturnStockTopics,StockMovementTopics,Action\npetc,rc,navision,3plpnp,\"![+ycEERpRxxm5RfqLRNxBXw==]\",\"topic1|topic2\",\"topic1|topic2\",topic1,topic1,FullOnboarding')"
+            "csvContent": "@coalesce(triggerBody()?['csvContent'], 'Brand,Env,SystemName,ThreePLCode,EncryptedPassword,Action,ClientProfileAllowGuaranteedMsgSendEnabled,ClientProfileAllowGuaranteedMsgReceiveEnabled,ClientProfileCompressionEnabled,ClientProfileReplicationAllowClientConnectWhenStandbyEnabled,ClientProfileAllowTransactedSessionsEnabled,ClientProfileAllowBridgeConnectionsEnabled,ClientProfileAllowGuaranteedEndpointCreateEnabled,ClientProfileAllowSharedSubscriptionsEnabled,AclClientConnectDefaultAction,AclPublishTopicDefaultAction,AclSubscribeShareNameDefaultAction,AclSubscribeTopicDefaultAction,ClientUserEnabled,ClientUserGuaranteedEndpointPermissionOverrideEnabled,ClientUserSubscriptionManagerEnabled,MessageType,Topic,QueuePermission,QueueEgressEnabled,QueueMaxRedeliveryCount\npetc,rc,navision,3plpnp,\"![+ycEERpRxxm5RfqLRNxBXw==]\",FullOnboarding,,,,,,,,,,,,,,,,DespatchStock,topic1,,,\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,DespatchStock,topic2,,,\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,SourcingStock,topic1,,,')"
           }
         },
         "runAfter": {}
