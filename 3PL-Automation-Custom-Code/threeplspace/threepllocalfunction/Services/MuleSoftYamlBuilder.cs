@@ -7,6 +7,35 @@ using MuleSoftAutomation.Models;
 
 namespace MuleSoftAutomation.Services;
 
+// ============================================================================
+// MuleSoftYamlBuilder — renders / incrementally patches the 4 NAV config files
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   Given a MuleSoftOnboardingRecord, produces the app.yaml/dev.yaml/
+//   tst.yaml/prod.yaml content matching the real reference shape
+//   (3PL-Automation-AI-Foundry/templates/mulesoft-template.yaml), in two
+//   modes selected by the caller's updateExisting flag: BuildNew() for a
+//   brand-new onboarding, or MergeIntoExisting() to incrementally patch
+//   onto YAML the caller already has — non-blank CSV scalars override,
+//   blank scalars keep the existing value, and list items (transaction
+//   types, message types, mappings) are upserted by key so re-running with
+//   the same CSV is idempotent (updates in place) and a differently-shaped
+//   follow-up CSV only adds/changes what it specifies.
+// HOW TO USE:
+//   new MuleSoftYamlBuilder().BuildNew(record) or
+//   .MergeIntoExisting(record, existingByFile) — both return
+//   IDictionary<string,string> keyed by filename ("app.yaml" etc.), only
+//   including files that are actually applicable (BuildNew skips an env
+//   file with no CSV override for it; MergeIntoExisting only touches files
+//   the caller actually passed existing content for, or that the CSV
+//   supplies an override for).
+// IMPORTANT NOTES:
+//   The output of GenerateMuleSoftConfigFunction (this class's caller) is
+//   valid JSON containing YAML text as string values — embedded newlines
+//   appear as literal "\n" in that JSON, which is correct/required JSON
+//   encoding, not a bug; any JSON-decoding consumer recovers the real
+//   multi-line YAML automatically.
+// ============================================================================
 /// <summary>
 /// Builds or incrementally patches the 4 MuleSoft NAV config files (app.yaml, dev.yaml,
 /// tst.yaml, prod.yaml) matching the shape in

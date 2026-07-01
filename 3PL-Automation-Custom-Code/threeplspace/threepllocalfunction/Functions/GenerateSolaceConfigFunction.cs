@@ -10,6 +10,31 @@ using SolaceConfigGenerator.Services;
 
 namespace SolaceConfigGenerator.Functions;
 
+// ============================================================================
+// GenerateSolaceConfigFunction — Logic Apps entry point for the Solace domain
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   Turns a Solace onboarding CSV into the real Solace onboarding JSON shape,
+//   from a Logic Apps "Call a local function" action — this is the first
+//   step of the Solace pipeline (the second is
+//   PublishSolaceConfigToFeatureBranch, which commits the result to GitHub).
+//   All field values (client-profile flags, ACL defaults, queue permissions,
+//   message types/topics) are CSV-driven via CsvParser + SolaceConfigBuilder
+//   — nothing about a specific onboarding is hardcoded here.
+// HOW TO USE:
+//   Logic Apps action "InvokeFunction" with functionName
+//   "GenerateSolaceConfig" and a single csvContent parameter (the whole CSV
+//   as one string, header row included). See
+//   three3pllogicapp/sample3pl/workflow.json for a worked example.
+// IMPORTANT NOTES:
+//   One CSV can describe multiple onboarding records (grouped by
+//   Brand/Env/SystemName/ThreePLCode) — each record's success/failure is
+//   independent (see BuildResult's try/catch), so one malformed record
+//   doesn't fail the others in the same batch. A CSV that fails to parse at
+//   all (wrong column count, unknown Action) throws and fails the whole
+//   action — that's intentional fail-fast behavior for a structurally
+//   invalid CSV, as opposed to one bad record within an otherwise-valid CSV.
+// ============================================================================
 public class GenerateSolaceConfigFunction
 {
     private static readonly CsvParser CsvParser = new();

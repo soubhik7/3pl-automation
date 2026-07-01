@@ -5,6 +5,25 @@ using ThreePlLocalFunction.Shared;
 
 namespace MuleSoftAutomation.Services;
 
+// ============================================================================
+// MuleSoftCsvParser — turns a MuleSoft NAV requirements CSV into one record
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   This is the only place that knows the MuleSoft requirements CSV's column
+//   layout. Kept separate from MuleSoftYamlBuilder so the CSV's shape (a
+//   spreadsheet-friendly, one-row-per-item long format) can evolve without
+//   touching the YAML rendering/merge logic, and vice versa.
+// HOW TO USE:
+//   var record = new MuleSoftCsvParser().Parse(csvContent); — see the column
+//   list and worked example below. A structurally invalid CSV (wrong column
+//   count, unrecognized RowType, a RowType missing its required columns)
+//   throws FormatException/ArgumentException naming the offending row, so
+//   the Logic Apps action fails clearly instead of producing wrong YAML.
+// IMPORTANT NOTES:
+//   Entirely separate from the Solace CsvParser (different namespace,
+//   different column layout, one record per CSV instead of many) — the two
+//   only share the stateless, format-level CsvLineSplitter helper.
+// ============================================================================
 /// <summary>
 /// Parses a MuleSoft NAV onboarding requirements CSV into one MuleSoftOnboardingRecord.
 /// Unlike the Solace CSV, this always describes a single country/partner — no

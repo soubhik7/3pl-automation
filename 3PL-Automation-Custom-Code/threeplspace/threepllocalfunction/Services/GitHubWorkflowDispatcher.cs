@@ -1,30 +1,39 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using ThreePlLocalFunction.Shared;
 
 namespace BtpAutomation.Services;
 
-/// <summary>
-/// Triggers a GitHub Actions workflow_dispatch event via the REST API
-/// (POST /repos/{owner}/{repo}/actions/workflows/{workflow_file}/dispatches).
-///
-/// The PAT is taken from the caller-supplied githubToken when given; otherwise it
-/// falls back to the GITHUB_TOKEN app setting/environment variable. Note that a
-/// PAT passed as githubToken is visible in the Logic App's run history — the
-/// env-var fallback exists so callers can avoid that when they don't need to
-/// override it per call.
-/// </summary>
+// ============================================================================
+// GitHubWorkflowDispatcher — fires a GitHub Actions workflow_dispatch event
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   The BTP domain's deployment trigger is a GitHub Actions workflow (e.g.
+//   "btp-Api-management-deploy.yml") in an external repo. This is the one
+//   place that knows how to call GitHub's
+//   POST /repos/{owner}/{repo}/actions/workflows/{file}/dispatches REST
+//   endpoint — TriggerBtpDeploymentFunction only builds the `inputs` payload
+//   and delegates the HTTP call here.
+// HOW TO USE:
+//   await new GitHubWorkflowDispatcher().DispatchAsync(
+//       repoOwner, repoName, workflowFileName, branchRef, githubToken, inputs);
+//   Returns a structured result dictionary (success, statusCode, message,
+//   workflow, ref, inputs) — never throws for GitHub-side failures, so a bad
+//   token or missing workflow file surfaces as success:false with GitHub's own
+//   message rather than an unhandled exception.
+// IMPORTANT NOTES:
+//   githubToken is used if the caller supplies it (note: that value is then
+//   visible in the Logic App's run history — an explicit, accepted trade-off
+//   for callers who need a per-call override); otherwise this falls back to
+//   the GITHUB_TOKEN app setting/environment variable so callers who don't
+//   need an override never have to pass a PAT through run history at all.
+// ============================================================================
 public sealed class GitHubWorkflowDispatcher
 {
-    private const string GitHubTokenEnvVar = "GITHUB_TOKEN";
-
-    // Reused across invocations per .NET HttpClient guidance (avoids socket exhaustion).
-    private static readonly HttpClient Http = new();
-
     public async Task<IDictionary<string, object>> DispatchAsync(
         string repoOwner,
         string repoName,
@@ -33,38 +42,42 @@ public sealed class GitHubWorkflowDispatcher
         string githubToken,
         IReadOnlyDictionary<string, string> inputs)
     {
-        var token = string.IsNullOrWhiteSpace(githubToken)
-            ? Environment.GetEnvironmentVariable(GitHubTokenEnvVar)
-            : githubToken;
+        var workflow = $"{repoOwner}/{repoName}/actions/workflows/{workflowFileName}";
 
-        if (string.IsNullOrWhiteSpace(token))
-            throw new InvalidOperationException(
-                $"No GitHub PAT supplied: pass githubToken or configure the '{GitHubTokenEnvVar}' app setting.");
-
-        var url = $"https://api.github.com/repos/{repoOwner}/{repoName}/actions/workflows/{workflowFileName}/dispatches";
-        var payload = new Dictionary<string, object> { ["ref"] = branchRef, ["inputs"] = inputs };
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, url)
+        try
         {
-            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
-        };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/vnd.github+json"));
-        request.Headers.Add("X-GitHub-Api-Version", "2022-11-28");
-        request.Headers.UserAgent.Add(new ProductInfoHeaderValue("3PL-Automation-BTP-Function", "1.0"));
+            var token = GitHubApiClient.ResolveToken(githubToken);
+            var url = $"https://api.github.com/repos/{repoOwner}/{repoName}/actions/workflows/{workflowFileName}/dispatches";
+            var payload = new Dictionary<string, object> { ["ref"] = branchRef, ["inputs"] = inputs };
 
-        using var response = await Http.SendAsync(request);
-        var body = await response.Content.ReadAsStringAsync();
+            using var request = GitHubApiClient.CreateRequest(HttpMethod.Post, url, token);
+            request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        // GitHub returns 204 No Content on success and a JSON {"message": "..."} on failure.
-        return new Dictionary<string, object>
+            using var response = await GitHubApiClient.Http.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+
+            // GitHub returns 204 No Content on success and a JSON {"message": "..."} on failure.
+            return new Dictionary<string, object>
+            {
+                ["success"] = response.IsSuccessStatusCode,
+                ["statusCode"] = (int)response.StatusCode,
+                ["message"] = body.Length > 0 ? body : response.ReasonPhrase ?? "",
+                ["workflow"] = workflow,
+                ["ref"] = branchRef,
+                ["inputs"] = inputs
+            };
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            ["success"] = response.IsSuccessStatusCode,
-            ["statusCode"] = (int)response.StatusCode,
-            ["message"] = body.Length > 0 ? body : response.ReasonPhrase ?? "",
-            ["workflow"] = $"{repoOwner}/{repoName}/actions/workflows/{workflowFileName}",
-            ["ref"] = branchRef,
-            ["inputs"] = inputs
-        };
+            return new Dictionary<string, object>
+            {
+                ["success"] = false,
+                ["statusCode"] = 0,
+                ["message"] = $"Network error talking to GitHub: {ex.Message}",
+                ["workflow"] = workflow,
+                ["ref"] = branchRef,
+                ["inputs"] = inputs
+            };
+        }
     }
 }

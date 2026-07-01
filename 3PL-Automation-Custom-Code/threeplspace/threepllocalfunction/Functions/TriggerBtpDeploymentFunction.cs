@@ -1,22 +1,45 @@
-using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BtpAutomation.Services;
 using Microsoft.Azure.Functions.Extensions.Workflows;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using ThreePlLocalFunction.Shared;
 
 namespace BtpAutomation.Functions;
 
-/// <summary>
-/// Dispatches a GitHub Actions workflow_dispatch event for a BTP pipeline (e.g. the
-/// "btp-Api-management-deploy.yml" app-creation workflow). Every value from the
-/// triggering request is a parameter here, including the GitHub PAT (githubToken) —
-/// if left blank, GitHubWorkflowDispatcher falls back to the GITHUB_TOKEN app
-/// setting instead of failing.
-/// </summary>
+// ============================================================================
+// TriggerBtpDeploymentFunction — Logic Apps entry point for the BTP domain
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   Fires the "btp-Api-management-deploy.yml" GitHub Actions workflow (or any
+//   workflow_dispatch-enabled workflow) for a BTP app-creation/deployment
+//   pipeline, from a Logic Apps "Call a local function" action. Every field
+//   from the original triggering request (repo location, branch, and all the
+//   BTP-specific inputs: subAccount/mode/environment/developerId/title/
+//   shortText/productName) is a parameter here — nothing about a specific
+//   BTP pipeline run is hardcoded.
+// HOW TO USE:
+//   Logic Apps action "InvokeFunction" with functionName "TriggerBtpDeployment"
+//   and all 12 parameters below supplied from triggerBody(). See
+//   three3pllogicapp/btp-app-creation/workflow.json for a worked example with
+//   safe coalesce() defaults for portal testing.
+// IMPORTANT NOTES:
+//   githubToken is optional — leave it blank to use the GITHUB_TOKEN app
+//   setting instead (see GitHubWorkflowDispatcher). shortText is the only
+//   optional business field (GitHub Actions treats a missing workflow input
+//   as blank, so an empty string is sent instead of null).
+//   This function only lives in the BtpAutomation namespace — it shares no
+//   mutable state with the Solace or MuleSoft domains, only the stateless
+//   Guard/GitHubApiClient helpers under ThreePlLocalFunction.Shared.
+// ============================================================================
 public class TriggerBtpDeploymentFunction
 {
     private static readonly GitHubWorkflowDispatcher Dispatcher = new();
+
+    private readonly ILogger<TriggerBtpDeploymentFunction> _logger =
+        NullLogger<TriggerBtpDeploymentFunction>.Instance;
 
     [Function("TriggerBtpDeployment")]
     public Task<IDictionary<string, object>> Run(
@@ -33,16 +56,20 @@ public class TriggerBtpDeploymentFunction
         string shortText,
         string productName)
     {
-        Require(repoOwner, nameof(repoOwner));
-        Require(repoName, nameof(repoName));
-        Require(workflowFileName, nameof(workflowFileName));
-        Require(branchRef, nameof(branchRef));
-        Require(subAccount, nameof(subAccount));
-        Require(mode, nameof(mode));
-        Require(environment, nameof(environment));
-        Require(developerId, nameof(developerId));
-        Require(title, nameof(title));
-        Require(productName, nameof(productName));
+        _logger.LogInformation(
+            "TriggerBtpDeployment invoked for {Repo} ref={Ref} mode={Mode} env={Env}",
+            $"{repoOwner}/{repoName}", branchRef, mode, environment);
+
+        Guard.RequireNotBlank(repoOwner, nameof(repoOwner));
+        Guard.RequireNotBlank(repoName, nameof(repoName));
+        Guard.RequireNotBlank(workflowFileName, nameof(workflowFileName));
+        Guard.RequireNotBlank(branchRef, nameof(branchRef));
+        Guard.RequireNotBlank(subAccount, nameof(subAccount));
+        Guard.RequireNotBlank(mode, nameof(mode));
+        Guard.RequireNotBlank(environment, nameof(environment));
+        Guard.RequireNotBlank(developerId, nameof(developerId));
+        Guard.RequireNotBlank(title, nameof(title));
+        Guard.RequireNotBlank(productName, nameof(productName));
 
         var inputs = new Dictionary<string, string>
         {
@@ -56,11 +83,5 @@ public class TriggerBtpDeploymentFunction
         };
 
         return Dispatcher.DispatchAsync(repoOwner, repoName, workflowFileName, branchRef, githubToken, inputs);
-    }
-
-    private static void Require(string value, string paramName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-            throw new ArgumentException($"{paramName} must not be empty.");
     }
 }

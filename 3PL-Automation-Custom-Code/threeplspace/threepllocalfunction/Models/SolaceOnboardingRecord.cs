@@ -2,6 +2,25 @@ using System.Collections.Generic;
 
 namespace SolaceConfigGenerator.Models;
 
+// ============================================================================
+// Solace onboarding models — CSV-shaped, pre-default-resolution data
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   These records hold the raw CSV cell values (as literal strings, "" when
+//   blank) for one onboarding/change request, with zero business defaults
+//   baked in — that decision belongs entirely to SolaceConfigBuilder, which
+//   is the only place that knows what a blank field should fall back to.
+//   Keeping that logic out of the models means every value here traces back
+//   to an actual CSV column (see CsvParser), satisfying "no hardcoded
+//   mapping values" at the data layer.
+// HOW TO USE:
+//   Produced by CsvParser.Parse(), consumed by SolaceConfigBuilder.Build().
+//   Not constructed directly outside those two classes.
+// IMPORTANT NOTES:
+//   NamingPrefix is the one piece of derived (not CSV-sourced) data — it's a
+//   fixed naming convention ({Brand}-{Env}-{SystemName}-{ThreePLCode}-sys),
+//   not a business policy value, so it's a computed property, not a default.
+// ============================================================================
 /// <summary>
 /// Raw client-profile flag overrides from the CSV. Each field is the literal cell value
 /// ("" if not supplied) — SolaceConfigBuilder decides the default when a field is blank,

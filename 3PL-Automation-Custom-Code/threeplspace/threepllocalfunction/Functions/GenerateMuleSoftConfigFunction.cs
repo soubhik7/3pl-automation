@@ -10,6 +10,31 @@ using MuleSoftAutomation.Services;
 
 namespace MuleSoftAutomation.Functions;
 
+// ============================================================================
+// GenerateMuleSoftConfigFunction — Logic Apps entry point for the MuleSoft domain
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   Turns a MuleSoft NAV requirements CSV into app/dev/tst/prod.yaml content,
+//   from a Logic Apps "Call a local function" action — this is the first
+//   step of the MuleSoft pipeline (the second is
+//   PublishMuleSoftConfigToFeatureBranch, which commits the result to
+//   GitHub). All field values are CSV-driven via MuleSoftCsvParser +
+//   MuleSoftYamlBuilder — nothing about a specific country/partner is
+//   hardcoded here.
+// HOW TO USE:
+//   Logic Apps action "InvokeFunction" with functionName
+//   "GenerateMuleSoftConfig", csvContent (the whole CSV as one string), and
+//   updateExisting (bool) — if true, also pass existingAppYaml/
+//   existingDevYaml/existingTstYaml/existingProdYaml (the caller's current
+//   file contents, blank if that file doesn't exist yet) so changes merge
+//   incrementally instead of overwriting. See
+//   three3pllogicapp/mulesoft-config-generation/workflow.json.
+// IMPORTANT NOTES:
+//   A malformed CSV throws ArgumentException/FormatException and fails the
+//   action outright — there's exactly one record per CSV here (unlike
+//   Solace's multi-record batching), so there's no "one bad record among
+//   many good ones" case to isolate.
+// ============================================================================
 /// <summary>
 /// Generates or incrementally patches the 4 MuleSoft NAV onboarding config files
 /// (app.yaml, dev.yaml, tst.yaml, prod.yaml) from a requirements CSV.

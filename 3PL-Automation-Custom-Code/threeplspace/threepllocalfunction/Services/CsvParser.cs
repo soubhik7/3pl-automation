@@ -6,6 +6,27 @@ using ThreePlLocalFunction.Shared;
 
 namespace SolaceConfigGenerator.Services;
 
+// ============================================================================
+// CsvParser (Solace) — turns the Solace onboarding CSV into typed records
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   This is the only place that knows the Solace CSV's column layout. It
+//   exists so the CSV can stay a plain, spreadsheet-friendly long/normalized
+//   format (one row per topic) while still producing exactly the structured
+//   data SolaceConfigBuilder needs — without either of those two classes
+//   knowing about the other's internals.
+// HOW TO USE:
+//   var records = new CsvParser().Parse(csvContent); — see the column list
+//   and worked example below. Malformed rows (wrong column count, unknown
+//   RowType-equivalent Action) throw FormatException/ArgumentException with
+//   the offending row's index and content, so a bad CSV fails the Logic Apps
+//   action clearly instead of silently producing wrong config.
+// IMPORTANT NOTES:
+//   This parser is entirely separate from MuleSoftCsvParser — different
+//   column layout, different namespace (SolaceConfigGenerator.Services vs
+//   MuleSoftAutomation.Services) — the two only share the stateless,
+//   format-level CsvLineSplitter helper.
+// ============================================================================
 /// <summary>
 /// Parses the onboarding CSV into SolaceOnboardingRecord instances.
 ///

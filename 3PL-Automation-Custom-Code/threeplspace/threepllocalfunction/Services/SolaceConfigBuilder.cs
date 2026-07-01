@@ -5,6 +5,30 @@ using SolaceConfigGenerator.Models;
 
 namespace SolaceConfigGenerator.Services;
 
+// ============================================================================
+// SolaceConfigBuilder — turns a SolaceOnboardingRecord into the Solace JSON shape
+// ----------------------------------------------------------------------------
+// WHY THIS EXISTS:
+//   This is the single place that knows the real Solace onboarding JSON
+//   schema (clientProfile/ACL/ClientUser/Queue/Subscription, exact field
+//   names like "create_ACL"/"SUBSCRIPTION_LIST") and which sections a given
+//   Action needs — verified byte-for-byte against a real production Solace
+//   config the CSV/JSON schema was built from. Separating this from
+//   CsvParser means the CSV's shape can evolve without touching the JSON
+//   schema knowledge, and vice versa.
+// HOW TO USE:
+//   var json = new SolaceConfigBuilder().Build(record); — record comes from
+//   CsvParser.Parse(). Every business-rule default below (Default* constants)
+//   is used ONLY when the corresponding CSV cell was blank — the CSV always
+//   wins, so nothing here is a hidden override of an explicit CSV value.
+// IMPORTANT NOTES:
+//   Every Default* constant and the Action->sections mapping (ResolveSections)
+//   is intentionally still C# code, not CSV data — these encode Solace
+//   *business policy* (e.g. "publish defaults to disallow"), not values that
+//   vary per onboarding request. The DMQ's "consume" permission likewise
+//   isn't a policy default — it's the structural definition of a dead-message
+//   queue, so it can never be an override.
+// ============================================================================
 // Which JSON sections a row's Action produces. A row only ever describes one change
 // (e.g. "just add a subscription to an existing queue"), so most Actions need just
 // a slice of the full onboarding shape, not every section every time.
