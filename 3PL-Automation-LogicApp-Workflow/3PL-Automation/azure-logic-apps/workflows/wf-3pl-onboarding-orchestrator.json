@@ -10,12 +10,12 @@
       },
       "blobSasToken": {
         "type": "SecureString",
-        "defaultValue": "se=2027-12-31T23%3A59%3A59Z&sp=racwdl&spr=https&sv=2026-02-06&sr=c&sig=UILjyYJu1DSBNX3JD/JBpoPgUL5PpRfAU1fS7sDPw8E%3D",
+        "defaultValue": "se=REVOKED&sp=racwdl&spr=https&sv=2026-02-06&sr=c&sig=ROTATED_SEE_GITGUARDIAN_INCIDENT",
         "description": "SAS token for 3pl-onboarding container (expires 2027-12-31)"
       },
       "solaceOrchestratorUrl": {
         "type": "String",
-        "defaultValue": "https://prod-46.eastus.logic.azure.com:443/workflows/47f0ac2e7b964abdaae593ea94a223a7/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=cxrzYM8fCqkasUaH-JwG_U6zIanPulSWexh2QKAi28k",
+        "defaultValue": "https://prod-46.eastus.logic.azure.com:443/workflows/47f0ac2e7b964abdaae593ea94a223a7/triggers/manual/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED16",
         "description": "HTTP trigger URL of wf-solace-automation-main-orchestrator"
       }
     },

@@ -20,7 +20,7 @@
       },
       "sempPassword": {
         "type": "SecureString",
-        "defaultValue": "hr1aufccrtn2u33a5npbe8um7k",
+        "defaultValue": "ROTATED_SEE_GITGUARDIAN_INCIDENT",
         "description": "Solace SEMP password"
       }
     },

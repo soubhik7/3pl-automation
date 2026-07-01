@@ -10,7 +10,7 @@
       },
       "blobSasToken": {
         "type": "SecureString",
-        "defaultValue": "se=2027-12-31T23%3A59%3A59Z&sp=racwdl&spr=https&sv=2026-02-06&sr=c&sig=UILjyYJu1DSBNX3JD/JBpoPgUL5PpRfAU1fS7sDPw8E%3D",
+        "defaultValue": "se=REVOKED&sp=racwdl&spr=https&sv=2026-02-06&sr=c&sig=ROTATED_SEE_GITGUARDIAN_INCIDENT",
         "description": "SAS token for 3pl-onboarding container (expires 2027-12-31)"
       }
     },

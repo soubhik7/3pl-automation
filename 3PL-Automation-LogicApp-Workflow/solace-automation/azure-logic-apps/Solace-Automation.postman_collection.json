@@ -8,12 +8,12 @@
   "variable": [
     {
       "key": "dispatcherUrl",
-      "value": "https://prod-37.eastus.logic.azure.com:443/workflows/2e7e7ad2e9714e358a404c407f7d10c1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=S7-20ybnxrIzhDwTDuMfnZIZdslJt44d2p1yMArJQIU",
+      "value": "https://prod-37.eastus.logic.azure.com:443/workflows/2e7e7ad2e9714e358a404c407f7d10c1/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED11",
       "description": "Trigger URL of main-dispatcher Logic App workflow"
     },
     {
       "key": "credentialsInitUrl",
-      "value": "https://prod-77.eastus.logic.azure.com:443/workflows/13b3e713a53e4e9a8fb9d5a694dd7b9d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ydidYhK2KZPVU7DtPs_un-eZGL-Y1bkvXzPRIJT3HsU",
+      "value": "https://prod-77.eastus.logic.azure.com:443/workflows/13b3e713a53e4e9a8fb9d5a694dd7b9d/triggers/manual/paths/invoke?api-version=2019-05-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ROTATED09",
       "description": "Trigger URL of credentials-init Logic App workflow"
     },
     {
