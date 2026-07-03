@@ -2,6 +2,19 @@
   "definition": {
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "actions": {
+      "Initialize_Correlation_Id": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], '')"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
       "Scope-Try": {
         "type": "Scope",
         "actions": {
@@ -171,7 +184,8 @@
               "statusCode": 200,
               "body": {
                 "decision": "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['decision'], '')",
-                "branchName": "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['branchName'], triggerBody()?['suggestedBranchName'])"
+                "branchName": "@coalesce(body('Post_adaptive_card_and_wait_for_a_response')?['data']?['branchName'], triggerBody()?['suggestedBranchName'])",
+                "correlationId": "@variables('correlationId')"
               }
             },
             "runAfter": {
@@ -181,7 +195,11 @@
             }
           }
         },
-        "runAfter": {}
+        "runAfter": {
+          "Initialize_Correlation_Id": [
+            "Succeeded"
+          ]
+        }
       },
       "Scope-Catch": {
         "type": "Scope",
@@ -193,6 +211,7 @@
               "statusCode": 500,
               "body": {
                 "status": "request-feature-branch-via-teams failed.",
+                "correlationId": "@variables('correlationId')",
                 "details": "@result('Scope-Try')"
               }
             },

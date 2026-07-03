@@ -2,6 +2,19 @@
   "definition": {
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "actions": {
+      "Initialize_Correlation_Id": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], '')"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
       "Scope-Try": {
         "type": "Scope",
         "actions": {
@@ -20,7 +33,8 @@
                 "developerId": "@coalesce(triggerBody()?['developerId'], '@effem.com')",
                 "title": "@coalesce(triggerBody()?['title'], 'MyNewApplication')",
                 "shortText": "@coalesce(triggerBody()?['shortText'], 'Short description here')",
-                "productName": "@coalesce(triggerBody()?['productName'], 'cicd,TestAIS')"
+                "productName": "@coalesce(triggerBody()?['productName'], 'cicd,TestAIS')",
+                "correlationId": "@variables('correlationId')"
               }
             }
           },
@@ -38,7 +52,11 @@
             }
           }
         },
-        "runAfter": {}
+        "runAfter": {
+          "Initialize_Correlation_Id": [
+            "Succeeded"
+          ]
+        }
       },
       "Scope-Catch": {
         "type": "Scope",
@@ -50,6 +68,7 @@
               "statusCode": 500,
               "body": {
                 "status": "btp-config-publish failed.",
+                "correlationId": "@variables('correlationId')",
                 "details": "@result('Scope-Try')"
               }
             }

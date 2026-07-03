@@ -2,6 +2,19 @@
   "definition": {
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "actions": {
+      "Initialize_Correlation_Id": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], trigger().clientTrackingId)"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
       "Scope-Try": {
         "type": "Scope",
         "actions": {
@@ -16,10 +29,25 @@
                       "id": "btp-config-publish"
                     }
                   },
-                  "body": "@coalesce(triggerBody()?['btp'], json('{}'))"
-                }
+                  "body": {
+                    "correlationId": "@variables('correlationId')",
+                    "repoOwner": "@triggerBody()?['btp']?['repoOwner']",
+                    "repoName": "@triggerBody()?['btp']?['repoName']",
+                    "workflowFileName": "@triggerBody()?['btp']?['workflowFileName']",
+                    "branchRef": "@triggerBody()?['btp']?['branchRef']",
+                    "subAccount": "@triggerBody()?['btp']?['subAccount']",
+                    "mode": "@triggerBody()?['btp']?['mode']",
+                    "environment": "@triggerBody()?['btp']?['environment']",
+                    "developerId": "@triggerBody()?['btp']?['developerId']",
+                    "title": "@triggerBody()?['btp']?['title']",
+                    "shortText": "@triggerBody()?['btp']?['shortText']",
+                    "productName": "@triggerBody()?['btp']?['productName']"
+                  }
+                },
+                "runAfter": {}
               }
-            }
+            },
+            "runAfter": {}
           },
           "Scope-MuleSoft": {
             "type": "Scope",
@@ -32,8 +60,25 @@
                       "id": "mulesoft-config-generation"
                     }
                   },
-                  "body": "@triggerBody()?['mulesoft']?['generate']"
-                }
+                  "body": {
+                    "correlationId": "@variables('correlationId')",
+                    "csvContent": "@triggerBody()?['mulesoft']?['generate']?['csvContent']",
+                    "updateExisting": "@triggerBody()?['mulesoft']?['generate']?['updateExisting']",
+                    "existingAppYaml": "@triggerBody()?['mulesoft']?['generate']?['existingAppYaml']",
+                    "existingDevYaml": "@triggerBody()?['mulesoft']?['generate']?['existingDevYaml']",
+                    "existingTstYaml": "@triggerBody()?['mulesoft']?['generate']?['existingTstYaml']",
+                    "existingProdYaml": "@triggerBody()?['mulesoft']?['generate']?['existingProdYaml']",
+                    "repoOwner": "@triggerBody()?['mulesoft']?['generate']?['repoOwner']",
+                    "repoName": "@triggerBody()?['mulesoft']?['generate']?['repoName']",
+                    "branch": "@triggerBody()?['mulesoft']?['generate']?['branch']",
+                    "filePathPrefix": "@triggerBody()?['mulesoft']?['generate']?['filePathPrefix']",
+                    "featureBranchName": "@triggerBody()?['mulesoft']?['generate']?['featureBranchName']",
+                    "baseBranch": "@triggerBody()?['mulesoft']?['generate']?['baseBranch']",
+                    "requesterEmail": "@triggerBody()?['mulesoft']?['generate']?['requesterEmail']",
+                    "recipientEmail": "@triggerBody()?['mulesoft']?['generate']?['recipientEmail']"
+                  }
+                },
+                "runAfter": {}
               },
               "Invoke_MuleSoft_Config_Publish": {
                 "type": "Workflow",
@@ -44,6 +89,7 @@
                     }
                   },
                   "body": {
+                    "correlationId": "@variables('correlationId')",
                     "repoOwner": "@triggerBody()?['mulesoft']?['publish']?['repoOwner']",
                     "repoName": "@triggerBody()?['mulesoft']?['publish']?['repoName']",
                     "baseBranch": "@triggerBody()?['mulesoft']?['publish']?['baseBranch']",
@@ -62,7 +108,8 @@
                   ]
                 }
               }
-            }
+            },
+            "runAfter": {}
           },
           "Scope-Solace": {
             "type": "Scope",
@@ -75,8 +122,20 @@
                       "id": "solace-config-generation"
                     }
                   },
-                  "body": "@triggerBody()?['solace']?['generate']"
-                }
+                  "body": {
+                    "correlationId": "@variables('correlationId')",
+                    "csvContent": "@triggerBody()?['solace']?['generate']?['csvContent']",
+                    "repoOwner": "@triggerBody()?['solace']?['generate']?['repoOwner']",
+                    "repoName": "@triggerBody()?['solace']?['generate']?['repoName']",
+                    "branch": "@triggerBody()?['solace']?['generate']?['branch']",
+                    "filePath": "@triggerBody()?['solace']?['generate']?['filePath']",
+                    "featureBranchName": "@triggerBody()?['solace']?['generate']?['featureBranchName']",
+                    "baseBranch": "@triggerBody()?['solace']?['generate']?['baseBranch']",
+                    "requesterEmail": "@triggerBody()?['solace']?['generate']?['requesterEmail']",
+                    "recipientEmail": "@triggerBody()?['solace']?['generate']?['recipientEmail']"
+                  }
+                },
+                "runAfter": {}
               },
               "Invoke_Solace_Config_Publish": {
                 "type": "Workflow",
@@ -87,6 +146,7 @@
                     }
                   },
                   "body": {
+                    "correlationId": "@variables('correlationId')",
                     "repoOwner": "@triggerBody()?['solace']?['publish']?['repoOwner']",
                     "repoName": "@triggerBody()?['solace']?['publish']?['repoName']",
                     "baseBranch": "@triggerBody()?['solace']?['publish']?['baseBranch']",
@@ -102,7 +162,8 @@
                   ]
                 }
               }
-            }
+            },
+            "runAfter": {}
           },
           "Response-Success": {
             "type": "Response",
@@ -111,6 +172,7 @@
               "statusCode": 200,
               "body": {
                 "status": "All child workflows completed successfully.",
+                "correlationId": "@variables('correlationId')",
                 "btp": "@body('Invoke_BTP_Config_Publish')",
                 "mulesoft": {
                   "generate": "@body('Invoke_MuleSoft_Config_Generation')",
@@ -135,7 +197,11 @@
             }
           }
         },
-        "runAfter": {}
+        "runAfter": {
+          "Initialize_Correlation_Id": [
+            "Succeeded"
+          ]
+        }
       },
       "Scope-Catch": {
         "type": "Scope",
@@ -147,6 +213,7 @@
               "statusCode": 500,
               "body": {
                 "status": "One or more child workflows failed during orchestration.",
+                "correlationId": "@variables('correlationId')",
                 "summary": "@result('Scope-Try')",
                 "btpDetails": "@result('Scope-BTP')",
                 "mulesoftDetails": "@result('Scope-MuleSoft')",

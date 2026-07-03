@@ -62,28 +62,37 @@ public class GenerateMuleSoftConfigFunction
         string existingAppYaml,
         string existingDevYaml,
         string existingTstYaml,
-        string existingProdYaml)
+        string existingProdYaml,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "GenerateMuleSoftConfig invoked, csvContent length={Len}, updateExisting={UpdateExisting}",
-            csvContent?.Length ?? 0, updateExisting);
+        try
+        {
+            _logger.LogInformation(
+                "[{CorrelationId}] GenerateMuleSoftConfig invoked, csvContent length={Len}, updateExisting={UpdateExisting}",
+                correlationId, csvContent?.Length ?? 0, updateExisting);
 
-        if (string.IsNullOrWhiteSpace(csvContent))
-            throw new ArgumentException("csvContent must not be empty.");
+            if (string.IsNullOrWhiteSpace(csvContent))
+                throw new ArgumentException("csvContent must not be empty.");
 
-        var record = CsvParser.Parse(csvContent);
+            var record = CsvParser.Parse(csvContent);
 
-        var files = updateExisting
-            ? YamlBuilder.MergeIntoExisting(record, new Dictionary<string, string>
-              {
-                  ["app.yaml"] = existingAppYaml ?? "",
-                  ["dev.yaml"] = existingDevYaml ?? "",
-                  ["tst.yaml"] = existingTstYaml ?? "",
-                  ["prod.yaml"] = existingProdYaml ?? ""
-              })
-            : YamlBuilder.BuildNew(record);
+            var files = updateExisting
+                ? YamlBuilder.MergeIntoExisting(record, new Dictionary<string, string>
+                  {
+                      ["app.yaml"] = existingAppYaml ?? "",
+                      ["dev.yaml"] = existingDevYaml ?? "",
+                      ["tst.yaml"] = existingTstYaml ?? "",
+                      ["prod.yaml"] = existingProdYaml ?? ""
+                  })
+                : YamlBuilder.BuildNew(record);
 
-        return Task.FromResult<IDictionary<string, object>>(
-            files.ToDictionary(kv => kv.Key, kv => (object)kv.Value));
+            var result = files.ToDictionary(kv => kv.Key, kv => (object)kv.Value);
+            result["correlationId"] = correlationId;
+            return Task.FromResult<IDictionary<string, object>>(result);
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] GenerateMuleSoftConfig failed: {ex.Message}", ex);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Extensions.Workflows;
@@ -46,20 +47,30 @@ public class PublishSolaceConfigToFeatureBranchFunction
         NullLogger<PublishSolaceConfigToFeatureBranchFunction>.Instance;
 
     [Function("PublishSolaceConfigToFeatureBranch")]
-    public Task<IDictionary<string, object>> Run(
+    public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
         string baseBranch,
         string featureBranchName,
         string filePath,
         string solaceConfigJson,
-        string commitMessage)
+        string commitMessage,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "PublishSolaceConfigToFeatureBranch invoked for {Repo}@{Branch} -> {Path}",
-            $"{repoOwner}/{repoName}", featureBranchName, filePath);
+        try
+        {
+            _logger.LogInformation(
+                "[{CorrelationId}] PublishSolaceConfigToFeatureBranch invoked for {Repo}@{Branch} -> {Path}",
+                correlationId, $"{repoOwner}/{repoName}", featureBranchName, filePath);
 
-        return Publisher.PublishAsync(
-            repoOwner, repoName, baseBranch, featureBranchName, filePath, solaceConfigJson, commitMessage, githubToken: null);
+            var result = await Publisher.PublishAsync(
+                repoOwner, repoName, baseBranch, featureBranchName, filePath, solaceConfigJson, commitMessage, githubToken: null);
+            result["correlationId"] = correlationId;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] PublishSolaceConfigToFeatureBranch failed: {ex.Message}", ex);
+        }
     }
 }

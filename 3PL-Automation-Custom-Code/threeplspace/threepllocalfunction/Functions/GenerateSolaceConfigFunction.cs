@@ -45,17 +45,25 @@ public class GenerateSolaceConfigFunction
     private readonly ILogger<GenerateSolaceConfigFunction> _logger = NullLogger<GenerateSolaceConfigFunction>.Instance;
 
     [Function("GenerateSolaceConfig")]
-    public Task<GenerateSolaceConfigResponse> Run([WorkflowActionTrigger] string csvContent)
+    public Task<GenerateSolaceConfigResponse> Run([WorkflowActionTrigger] string csvContent, string correlationId)
     {
-        _logger.LogInformation("GenerateSolaceConfig invoked, csvContent length={Len}", csvContent?.Length ?? 0);
+        try
+        {
+            _logger.LogInformation(
+                "[{CorrelationId}] GenerateSolaceConfig invoked, csvContent length={Len}", correlationId, csvContent?.Length ?? 0);
 
-        if (string.IsNullOrWhiteSpace(csvContent))
-            throw new ArgumentException("csvContent must not be empty.");
+            if (string.IsNullOrWhiteSpace(csvContent))
+                throw new ArgumentException("csvContent must not be empty.");
 
-        var records = CsvParser.Parse(csvContent);
-        var results = records.Select(BuildResult).ToList();
+            var records = CsvParser.Parse(csvContent);
+            var results = records.Select(BuildResult).ToList();
 
-        return Task.FromResult(new GenerateSolaceConfigResponse { Results = results });
+            return Task.FromResult(new GenerateSolaceConfigResponse { Results = results, CorrelationId = correlationId });
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] GenerateSolaceConfig failed: {ex.Message}", ex);
+        }
     }
 
     private static SolaceConfigResult BuildResult(SolaceOnboardingRecord record)

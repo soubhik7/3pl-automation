@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using BtpAutomation.Services;
@@ -45,7 +46,7 @@ public class TriggerBtpDeploymentFunction
         NullLogger<TriggerBtpDeploymentFunction>.Instance;
 
     [Function("TriggerBtpDeployment")]
-    public Task<IDictionary<string, object>> Run(
+    public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
         string workflowFileName,
@@ -56,34 +57,44 @@ public class TriggerBtpDeploymentFunction
         string developerId,
         string title,
         string shortText,
-        string productName)
+        string productName,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "TriggerBtpDeployment invoked for {Repo} ref={Ref} mode={Mode} env={Env}",
-            $"{repoOwner}/{repoName}", branchRef, mode, environment);
-
-        Guard.RequireNotBlank(repoOwner, nameof(repoOwner));
-        Guard.RequireNotBlank(repoName, nameof(repoName));
-        Guard.RequireNotBlank(workflowFileName, nameof(workflowFileName));
-        Guard.RequireNotBlank(branchRef, nameof(branchRef));
-        Guard.RequireNotBlank(subAccount, nameof(subAccount));
-        Guard.RequireNotBlank(mode, nameof(mode));
-        Guard.RequireNotBlank(environment, nameof(environment));
-        Guard.RequireNotBlank(developerId, nameof(developerId));
-        Guard.RequireNotBlank(title, nameof(title));
-        Guard.RequireNotBlank(productName, nameof(productName));
-
-        var inputs = new Dictionary<string, string>
+        try
         {
-            ["sub_account"] = subAccount,
-            ["mode"] = mode,
-            ["environment"] = environment,
-            ["developer_id"] = developerId,
-            ["title"] = title,
-            ["short_text"] = shortText ?? "",
-            ["product_name"] = productName
-        };
+            _logger.LogInformation(
+                "[{CorrelationId}] TriggerBtpDeployment invoked for {Repo} ref={Ref} mode={Mode} env={Env}",
+                correlationId, $"{repoOwner}/{repoName}", branchRef, mode, environment);
 
-        return Dispatcher.DispatchAsync(repoOwner, repoName, workflowFileName, branchRef, null, inputs);
+            Guard.RequireNotBlank(repoOwner, nameof(repoOwner));
+            Guard.RequireNotBlank(repoName, nameof(repoName));
+            Guard.RequireNotBlank(workflowFileName, nameof(workflowFileName));
+            Guard.RequireNotBlank(branchRef, nameof(branchRef));
+            Guard.RequireNotBlank(subAccount, nameof(subAccount));
+            Guard.RequireNotBlank(mode, nameof(mode));
+            Guard.RequireNotBlank(environment, nameof(environment));
+            Guard.RequireNotBlank(developerId, nameof(developerId));
+            Guard.RequireNotBlank(title, nameof(title));
+            Guard.RequireNotBlank(productName, nameof(productName));
+
+            var inputs = new Dictionary<string, string>
+            {
+                ["sub_account"] = subAccount,
+                ["mode"] = mode,
+                ["environment"] = environment,
+                ["developer_id"] = developerId,
+                ["title"] = title,
+                ["short_text"] = shortText ?? "",
+                ["product_name"] = productName
+            };
+
+            var result = await Dispatcher.DispatchAsync(repoOwner, repoName, workflowFileName, branchRef, null, inputs);
+            result["correlationId"] = correlationId;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] TriggerBtpDeployment failed: {ex.Message}", ex);
+        }
     }
 }

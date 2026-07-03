@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Extensions.Workflows;
@@ -35,14 +36,25 @@ public class CheckGitHubBranchExistsFunction
         NullLogger<CheckGitHubBranchExistsFunction>.Instance;
 
     [Function("CheckGitHubBranchExists")]
-    public Task<IDictionary<string, object>> Run(
+    public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
-        string branch)
+        string branch,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "CheckGitHubBranchExists invoked for {Repo}@{Branch}", $"{repoOwner}/{repoName}", branch);
+        try
+        {
+            _logger.LogInformation(
+                "[{CorrelationId}] CheckGitHubBranchExists invoked for {Repo}@{Branch}",
+                correlationId, $"{repoOwner}/{repoName}", branch);
 
-        return GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken: null);
+            var result = await GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken: null);
+            result["correlationId"] = correlationId;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] CheckGitHubBranchExists failed: {ex.Message}", ex);
+        }
     }
 }

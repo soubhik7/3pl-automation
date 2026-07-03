@@ -2,6 +2,19 @@
   "definition": {
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "actions": {
+      "Initialize_Correlation_Id": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], '')"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
       "Scope-Try": {
         "type": "Scope",
         "actions": {
@@ -19,7 +32,8 @@
                 "devYaml": "@coalesce(triggerBody()?['devYaml'], '')",
                 "tstYaml": "@coalesce(triggerBody()?['tstYaml'], '')",
                 "prodYaml": "@coalesce(triggerBody()?['prodYaml'], '')",
-                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update MuleSoft NAV onboarding config via 3PL-Automation')"
+                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update MuleSoft NAV onboarding config via 3PL-Automation')",
+                "correlationId": "@variables('correlationId')"
               }
             }
           },
@@ -37,7 +51,11 @@
             }
           }
         },
-        "runAfter": {}
+        "runAfter": {
+          "Initialize_Correlation_Id": [
+            "Succeeded"
+          ]
+        }
       },
       "Scope-Catch": {
         "type": "Scope",
@@ -49,6 +67,7 @@
               "statusCode": 500,
               "body": {
                 "status": "mulesoft-config-publish failed.",
+                "correlationId": "@variables('correlationId')",
                 "details": "@result('Scope-Try')"
               }
             },

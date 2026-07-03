@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Extensions.Workflows;
@@ -48,7 +49,7 @@ public class PublishMuleSoftConfigToFeatureBranchFunction
         NullLogger<PublishMuleSoftConfigToFeatureBranchFunction>.Instance;
 
     [Function("PublishMuleSoftConfigToFeatureBranch")]
-    public Task<IDictionary<string, object>> Run(
+    public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
         string baseBranch,
@@ -58,14 +59,24 @@ public class PublishMuleSoftConfigToFeatureBranchFunction
         string devYaml,
         string tstYaml,
         string prodYaml,
-        string commitMessage)
+        string commitMessage,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "PublishMuleSoftConfigToFeatureBranch invoked for {Repo}@{Branch} -> {Prefix}",
-            $"{repoOwner}/{repoName}", featureBranchName, filePathPrefix);
+        try
+        {
+            _logger.LogInformation(
+                "[{CorrelationId}] PublishMuleSoftConfigToFeatureBranch invoked for {Repo}@{Branch} -> {Prefix}",
+                correlationId, $"{repoOwner}/{repoName}", featureBranchName, filePathPrefix);
 
-        return Publisher.PublishAsync(
-            repoOwner, repoName, baseBranch, featureBranchName, filePathPrefix,
-            appYaml, devYaml, tstYaml, prodYaml, commitMessage, githubToken: null);
+            var result = await Publisher.PublishAsync(
+                repoOwner, repoName, baseBranch, featureBranchName, filePathPrefix,
+                appYaml, devYaml, tstYaml, prodYaml, commitMessage, githubToken: null);
+            result["correlationId"] = correlationId;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] PublishMuleSoftConfigToFeatureBranch failed: {ex.Message}", ex);
+        }
     }
 }

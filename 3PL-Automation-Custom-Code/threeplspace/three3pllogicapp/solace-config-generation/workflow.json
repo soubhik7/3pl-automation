@@ -10,6 +10,11 @@
               "name": "targetBranch",
               "type": "string",
               "value": "@coalesce(triggerBody()?['featureBranchName'], triggerBody()?['branch'], 'main')"
+            },
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], '')"
             }
           ]
         },
@@ -25,7 +30,8 @@
               "parameters": {
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                "branch": "@variables('targetBranch')"
+                "branch": "@variables('targetBranch')",
+                "correlationId": "@variables('correlationId')"
               }
             }
           },
@@ -57,6 +63,7 @@
                     }
                   },
                   "body": {
+                    "correlationId": "@variables('correlationId')",
                     "title": "Solace Config Onboarding — Feature Branch Needed",
                     "subtitle": "Approval needed before the config pipeline can continue",
                     "requesterEmail": "@coalesce(triggerBody()?['requesterEmail'], '')",
@@ -86,6 +93,7 @@
                       "statusCode": 409,
                       "body": {
                         "status": "Feature branch request was rejected by the DevOps owner.",
+                        "correlationId": "@variables('correlationId')",
                         "branch": "@variables('targetBranch')"
                       }
                     }
@@ -107,7 +115,8 @@
                         "parameters": {
                           "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                           "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                          "branch": "@variables('targetBranch')"
+                          "branch": "@variables('targetBranch')",
+                          "correlationId": "@variables('correlationId')"
                         }
                       },
                       "runAfter": {
@@ -142,7 +151,8 @@
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
                 "branch": "@variables('targetBranch')",
-                "filePath": "@coalesce(triggerBody()?['filePath'], '')"
+                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
+                "correlationId": "@variables('correlationId')"
               }
             },
             "runAfter": {
@@ -156,7 +166,8 @@
             "inputs": {
               "functionName": "GenerateSolaceConfig",
               "parameters": {
-                "csvContent": "@triggerBody()?['csvContent']"
+                "csvContent": "@triggerBody()?['csvContent']",
+                "correlationId": "@variables('correlationId')"
               }
             }
           },
@@ -166,7 +177,8 @@
               "functionName": "MergeSolaceConfig",
               "parameters": {
                 "newConfigJson": "@string(coalesce(body('Call_a_local_function-_Generate_Solace_Config')?['Results']?[0]?['SolaceConfig'], body('Call_a_local_function-_Generate_Solace_Config')?['results']?[0]?['solaceConfig']))",
-                "existingConfigJson": "@coalesce(body('Fetch_Existing_Solace_Config')?['content'], '')"
+                "existingConfigJson": "@coalesce(body('Fetch_Existing_Solace_Config')?['content'], '')",
+                "correlationId": "@variables('correlationId')"
               }
             },
             "runAfter": {
@@ -185,7 +197,8 @@
               "statusCode": 200,
               "body": {
                 "generated": "@body('Call_a_local_function-_Generate_Solace_Config')",
-                "mergedConfigJson": "@body('Merge_Solace_Config')?['mergedConfigJson']"
+                "mergedConfigJson": "@body('Merge_Solace_Config')?['mergedConfigJson']",
+                "correlationId": "@variables('correlationId')"
               }
             },
             "runAfter": {
@@ -211,6 +224,7 @@
               "statusCode": 500,
               "body": {
                 "status": "solace-config-generation failed.",
+                "correlationId": "@variables('correlationId')",
                 "details": "@result('Scope-Try')"
               }
             }

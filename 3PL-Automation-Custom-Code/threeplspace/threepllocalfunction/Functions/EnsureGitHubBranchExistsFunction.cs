@@ -42,23 +42,37 @@ public class EnsureGitHubBranchExistsFunction
     public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
-        string branch)
+        string branch,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "EnsureGitHubBranchExists invoked for {Repo}@{Branch}", $"{repoOwner}/{repoName}", branch);
-
-        var result = await GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken: null);
-
-        if (result.TryGetValue("success", out var success) && success is false)
+        try
         {
-            result.TryGetValue("message", out var failureMessage);
-            throw new InvalidOperationException($"Could not verify branch '{branch}': {failureMessage}");
+            _logger.LogInformation(
+                "[{CorrelationId}] EnsureGitHubBranchExists invoked for {Repo}@{Branch}",
+                correlationId, $"{repoOwner}/{repoName}", branch);
+
+            var result = await GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken: null);
+
+            if (result.TryGetValue("success", out var success) && success is false)
+            {
+                result.TryGetValue("message", out var failureMessage);
+                throw new InvalidOperationException($"[{correlationId}] Could not verify branch '{branch}': {failureMessage}");
+            }
+
+            if (result.TryGetValue("exists", out var exists) && exists is false)
+                throw new InvalidOperationException(
+                    $"[{correlationId}] Branch '{branch}' still does not exist on {repoOwner}/{repoName} after waiting for the DevOps owner to create it.");
+
+            result["correlationId"] = correlationId;
+            return result;
         }
-
-        if (result.TryGetValue("exists", out var exists) && exists is false)
-            throw new InvalidOperationException(
-                $"Branch '{branch}' still does not exist on {repoOwner}/{repoName} after waiting for the DevOps owner to create it.");
-
-        return result;
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] EnsureGitHubBranchExists failed: {ex.Message}", ex);
+        }
     }
 }

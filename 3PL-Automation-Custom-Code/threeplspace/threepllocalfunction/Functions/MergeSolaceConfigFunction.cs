@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Extensions.Workflows;
@@ -41,17 +42,26 @@ public class MergeSolaceConfigFunction
     [Function("MergeSolaceConfig")]
     public Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string newConfigJson,
-        string existingConfigJson)
+        string existingConfigJson,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "MergeSolaceConfig invoked, newConfigJson length={NewLen}, existingConfigJson length={ExistingLen}",
-            newConfigJson?.Length ?? 0, existingConfigJson?.Length ?? 0);
-
-        var merged = SolaceConfigMerger.Merge(existingConfigJson, newConfigJson ?? "");
-
-        return Task.FromResult<IDictionary<string, object>>(new Dictionary<string, object>
+        try
         {
-            ["mergedConfigJson"] = merged
-        });
+            _logger.LogInformation(
+                "[{CorrelationId}] MergeSolaceConfig invoked, newConfigJson length={NewLen}, existingConfigJson length={ExistingLen}",
+                correlationId, newConfigJson?.Length ?? 0, existingConfigJson?.Length ?? 0);
+
+            var merged = SolaceConfigMerger.Merge(existingConfigJson, newConfigJson ?? "");
+
+            return Task.FromResult<IDictionary<string, object>>(new Dictionary<string, object>
+            {
+                ["mergedConfigJson"] = merged,
+                ["correlationId"] = correlationId
+            });
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] MergeSolaceConfig failed: {ex.Message}", ex);
+        }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.Functions.Extensions.Workflows;
@@ -41,16 +42,26 @@ public class FetchExistingConfigFileFunction
         NullLogger<FetchExistingConfigFileFunction>.Instance;
 
     [Function("FetchExistingConfigFile")]
-    public Task<IDictionary<string, object>> Run(
+    public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
         string branch,
-        string filePath)
+        string filePath,
+        string correlationId)
     {
-        _logger.LogInformation(
-            "FetchExistingConfigFile invoked for {Repo}@{Branch} -> {Path}",
-            $"{repoOwner}/{repoName}", branch, filePath);
+        try
+        {
+            _logger.LogInformation(
+                "[{CorrelationId}] FetchExistingConfigFile invoked for {Repo}@{Branch} -> {Path}",
+                correlationId, $"{repoOwner}/{repoName}", branch, filePath);
 
-        return GitHubBranchReader.FetchFileFromBranchAsync(repoOwner, repoName, branch, githubToken: null, filePath);
+            var result = await GitHubBranchReader.FetchFileFromBranchAsync(repoOwner, repoName, branch, githubToken: null, filePath);
+            result["correlationId"] = correlationId;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"[{correlationId}] FetchExistingConfigFile failed: {ex.Message}", ex);
+        }
     }
 }

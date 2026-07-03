@@ -25,6 +25,7 @@ namespace SolaceConfigGenerator.Models;
 public sealed class GenerateSolaceConfigResponse
 {
     public List<SolaceConfigResult> Results { get; init; } = [];
+    public string CorrelationId { get; init; } = "";
 }
 
 public sealed class SolaceConfigResult
