@@ -40,7 +40,7 @@ public sealed class SolaceGitHubPublisher
         string filePath,
         string solaceConfigJson,
         string commitMessage,
-        string githubToken)
+        string? githubToken)
     {
         Guard.RequireNotBlank(repoOwner, nameof(repoOwner));
         Guard.RequireNotBlank(repoName, nameof(repoName));

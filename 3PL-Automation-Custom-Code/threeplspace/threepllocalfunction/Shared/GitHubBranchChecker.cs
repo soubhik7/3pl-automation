@@ -59,7 +59,7 @@ public static class GitHubBranchChecker
 
         try
         {
-            var token = GitHubApiClient.ResolveToken(githubToken);
+            var token = GitHubApiClient.ResolveToken(githubToken, "githubToken");
 
             using var request = GitHubApiClient.CreateRequest(
                 HttpMethod.Get, $"https://api.github.com/repos/{repo}/git/ref/heads/{branch}", token);

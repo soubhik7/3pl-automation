@@ -19,8 +19,7 @@
                 "devYaml": "@coalesce(triggerBody()?['devYaml'], '')",
                 "tstYaml": "@coalesce(triggerBody()?['tstYaml'], '')",
                 "prodYaml": "@coalesce(triggerBody()?['prodYaml'], '')",
-                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update MuleSoft NAV onboarding config via 3PL-Automation')",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update MuleSoft NAV onboarding config via 3PL-Automation')"
               }
             }
           },

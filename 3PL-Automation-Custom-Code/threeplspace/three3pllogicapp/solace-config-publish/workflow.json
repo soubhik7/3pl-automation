@@ -16,8 +16,7 @@
                 "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/solace-config-update')",
                 "filePath": "@coalesce(triggerBody()?['filePath'], '')",
                 "solaceConfigJson": "@coalesce(triggerBody()?['solaceConfigJson'], '')",
-                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update Solace onboarding config via 3PL-Automation')",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update Solace onboarding config via 3PL-Automation')"
               }
             }
           },

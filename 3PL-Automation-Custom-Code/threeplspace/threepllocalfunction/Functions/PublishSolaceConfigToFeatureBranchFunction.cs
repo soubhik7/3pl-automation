@@ -29,11 +29,14 @@ namespace SolaceConfigGenerator.Functions;
 // IMPORTANT NOTES:
 //   Nothing here is hardcoded: repoOwner/repoName/baseBranch/
 //   featureBranchName/filePath/commitMessage are all parameters, so this can
-//   target any repo/branch/path without a code change. githubToken is
-//   optional (falls back to the GITHUB_TOKEN app setting — see
-//   GitHubApiClient.ResolveToken). Lives entirely in the SolaceConfigGenerator
-//   namespace — no shared state with BtpAutomation or MuleSoftAutomation,
-//   only the stateless GitHubBranchPublisher/Guard helpers.
+//   target any repo/branch/path without a code change. No githubToken
+//   parameter — the GitHub PAT is resolved internally from the
+//   "githubToken" app setting (see GitHubBranchPublisher /
+//   GitHubApiClient.ResolveToken) rather than being passed through as a
+//   Logic Apps action input, so it never appears in workflow run history.
+//   Lives entirely in the SolaceConfigGenerator namespace — no shared state
+//   with BtpAutomation or MuleSoftAutomation, only the stateless
+//   GitHubBranchPublisher/Guard helpers.
 // ============================================================================
 public class PublishSolaceConfigToFeatureBranchFunction
 {
@@ -50,14 +53,13 @@ public class PublishSolaceConfigToFeatureBranchFunction
         string featureBranchName,
         string filePath,
         string solaceConfigJson,
-        string commitMessage,
-        string githubToken)
+        string commitMessage)
     {
         _logger.LogInformation(
             "PublishSolaceConfigToFeatureBranch invoked for {Repo}@{Branch} -> {Path}",
             $"{repoOwner}/{repoName}", featureBranchName, filePath);
 
         return Publisher.PublishAsync(
-            repoOwner, repoName, baseBranch, featureBranchName, filePath, solaceConfigJson, commitMessage, githubToken);
+            repoOwner, repoName, baseBranch, featureBranchName, filePath, solaceConfigJson, commitMessage, githubToken: null);
     }
 }

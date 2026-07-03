@@ -48,7 +48,7 @@ public sealed class MuleSoftGitHubPublisher
         string tstYaml,
         string prodYaml,
         string commitMessage,
-        string githubToken)
+        string? githubToken)
     {
         Guard.RequireNotBlank(repoOwner, nameof(repoOwner));
         Guard.RequireNotBlank(repoName, nameof(repoName));

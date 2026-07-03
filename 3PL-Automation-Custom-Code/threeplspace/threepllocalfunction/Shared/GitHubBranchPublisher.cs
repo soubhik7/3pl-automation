@@ -71,7 +71,7 @@ public static class GitHubBranchPublisher
 
         try
         {
-            var token = GitHubApiClient.ResolveToken(githubToken);
+            var token = GitHubApiClient.ResolveToken(githubToken, "githubToken");
             var branchCreated = await EnsureFeatureBranchAsync(repo, baseBranch, featureBranchName, token);
 
             foreach (var (path, content) in filesByRepoPath)

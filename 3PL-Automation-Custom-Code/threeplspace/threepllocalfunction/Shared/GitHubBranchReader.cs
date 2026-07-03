@@ -71,7 +71,7 @@ public static class GitHubBranchReader
 
         try
         {
-            var token = GitHubApiClient.ResolveToken(githubToken);
+            var token = GitHubApiClient.ResolveToken(githubToken, "githubToken");
             var encodedPath = string.Join('/', filePath.Split('/').Select(Uri.EscapeDataString));
 
             using var request = GitHubApiClient.CreateRequest(

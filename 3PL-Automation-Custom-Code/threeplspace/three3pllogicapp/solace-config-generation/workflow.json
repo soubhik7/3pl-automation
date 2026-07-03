@@ -25,8 +25,7 @@
               "parameters": {
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                "branch": "@variables('targetBranch')",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "branch": "@variables('targetBranch')"
               }
             }
           },
@@ -108,8 +107,7 @@
                         "parameters": {
                           "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                           "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                          "branch": "@variables('targetBranch')",
-                          "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                          "branch": "@variables('targetBranch')"
                         }
                       },
                       "runAfter": {
@@ -144,8 +142,7 @@
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
                 "branch": "@variables('targetBranch')",
-                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "filePath": "@coalesce(triggerBody()?['filePath'], '')"
               }
             },
             "runAfter": {

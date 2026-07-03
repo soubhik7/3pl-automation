@@ -45,13 +45,12 @@ public class FetchExistingConfigFileFunction
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
         string branch,
-        string filePath,
-        string githubToken)
+        string filePath)
     {
         _logger.LogInformation(
             "FetchExistingConfigFile invoked for {Repo}@{Branch} -> {Path}",
             $"{repoOwner}/{repoName}", branch, filePath);
 
-        return GitHubBranchReader.FetchFileFromBranchAsync(repoOwner, repoName, branch, githubToken, filePath);
+        return GitHubBranchReader.FetchFileFromBranchAsync(repoOwner, repoName, branch, githubToken: null, filePath);
     }
 }

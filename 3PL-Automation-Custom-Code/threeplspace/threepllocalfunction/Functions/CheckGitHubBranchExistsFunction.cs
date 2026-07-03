@@ -22,7 +22,10 @@ namespace GitHubConfigAutomation.Functions;
 //   once after the wait loop ends.
 // HOW TO USE:
 //   Logic Apps action "InvokeFunction" with functionName
-//   "CheckGitHubBranchExists" and repoOwner/repoName/branch/githubToken. See
+//   "CheckGitHubBranchExists" and repoOwner/repoName/branch. No githubToken
+//   parameter — the GitHub PAT is resolved internally from the
+//   "githubToken" app setting rather than passed through as an action
+//   input, so it never appears in workflow run history. See
 //   three3pllogicapp/mulesoft-config-generation/workflow.json and
 //   three3pllogicapp/solace-config-generation/workflow.json.
 // ============================================================================
@@ -35,12 +38,11 @@ public class CheckGitHubBranchExistsFunction
     public Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
-        string branch,
-        string githubToken)
+        string branch)
     {
         _logger.LogInformation(
             "CheckGitHubBranchExists invoked for {Repo}@{Branch}", $"{repoOwner}/{repoName}", branch);
 
-        return GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken);
+        return GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken: null);
     }
 }

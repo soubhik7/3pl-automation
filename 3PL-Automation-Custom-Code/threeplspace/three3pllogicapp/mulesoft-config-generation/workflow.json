@@ -1,4 +1,4 @@
-{
+﻿{
   "definition": {
     "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
     "actions": {
@@ -12,8 +12,7 @@
               "parameters": {
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                "branch": "@variables('targetBranch')",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "branch": "@variables('targetBranch')"
               }
             }
           },
@@ -95,8 +94,7 @@
                         "parameters": {
                           "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                           "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                          "branch": "@variables('targetBranch')",
-                          "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                          "branch": "@variables('targetBranch')"
                         }
                       },
                       "runAfter": {
@@ -131,8 +129,7 @@
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
                 "branch": "@variables('targetBranch')",
-                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'app.yaml'))",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'app.yaml'))"
               }
             },
             "runAfter": {
@@ -149,8 +146,7 @@
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
                 "branch": "@variables('targetBranch')",
-                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'dev.yaml'))",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'dev.yaml'))"
               }
             },
             "runAfter": {
@@ -167,8 +163,7 @@
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
                 "branch": "@variables('targetBranch')",
-                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'tst.yaml'))",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'tst.yaml'))"
               }
             },
             "runAfter": {
@@ -185,8 +180,7 @@
                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
                 "branch": "@variables('targetBranch')",
-                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'prod.yaml'))",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'prod.yaml'))"
               }
             },
             "runAfter": {

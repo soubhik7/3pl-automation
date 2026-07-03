@@ -31,8 +31,11 @@ namespace MuleSoftAutomation.Functions;
 //   test harness with safe coalesce() defaults.
 // IMPORTANT NOTES:
 //   Nothing here is hardcoded: repoOwner/repoName/baseBranch/
-//   featureBranchName/filePathPrefix/commitMessage are all parameters.
-//   githubToken is optional (falls back to the GITHUB_TOKEN app setting).
+//   featureBranchName/filePathPrefix/commitMessage are all parameters. No
+//   githubToken parameter — the GitHub PAT is resolved internally from the
+//   "githubToken" app setting (see GitHubBranchPublisher /
+//   GitHubApiClient.ResolveToken) rather than being passed through as a
+//   Logic Apps action input, so it never appears in workflow run history.
 //   Lives entirely in the MuleSoftAutomation namespace — no shared state
 //   with BtpAutomation or SolaceConfigGenerator, only the stateless
 //   GitHubBranchPublisher/Guard helpers.
@@ -55,8 +58,7 @@ public class PublishMuleSoftConfigToFeatureBranchFunction
         string devYaml,
         string tstYaml,
         string prodYaml,
-        string commitMessage,
-        string githubToken)
+        string commitMessage)
     {
         _logger.LogInformation(
             "PublishMuleSoftConfigToFeatureBranch invoked for {Repo}@{Branch} -> {Prefix}",
@@ -64,6 +66,6 @@ public class PublishMuleSoftConfigToFeatureBranchFunction
 
         return Publisher.PublishAsync(
             repoOwner, repoName, baseBranch, featureBranchName, filePathPrefix,
-            appYaml, devYaml, tstYaml, prodYaml, commitMessage, githubToken);
+            appYaml, devYaml, tstYaml, prodYaml, commitMessage, githubToken: null);
     }
 }

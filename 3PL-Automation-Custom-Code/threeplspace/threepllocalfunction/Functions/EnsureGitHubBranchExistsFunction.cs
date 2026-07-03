@@ -42,13 +42,12 @@ public class EnsureGitHubBranchExistsFunction
     public async Task<IDictionary<string, object>> Run(
         [WorkflowActionTrigger] string repoOwner,
         string repoName,
-        string branch,
-        string githubToken)
+        string branch)
     {
         _logger.LogInformation(
             "EnsureGitHubBranchExists invoked for {Repo}@{Branch}", $"{repoOwner}/{repoName}", branch);
 
-        var result = await GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken);
+        var result = await GitHubBranchChecker.CheckBranchExistsAsync(repoOwner, repoName, branch, githubToken: null);
 
         if (result.TryGetValue("success", out var success) && success is false)
         {

@@ -26,10 +26,13 @@ namespace BtpAutomation.Functions;
 //   three3pllogicapp/btp-app-creation/workflow.json for a worked example with
 //   safe coalesce() defaults for portal testing.
 // IMPORTANT NOTES:
-//   githubToken is optional — leave it blank to use the GITHUB_TOKEN app
-//   setting instead (see GitHubWorkflowDispatcher). shortText is the only
-//   optional business field (GitHub Actions treats a missing workflow input
-//   as blank, so an empty string is sent instead of null).
+//   No githubToken parameter — the GitHub PAT is resolved internally from
+//   the "githubToken" app setting (see GitHubWorkflowDispatcher /
+//   GitHubApiClient.ResolveToken) rather than being passed through as a
+//   Logic Apps action input, so it never appears in workflow run history.
+//   shortText is the only optional business field (GitHub Actions treats a
+//   missing workflow input as blank, so an empty string is sent instead of
+//   null).
 //   This function only lives in the BtpAutomation namespace — it shares no
 //   mutable state with the Solace or MuleSoft domains, only the stateless
 //   Guard/GitHubApiClient helpers under ThreePlLocalFunction.Shared.
@@ -47,7 +50,6 @@ public class TriggerBtpDeploymentFunction
         string repoName,
         string workflowFileName,
         string branchRef,
-        string githubToken,
         string subAccount,
         string mode,
         string environment,
@@ -82,6 +84,6 @@ public class TriggerBtpDeploymentFunction
             ["product_name"] = productName
         };
 
-        return Dispatcher.DispatchAsync(repoOwner, repoName, workflowFileName, branchRef, githubToken, inputs);
+        return Dispatcher.DispatchAsync(repoOwner, repoName, workflowFileName, branchRef, null, inputs);
     }
 }

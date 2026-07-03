@@ -14,7 +14,6 @@
                 "repoName": "@coalesce(triggerBody()?['repoName'], 'marsis-az-core-pipeline')",
                 "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], 'btp-Api-management-deploy.yml')",
                 "branchRef": "@coalesce(triggerBody()?['branchRef'], 'feature-kk-btp-app-creation')",
-                "githubToken": "@coalesce(appsetting('githubToken'), '')",
                 "subAccount": "@coalesce(triggerBody()?['subAccount'], 'Global')",
                 "mode": "@coalesce(triggerBody()?['mode'], 'Create_Application_with_Product')",
                 "environment": "@coalesce(triggerBody()?['environment'], 'Dev')",

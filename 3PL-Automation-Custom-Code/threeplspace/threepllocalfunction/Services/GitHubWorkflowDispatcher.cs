@@ -39,14 +39,14 @@ public sealed class GitHubWorkflowDispatcher
         string repoName,
         string workflowFileName,
         string branchRef,
-        string githubToken,
+        string? githubToken,
         IReadOnlyDictionary<string, string> inputs)
     {
         var workflow = $"{repoOwner}/{repoName}/actions/workflows/{workflowFileName}";
 
         try
         {
-            var token = GitHubApiClient.ResolveToken(githubToken);
+            var token = GitHubApiClient.ResolveToken(githubToken, "githubToken");
             var url = $"https://api.github.com/repos/{repoOwner}/{repoName}/actions/workflows/{workflowFileName}/dispatches";
             var payload = new Dictionary<string, object> { ["ref"] = branchRef, ["inputs"] = inputs };
 
