@@ -12,17 +12,14 @@
                                 "type": "Workflow",
                                 "inputs": {
                                     "host": {
-                                        "triggerName": "When_a_HTTP_request_is_received",
                                         "workflow": {
                                             "id": "btp-config-publish"
                                         }
                                     },
                                     "body": "@coalesce(triggerBody()?['btp'], json('{}'))"
-                                },
-                                "runAfter": {}
+                                }
                             }
-                        },
-                        "runAfter": {}
+                        }
                     },
                     "Scope-MuleSoft": {
                         "type": "Scope",
@@ -31,20 +28,17 @@
                                 "type": "Workflow",
                                 "inputs": {
                                     "host": {
-                                        "triggerName": "When_a_HTTP_request_is_received",
                                         "workflow": {
                                             "id": "mulesoft-config-generation"
                                         }
                                     },
                                     "body": "@triggerBody()?['mulesoft']?['generate']"
-                                },
-                                "runAfter": {}
+                                }
                             },
                             "Invoke_MuleSoft_Config_Publish": {
                                 "type": "Workflow",
                                 "inputs": {
                                     "host": {
-                                        "triggerName": "When_a_HTTP_request_is_received",
                                         "workflow": {
                                             "id": "mulesoft-config-publish"
                                         }
@@ -68,8 +62,7 @@
                                     ]
                                 }
                             }
-                        },
-                        "runAfter": {}
+                        }
                     },
                     "Scope-Solace": {
                         "type": "Scope",
@@ -78,20 +71,17 @@
                                 "type": "Workflow",
                                 "inputs": {
                                     "host": {
-                                        "triggerName": "When_a_HTTP_request_is_received",
                                         "workflow": {
                                             "id": "solace-config-generation"
                                         }
                                     },
                                     "body": "@triggerBody()?['solace']?['generate']"
-                                },
-                                "runAfter": {}
+                                }
                             },
                             "Invoke_Solace_Config_Publish": {
                                 "type": "Workflow",
                                 "inputs": {
                                     "host": {
-                                        "triggerName": "When_a_HTTP_request_is_received",
                                         "workflow": {
                                             "id": "solace-config-publish"
                                         }
@@ -112,8 +102,7 @@
                                     ]
                                 }
                             }
-                        },
-                        "runAfter": {}
+                        }
                     },
                     "Response-Success": {
                         "type": "Response",
@@ -163,8 +152,7 @@
                                 "mulesoftDetails": "@result('Scope-MuleSoft')",
                                 "solaceDetails": "@result('Scope-Solace')"
                             }
-                        },
-                        "runAfter": {}
+                        }
                     }
                 },
                 "runAfter": {

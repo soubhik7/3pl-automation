@@ -5,18 +5,99 @@
             "Scope-Try": {
                 "type": "Scope",
                 "actions": {
-                    "Initialize_Normalized_FilePathPrefix": {
-                        "type": "InitializeVariable",
+                    "Check_Branch_Exists": {
+                        "type": "InvokeFunction",
                         "inputs": {
-                            "variables": [
+                            "functionName": "CheckGitHubBranchExists",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@variables('targetBranch')",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        }
+                    },
+                    "If_Feature_Branch_Missing": {
+                        "type": "If",
+                        "expression": {
+                            "or": [
                                 {
-                                    "name": "normalizedFilePathPrefix",
-                                    "type": "string",
-                                    "value": "@if(or(empty(coalesce(triggerBody()?['filePathPrefix'], '')), endsWith(coalesce(triggerBody()?['filePathPrefix'], ''), '/')), coalesce(triggerBody()?['filePathPrefix'], ''), concat(coalesce(triggerBody()?['filePathPrefix'], ''), '/'))"
+                                    "equals": [
+                                        "@body('Check_Branch_Exists')?['exists']",
+                                        false
+                                    ]
+                                },
+                                {
+                                    "equals": [
+                                        "@empty(triggerBody()?['featureBranchName'])",
+                                        false
+                                    ]
                                 }
                             ]
                         },
-                        "runAfter": {}
+                        "actions": {
+                            "Wait_For_Branch_Creation": {
+                                "type": "Until",
+                                "expression": "@equals(body('Poll_Branch_Exists')?['exists'], true)",
+                                "limit": {
+                                    "count": 40,
+                                    "timeout": "PT20M"
+                                },
+                                "actions": {
+                                    "Delay_Before_Poll": {
+                                        "type": "Wait",
+                                        "inputs": {
+                                            "interval": {
+                                                "count": 30,
+                                                "unit": "Second"
+                                            }
+                                        }
+                                    },
+                                    "Poll_Branch_Exists": {
+                                        "type": "InvokeFunction",
+                                        "inputs": {
+                                            "functionName": "CheckGitHubBranchExists",
+                                            "parameters": {
+                                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                                "branch": "@variables('targetBranch')",
+                                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Delay_Before_Poll": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "Ensure_Branch_Now_Exists": {
+                                "type": "InvokeFunction",
+                                "inputs": {
+                                    "functionName": "EnsureGitHubBranchExists",
+                                    "parameters": {
+                                        "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                        "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                        "branch": "@variables('targetBranch')",
+                                        "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Wait_For_Branch_Creation": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {}
+                        },
+                        "runAfter": {
+                            "Check_Branch_Exists": [
+                                "Succeeded"
+                            ]
+                        }
                     },
                     "Fetch_Existing_App_Yaml": {
                         "type": "InvokeFunction",
@@ -25,13 +106,13 @@
                             "parameters": {
                                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "branch": "@variables('targetBranch')",
                                 "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'app.yaml'))",
                                 "githubToken": "@coalesce(appsetting('githubToken'), '')"
                             }
                         },
                         "runAfter": {
-                            "Initialize_Normalized_FilePathPrefix": [
+                            "If_Feature_Branch_Missing": [
                                 "Succeeded"
                             ]
                         }
@@ -43,13 +124,13 @@
                             "parameters": {
                                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "branch": "@variables('targetBranch')",
                                 "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'dev.yaml'))",
                                 "githubToken": "@coalesce(appsetting('githubToken'), '')"
                             }
                         },
                         "runAfter": {
-                            "Initialize_Normalized_FilePathPrefix": [
+                            "If_Feature_Branch_Missing": [
                                 "Succeeded"
                             ]
                         }
@@ -61,13 +142,13 @@
                             "parameters": {
                                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "branch": "@variables('targetBranch')",
                                 "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'tst.yaml'))",
                                 "githubToken": "@coalesce(appsetting('githubToken'), '')"
                             }
                         },
                         "runAfter": {
-                            "Initialize_Normalized_FilePathPrefix": [
+                            "If_Feature_Branch_Missing": [
                                 "Succeeded"
                             ]
                         }
@@ -79,13 +160,13 @@
                             "parameters": {
                                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "branch": "@variables('targetBranch')",
                                 "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'prod.yaml'))",
                                 "githubToken": "@coalesce(appsetting('githubToken'), '')"
                             }
                         },
                         "runAfter": {
-                            "Initialize_Normalized_FilePathPrefix": [
+                            "If_Feature_Branch_Missing": [
                                 "Succeeded"
                             ]
                         }
@@ -132,16 +213,50 @@
                         }
                     }
                 },
-                "runAfter": {}
+                "runAfter": {
+                    "Initialize_Target_Branch": [
+                        "Succeeded"
+                    ]
+                }
             },
-            "Scope": {
+            "Scope-Catch": {
                 "type": "Scope",
-                "actions": {},
+                "actions": {
+                    "Response-Error": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 500,
+                            "body": {
+                                "status": "mulesoft-config-generation failed.",
+                                "details": "@result('Scope-Try')"
+                            }
+                        }
+                    }
+                },
                 "runAfter": {
                     "Scope-Try": [
                         "FAILED"
                     ]
                 }
+            },
+            "Initialize_Target_Branch": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "normalizedFilePathPrefix",
+                            "type": "string",
+                            "value": "@if(or(empty(coalesce(triggerBody()?['filePathPrefix'], '')), endsWith(coalesce(triggerBody()?['filePathPrefix'], ''), '/')), coalesce(triggerBody()?['filePathPrefix'], ''), concat(coalesce(triggerBody()?['filePathPrefix'], ''), '/'))"
+                        },
+                        {
+                            "name": "targetBranch",
+                            "type": "string",
+                            "value": "@coalesce(triggerBody()?['featureBranchName'], triggerBody()?['branch'], 'main')"
+                        }
+                    ]
+                },
+                "runAfter": {}
             }
         },
         "triggers": {

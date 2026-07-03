@@ -2,9 +2,116 @@
     "definition": {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
         "actions": {
+            "Initialize_Target_Branch": {
+                "type": "InitializeVariable",
+                "inputs": {
+                    "variables": [
+                        {
+                            "name": "targetBranch",
+                            "type": "string",
+                            "value": "@coalesce(triggerBody()?['featureBranchName'], triggerBody()?['branch'], 'main')"
+                        }
+                    ]
+                },
+                "runAfter": {}
+            },
             "Scope-Try": {
                 "type": "Scope",
                 "actions": {
+                    "Check_Branch_Exists": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "CheckGitHubBranchExists",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@variables('targetBranch')",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        }
+                    },
+                    "If_Feature_Branch_Missing": {
+                        "type": "If",
+                        "expression": {
+                            "or": [
+                                {
+                                    "equals": [
+                                        "@body('Check_Branch_Exists')?['exists']",
+                                        false
+                                    ]
+                                },
+                                {
+                                    "equals": [
+                                        "@empty(triggerBody()?['featureBranchName'])",
+                                        false
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "Wait_For_Branch_Creation": {
+                                "type": "Until",
+                                "expression": "@equals(body('Poll_Branch_Exists')?['exists'], true)",
+                                "limit": {
+                                    "count": 40,
+                                    "timeout": "PT20M"
+                                },
+                                "actions": {
+                                    "Delay_Before_Poll": {
+                                        "type": "Wait",
+                                        "inputs": {
+                                            "interval": {
+                                                "count": 30,
+                                                "unit": "Second"
+                                            }
+                                        }
+                                    },
+                                    "Poll_Branch_Exists": {
+                                        "type": "InvokeFunction",
+                                        "inputs": {
+                                            "functionName": "CheckGitHubBranchExists",
+                                            "parameters": {
+                                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                                "branch": "@variables('targetBranch')",
+                                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Delay_Before_Poll": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                }
+                            },
+                            "Ensure_Branch_Now_Exists": {
+                                "type": "InvokeFunction",
+                                "inputs": {
+                                    "functionName": "EnsureGitHubBranchExists",
+                                    "parameters": {
+                                        "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                        "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                        "branch": "@variables('targetBranch')",
+                                        "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Wait_For_Branch_Creation": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {}
+                        },
+                        "runAfter": {
+                            "Check_Branch_Exists": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
                     "Fetch_Existing_Solace_Config": {
                         "type": "InvokeFunction",
                         "inputs": {
@@ -12,12 +119,16 @@
                             "parameters": {
                                 "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
                                 "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "branch": "@variables('targetBranch')",
                                 "filePath": "@coalesce(triggerBody()?['filePath'], '')",
                                 "githubToken": "@coalesce(appsetting('githubToken'), '')"
                             }
                         },
-                        "runAfter": {}
+                        "runAfter": {
+                            "If_Feature_Branch_Missing": [
+                                "Succeeded"
+                            ]
+                        }
                     },
                     "Call_a_local_function-_Generate_Solace_Config": {
                         "type": "InvokeFunction",
@@ -26,8 +137,7 @@
                             "parameters": {
                                 "csvContent": "@triggerBody()?['csvContent']"
                             }
-                        },
-                        "runAfter": {}
+                        }
                     },
                     "Merge_Solace_Config": {
                         "type": "InvokeFunction",
@@ -64,11 +174,27 @@
                         }
                     }
                 },
-                "runAfter": {}
+                "runAfter": {
+                    "Initialize_Target_Branch": [
+                        "Succeeded"
+                    ]
+                }
             },
             "Scope-Catch": {
                 "type": "Scope",
-                "actions": {},
+                "actions": {
+                    "Response-Error": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 500,
+                            "body": {
+                                "status": "solace-config-generation failed.",
+                                "details": "@result('Scope-Try')"
+                            }
+                        }
+                    }
+                },
                 "runAfter": {
                     "Scope-Try": [
                         "FAILED"

@@ -42,7 +42,20 @@
             },
             "Scope-Catch": {
                 "type": "Scope",
-                "actions": {},
+                "actions": {
+                    "Response-Error": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 500,
+                            "body": {
+                                "status": "mulesoft-config-publish failed.",
+                                "details": "@result('Scope-Try')"
+                            }
+                        },
+                        "runAfter": {}
+                    }
+                },
                 "runAfter": {
                     "Scope-Try": [
                         "FAILED"
