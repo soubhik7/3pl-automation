@@ -1,76 +1,76 @@
 {
-    "definition": {
-        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope-Try": {
+        "type": "Scope",
         "actions": {
-            "Scope-Try": {
-                "type": "Scope",
-                "actions": {
-                    "Call_a_local_function-Publish_MuleSoft_Config_-_GitHub": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "PublishMuleSoftConfigToFeatureBranch",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
-                                "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/mulesoft-config-update')",
-                                "filePathPrefix": "@coalesce(triggerBody()?['filePathPrefix'], '')",
-                                "appYaml": "@coalesce(triggerBody()?['appYaml'], '')",
-                                "devYaml": "@coalesce(triggerBody()?['devYaml'], '')",
-                                "tstYaml": "@coalesce(triggerBody()?['tstYaml'], '')",
-                                "prodYaml": "@coalesce(triggerBody()?['prodYaml'], '')",
-                                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update MuleSoft NAV onboarding config via 3PL-Automation')",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        }
-                    },
-                    "Response-Success": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 200,
-                            "body": "@body('Call_a_local_function-Publish_MuleSoft_Config_-_GitHub')"
-                        },
-                        "runAfter": {
-                            "Call_a_local_function-Publish_MuleSoft_Config_-_GitHub": [
-                                "SUCCEEDED"
-                            ]
-                        }
-                    }
-                },
-                "runAfter": {}
+          "Call_a_local_function-Publish_MuleSoft_Config_-_GitHub": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "PublishMuleSoftConfigToFeatureBranch",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
+                "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/mulesoft-config-update')",
+                "filePathPrefix": "@coalesce(triggerBody()?['filePathPrefix'], '')",
+                "appYaml": "@coalesce(triggerBody()?['appYaml'], '')",
+                "devYaml": "@coalesce(triggerBody()?['devYaml'], '')",
+                "tstYaml": "@coalesce(triggerBody()?['tstYaml'], '')",
+                "prodYaml": "@coalesce(triggerBody()?['prodYaml'], '')",
+                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update MuleSoft NAV onboarding config via 3PL-Automation')",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            }
+          },
+          "Response-Success": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "body": "@body('Call_a_local_function-Publish_MuleSoft_Config_-_GitHub')"
             },
-            "Scope-Catch": {
-                "type": "Scope",
-                "actions": {
-                    "Response-Error": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 500,
-                            "body": {
-                                "status": "mulesoft-config-publish failed.",
-                                "details": "@result('Scope-Try')"
-                            }
-                        },
-                        "runAfter": {}
-                    }
-                },
-                "runAfter": {
-                    "Scope-Try": [
-                        "FAILED"
-                    ]
-                }
+            "runAfter": {
+              "Call_a_local_function-Publish_MuleSoft_Config_-_GitHub": [
+                "SUCCEEDED"
+              ]
             }
+          }
         },
-        "triggers": {
-            "When_a_HTTP_request_is_received": {
-                "type": "Request",
-                "kind": "Http"
-            }
+        "runAfter": {}
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Response-Error": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "mulesoft-config-publish failed.",
+                "details": "@result('Scope-Try')"
+              }
+            },
+            "runAfter": {}
+          }
         },
-        "contentVersion": "1.0.0.0",
-        "outputs": {}
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
     },
-    "kind": "stateful"
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
 }

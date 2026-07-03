@@ -1,77 +1,76 @@
 {
-    "definition": {
-        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope-Try": {
+        "type": "Scope",
         "actions": {
-            "Scope-Try": {
-                "type": "Scope",
-                "actions": {
-                    "Call_a_local_function-Trigger_BTP_GitHub_Action": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "TriggerBtpDeployment",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], 'Mars-Incorporated')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], 'marsis-az-core-pipeline')",
-                                "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], 'btp-Api-management-deploy.yml')",
-                                "branchRef": "@coalesce(triggerBody()?['branchRef'], 'feature-kk-btp-app-creation')",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')",
-                                "subAccount": "@coalesce(triggerBody()?['subAccount'], 'Global')",
-                                "mode": "@coalesce(triggerBody()?['mode'], 'Create_Application_with_Product')",
-                                "environment": "@coalesce(triggerBody()?['environment'], 'Dev')",
-                                "developerId": "@coalesce(triggerBody()?['developerId'], '@effem.com')",
-                                "title": "@coalesce(triggerBody()?['title'], 'MyNewApplication')",
-                                "shortText": "@coalesce(triggerBody()?['shortText'], 'Short description here')",
-                                "productName": "@coalesce(triggerBody()?['productName'], 'cicd,TestAIS')"
-                            }
-                        }
-                    },
-                    "Response-Success": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 200,
-                            "body": "@body('Call_a_local_function-Trigger_BTP_GitHub_Action')"
-                        },
-                        "runAfter": {
-                            "Call_a_local_function-Trigger_BTP_GitHub_Action": [
-                                "SUCCEEDED"
-                            ]
-                        }
-                    }
-                },
-                "runAfter": {}
+          "Call_a_local_function-Trigger_BTP_GitHub_Action": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "TriggerBtpDeployment",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], 'Mars-Incorporated')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], 'marsis-az-core-pipeline')",
+                "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], 'btp-Api-management-deploy.yml')",
+                "branchRef": "@coalesce(triggerBody()?['branchRef'], 'feature-kk-btp-app-creation')",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')",
+                "subAccount": "@coalesce(triggerBody()?['subAccount'], 'Global')",
+                "mode": "@coalesce(triggerBody()?['mode'], 'Create_Application_with_Product')",
+                "environment": "@coalesce(triggerBody()?['environment'], 'Dev')",
+                "developerId": "@coalesce(triggerBody()?['developerId'], '@effem.com')",
+                "title": "@coalesce(triggerBody()?['title'], 'MyNewApplication')",
+                "shortText": "@coalesce(triggerBody()?['shortText'], 'Short description here')",
+                "productName": "@coalesce(triggerBody()?['productName'], 'cicd,TestAIS')"
+              }
+            }
+          },
+          "Response-Success": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "body": "@body('Call_a_local_function-Trigger_BTP_GitHub_Action')"
             },
-            "Scope-Catch": {
-                "type": "Scope",
-                "actions": {
-                    "Response-Error": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 500,
-                            "body": {
-                                "status": "btp-config-publish failed.",
-                                "details": "@result('Scope-Try')"
-                            }
-                        },
-                        "runAfter": {}
-                    }
-                },
-                "runAfter": {
-                    "Scope-Try": [
-                        "FAILED"
-                    ]
-                }
+            "runAfter": {
+              "Call_a_local_function-Trigger_BTP_GitHub_Action": [
+                "SUCCEEDED"
+              ]
             }
+          }
         },
-        "triggers": {
-            "When_a_HTTP_request_is_received": {
-                "type": "Request",
-                "kind": "Http"
+        "runAfter": {}
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Response-Error": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "btp-config-publish failed.",
+                "details": "@result('Scope-Try')"
+              }
             }
+          }
         },
-        "contentVersion": "1.0.0.0",
-        "outputs": {}
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
     },
-    "kind": "stateful"
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
 }

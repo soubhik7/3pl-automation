@@ -1,73 +1,73 @@
 {
-    "definition": {
-        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope-Try": {
+        "type": "Scope",
         "actions": {
-            "Scope-Try": {
-                "type": "Scope",
-                "actions": {
-                    "Call_a_local_function_-_Publish_Solace_config_-_GitHub": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "PublishSolaceConfigToFeatureBranch",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
-                                "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/solace-config-update')",
-                                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
-                                "solaceConfigJson": "@coalesce(triggerBody()?['solaceConfigJson'], '')",
-                                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update Solace onboarding config via 3PL-Automation')",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        }
-                    },
-                    "Response-Success": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 200,
-                            "body": "@body('Call_a_local_function_-_Publish_Solace_config_-_GitHub')"
-                        },
-                        "runAfter": {
-                            "Call_a_local_function_-_Publish_Solace_config_-_GitHub": [
-                                "SUCCEEDED"
-                            ]
-                        }
-                    }
-                },
-                "runAfter": {}
+          "Call_a_local_function_-_Publish_Solace_config_-_GitHub": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "PublishSolaceConfigToFeatureBranch",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
+                "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/solace-config-update')",
+                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
+                "solaceConfigJson": "@coalesce(triggerBody()?['solaceConfigJson'], '')",
+                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update Solace onboarding config via 3PL-Automation')",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            }
+          },
+          "Response-Success": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "body": "@body('Call_a_local_function_-_Publish_Solace_config_-_GitHub')"
             },
-            "Scope-Catch": {
-                "type": "Scope",
-                "actions": {
-                    "Response-Error": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 500,
-                            "body": {
-                                "status": "solace-config-publish failed.",
-                                "details": "@result('Scope-Try')"
-                            }
-                        },
-                        "runAfter": {}
-                    }
-                },
-                "runAfter": {
-                    "Scope-Try": [
-                        "FAILED"
-                    ]
-                }
+            "runAfter": {
+              "Call_a_local_function_-_Publish_Solace_config_-_GitHub": [
+                "SUCCEEDED"
+              ]
             }
+          }
         },
-        "triggers": {
-            "When_a_HTTP_request_is_received": {
-                "type": "Request",
-                "kind": "Http"
-            }
+        "runAfter": {}
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Response-Error": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "solace-config-publish failed.",
+                "details": "@result('Scope-Try')"
+              }
+            },
+            "runAfter": {}
+          }
         },
-        "contentVersion": "1.0.0.0",
-        "outputs": {}
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
     },
-    "kind": "stateful"
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
 }

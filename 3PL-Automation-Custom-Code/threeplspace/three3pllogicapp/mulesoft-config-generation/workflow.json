@@ -1,272 +1,296 @@
 {
-    "definition": {
-        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope-Try": {
+        "type": "Scope",
         "actions": {
-            "Scope-Try": {
-                "type": "Scope",
-                "actions": {
-                    "Check_Branch_Exists": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "CheckGitHubBranchExists",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@variables('targetBranch')",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        }
-                    },
-                    "If_Feature_Branch_Missing": {
-                        "type": "If",
-                        "expression": {
-                            "or": [
-                                {
-                                    "equals": [
-                                        "@body('Check_Branch_Exists')?['exists']",
-                                        false
-                                    ]
-                                },
-                                {
-                                    "equals": [
-                                        "@empty(triggerBody()?['featureBranchName'])",
-                                        false
-                                    ]
-                                }
-                            ]
-                        },
-                        "actions": {
-                            "Wait_For_Branch_Creation": {
-                                "type": "Until",
-                                "expression": "@equals(body('Poll_Branch_Exists')?['exists'], true)",
-                                "limit": {
-                                    "count": 40,
-                                    "timeout": "PT20M"
-                                },
-                                "actions": {
-                                    "Delay_Before_Poll": {
-                                        "type": "Wait",
-                                        "inputs": {
-                                            "interval": {
-                                                "count": 30,
-                                                "unit": "Second"
-                                            }
-                                        }
-                                    },
-                                    "Poll_Branch_Exists": {
-                                        "type": "InvokeFunction",
-                                        "inputs": {
-                                            "functionName": "CheckGitHubBranchExists",
-                                            "parameters": {
-                                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                                "branch": "@variables('targetBranch')",
-                                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                                            }
-                                        },
-                                        "runAfter": {
-                                            "Delay_Before_Poll": [
-                                                "Succeeded"
-                                            ]
-                                        }
-                                    }
-                                }
-                            },
-                            "Ensure_Branch_Now_Exists": {
-                                "type": "InvokeFunction",
-                                "inputs": {
-                                    "functionName": "EnsureGitHubBranchExists",
-                                    "parameters": {
-                                        "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                        "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                        "branch": "@variables('targetBranch')",
-                                        "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                                    }
-                                },
-                                "runAfter": {
-                                    "Wait_For_Branch_Creation": [
-                                        "Succeeded"
-                                    ]
-                                }
-                            }
-                        },
-                        "else": {
-                            "actions": {}
-                        },
-                        "runAfter": {
-                            "Check_Branch_Exists": [
-                                "Succeeded"
-                            ]
-                        }
-                    },
-                    "Fetch_Existing_App_Yaml": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "FetchExistingConfigFile",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@variables('targetBranch')",
-                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'app.yaml'))",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        },
-                        "runAfter": {
-                            "If_Feature_Branch_Missing": [
-                                "Succeeded"
-                            ]
-                        }
-                    },
-                    "Fetch_Existing_Dev_Yaml": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "FetchExistingConfigFile",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@variables('targetBranch')",
-                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'dev.yaml'))",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        },
-                        "runAfter": {
-                            "If_Feature_Branch_Missing": [
-                                "Succeeded"
-                            ]
-                        }
-                    },
-                    "Fetch_Existing_Tst_Yaml": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "FetchExistingConfigFile",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@variables('targetBranch')",
-                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'tst.yaml'))",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        },
-                        "runAfter": {
-                            "If_Feature_Branch_Missing": [
-                                "Succeeded"
-                            ]
-                        }
-                    },
-                    "Fetch_Existing_Prod_Yaml": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "FetchExistingConfigFile",
-                            "parameters": {
-                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                                "branch": "@variables('targetBranch')",
-                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'prod.yaml'))",
-                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
-                            }
-                        },
-                        "runAfter": {
-                            "If_Feature_Branch_Missing": [
-                                "Succeeded"
-                            ]
-                        }
-                    },
-                    "Call_a_local_function-Generate_MuleSoft_Config_YAML": {
-                        "type": "InvokeFunction",
-                        "inputs": {
-                            "functionName": "GenerateMuleSoftConfig",
-                            "parameters": {
-                                "csvContent": "@triggerBody()?['csvContent']",
-                                "updateExisting": "@coalesce(triggerBody()?['updateExisting'], false)",
-                                "existingAppYaml": "@coalesce(triggerBody()?['existingAppYaml'], body('Fetch_Existing_App_Yaml')?['content'], '')",
-                                "existingDevYaml": "@coalesce(triggerBody()?['existingDevYaml'], body('Fetch_Existing_Dev_Yaml')?['content'], '')",
-                                "existingTstYaml": "@coalesce(triggerBody()?['existingTstYaml'], body('Fetch_Existing_Tst_Yaml')?['content'], '')",
-                                "existingProdYaml": "@coalesce(triggerBody()?['existingProdYaml'], body('Fetch_Existing_Prod_Yaml')?['content'], '')"
-                            }
-                        },
-                        "runAfter": {
-                            "Fetch_Existing_App_Yaml": [
-                                "Succeeded"
-                            ],
-                            "Fetch_Existing_Dev_Yaml": [
-                                "Succeeded"
-                            ],
-                            "Fetch_Existing_Tst_Yaml": [
-                                "Succeeded"
-                            ],
-                            "Fetch_Existing_Prod_Yaml": [
-                                "Succeeded"
-                            ]
-                        }
-                    },
-                    "Response-Success": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 200,
-                            "body": "@body('Call_a_local_function-Generate_MuleSoft_Config_YAML')"
-                        },
-                        "runAfter": {
-                            "Call_a_local_function-Generate_MuleSoft_Config_YAML": [
-                                "SUCCEEDED"
-                            ]
-                        }
-                    }
+          "Check_Branch_Exists": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "CheckGitHubBranchExists",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "branch": "@variables('targetBranch')",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            }
+          },
+          "If_Feature_Branch_Missing": {
+            "type": "If",
+            "expression": {
+              "or": [
+                {
+                  "equals": [
+                    "@body('Check_Branch_Exists')?['exists']",
+                    false
+                  ]
                 },
-                "runAfter": {
-                    "Initialize_Target_Branch": [
-                        "Succeeded"
-                    ]
+                {
+                  "equals": [
+                    "@empty(triggerBody()?['featureBranchName'])",
+                    false
+                  ]
                 }
+              ]
             },
-            "Scope-Catch": {
-                "type": "Scope",
-                "actions": {
-                    "Response-Error": {
-                        "type": "Response",
-                        "kind": "Http",
-                        "inputs": {
-                            "statusCode": 500,
-                            "body": {
-                                "status": "mulesoft-config-generation failed.",
-                                "details": "@result('Scope-Try')"
-                            }
-                        }
-                    }
-                },
-                "runAfter": {
-                    "Scope-Try": [
-                        "FAILED"
-                    ]
-                }
-            },
-            "Initialize_Target_Branch": {
-                "type": "InitializeVariable",
+            "actions": {
+              "Request_Feature_Branch_Via_Teams": {
+                "type": "Workflow",
                 "inputs": {
-                    "variables": [
-                        {
-                            "name": "normalizedFilePathPrefix",
-                            "type": "string",
-                            "value": "@if(or(empty(coalesce(triggerBody()?['filePathPrefix'], '')), endsWith(coalesce(triggerBody()?['filePathPrefix'], ''), '/')), coalesce(triggerBody()?['filePathPrefix'], ''), concat(coalesce(triggerBody()?['filePathPrefix'], ''), '/'))"
-                        },
-                        {
-                            "name": "targetBranch",
-                            "type": "string",
-                            "value": "@coalesce(triggerBody()?['featureBranchName'], triggerBody()?['branch'], 'main')"
-                        }
-                    ]
+                  "host": {
+                    "workflow": {
+                      "id": "request-feature-branch-via-teams"
+                    }
+                  },
+                  "body": {
+                    "title": "MuleSoft Config Onboarding — Feature Branch Needed",
+                    "subtitle": "Approval needed before the config pipeline can continue",
+                    "requesterEmail": "@coalesce(triggerBody()?['requesterEmail'], '')",
+                    "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                    "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                    "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
+                    "suggestedBranchName": "@variables('targetBranch')",
+                    "configPath": "@variables('normalizedFilePathPrefix')",
+                    "summary": "@concat('MuleSoft NAV onboarding config for ', coalesce(triggerBody()?['repoOwner'], ''), '/', coalesce(triggerBody()?['repoName'], ''))",
+                    "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], appsetting('MuleSoftDevOpsOwnerEmail'))"
+                  }
+                }
+              },
+              "If_Branch_Request_Rejected": {
+                "type": "If",
+                "expression": {
+                  "equals": [
+                    "@coalesce(body('Request_Feature_Branch_Via_Teams')?['decision'], '')",
+                    "reject"
+                  ]
                 },
-                "runAfter": {}
+                "actions": {
+                  "Response-Branch-Request-Rejected": {
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 409,
+                      "body": {
+                        "status": "Feature branch request was rejected by the DevOps owner.",
+                        "branch": "@variables('targetBranch')"
+                      }
+                    }
+                  }
+                },
+                "else": {
+                  "actions": {
+                    "Update_Target_Branch_From_Response": {
+                      "type": "SetVariable",
+                      "inputs": {
+                        "name": "targetBranch",
+                        "value": "@body('Request_Feature_Branch_Via_Teams')?['branchName']"
+                      }
+                    },
+                    "Ensure_Branch_Now_Exists": {
+                      "type": "InvokeFunction",
+                      "inputs": {
+                        "functionName": "EnsureGitHubBranchExists",
+                        "parameters": {
+                          "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                          "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                          "branch": "@variables('targetBranch')",
+                          "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                        }
+                      },
+                      "runAfter": {
+                        "Update_Target_Branch_From_Response": [
+                          "Succeeded"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "runAfter": {
+                  "Request_Feature_Branch_Via_Teams": [
+                    "Succeeded"
+                  ]
+                }
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Check_Branch_Exists": [
+                "Succeeded"
+              ]
             }
-        },
-        "triggers": {
-            "When_a_HTTP_request_is_received": {
-                "type": "Request",
-                "kind": "Http"
+          },
+          "Fetch_Existing_App_Yaml": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "FetchExistingConfigFile",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "branch": "@variables('targetBranch')",
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'app.yaml'))",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            },
+            "runAfter": {
+              "If_Feature_Branch_Missing": [
+                "Succeeded"
+              ]
             }
+          },
+          "Fetch_Existing_Dev_Yaml": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "FetchExistingConfigFile",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "branch": "@variables('targetBranch')",
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'dev.yaml'))",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            },
+            "runAfter": {
+              "If_Feature_Branch_Missing": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Fetch_Existing_Tst_Yaml": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "FetchExistingConfigFile",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "branch": "@variables('targetBranch')",
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'tst.yaml'))",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            },
+            "runAfter": {
+              "If_Feature_Branch_Missing": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Fetch_Existing_Prod_Yaml": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "FetchExistingConfigFile",
+              "parameters": {
+                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                "branch": "@variables('targetBranch')",
+                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'prod.yaml'))",
+                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+              }
+            },
+            "runAfter": {
+              "If_Feature_Branch_Missing": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Call_a_local_function-Generate_MuleSoft_Config_YAML": {
+            "type": "InvokeFunction",
+            "inputs": {
+              "functionName": "GenerateMuleSoftConfig",
+              "parameters": {
+                "csvContent": "@triggerBody()?['csvContent']",
+                "updateExisting": "@coalesce(triggerBody()?['updateExisting'], false)",
+                "existingAppYaml": "@coalesce(triggerBody()?['existingAppYaml'], body('Fetch_Existing_App_Yaml')?['content'], '')",
+                "existingDevYaml": "@coalesce(triggerBody()?['existingDevYaml'], body('Fetch_Existing_Dev_Yaml')?['content'], '')",
+                "existingTstYaml": "@coalesce(triggerBody()?['existingTstYaml'], body('Fetch_Existing_Tst_Yaml')?['content'], '')",
+                "existingProdYaml": "@coalesce(triggerBody()?['existingProdYaml'], body('Fetch_Existing_Prod_Yaml')?['content'], '')"
+              }
+            },
+            "runAfter": {
+              "Fetch_Existing_App_Yaml": [
+                "Succeeded"
+              ],
+              "Fetch_Existing_Dev_Yaml": [
+                "Succeeded"
+              ],
+              "Fetch_Existing_Tst_Yaml": [
+                "Succeeded"
+              ],
+              "Fetch_Existing_Prod_Yaml": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Response-Success": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "body": "@body('Call_a_local_function-Generate_MuleSoft_Config_YAML')"
+            },
+            "runAfter": {
+              "Call_a_local_function-Generate_MuleSoft_Config_YAML": [
+                "SUCCEEDED"
+              ]
+            }
+          }
         },
-        "contentVersion": "1.0.0.0",
-        "outputs": {}
+        "runAfter": {
+          "Initialize_Target_Branch": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Response-Error": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "mulesoft-config-generation failed.",
+                "details": "@result('Scope-Try')"
+              }
+            }
+          }
+        },
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      },
+      "Initialize_Target_Branch": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "normalizedFilePathPrefix",
+              "type": "string",
+              "value": "@if(or(empty(coalesce(triggerBody()?['filePathPrefix'], '')), endsWith(coalesce(triggerBody()?['filePathPrefix'], ''), '/')), coalesce(triggerBody()?['filePathPrefix'], ''), concat(coalesce(triggerBody()?['filePathPrefix'], ''), '/'))"
+            },
+            {
+              "name": "targetBranch",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['featureBranchName'], triggerBody()?['branch'], 'main')"
+            }
+          ]
+        },
+        "runAfter": {}
+      }
     },
-    "kind": "stateful"
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
 }
