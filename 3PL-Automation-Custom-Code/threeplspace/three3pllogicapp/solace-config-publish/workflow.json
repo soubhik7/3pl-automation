@@ -2,33 +2,47 @@
     "definition": {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
         "actions": {
-            "Call_a_local_function_in_this_logic_app": {
-                "type": "InvokeFunction",
-                "inputs": {
-                    "functionName": "PublishSolaceConfigToFeatureBranch",
-                    "parameters": {
-                        "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                        "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                        "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
-                        "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/solace-config-update')",
-                        "filePath": "@coalesce(triggerBody()?['filePath'], '')",
-                        "solaceConfigJson": "@coalesce(triggerBody()?['solaceConfigJson'], '')",
-                        "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update Solace onboarding config via 3PL-Automation')",
-                        "githubToken": "@coalesce(appsetting('githubToken'), '')"
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Call_a_local_function_-_Publish_Solace_config_-_GitHub": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "PublishSolaceConfigToFeatureBranch",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "baseBranch": "@coalesce(triggerBody()?['baseBranch'], 'main')",
+                                "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], 'feature/solace-config-update')",
+                                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
+                                "solaceConfigJson": "@coalesce(triggerBody()?['solaceConfigJson'], '')",
+                                "commitMessage": "@coalesce(triggerBody()?['commitMessage'], 'Update Solace onboarding config via 3PL-Automation')",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        }
+                    },
+                    "Response-Success": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": "@body('Call_a_local_function_-_Publish_Solace_config_-_GitHub')"
+                        },
+                        "runAfter": {
+                            "Call_a_local_function_-_Publish_Solace_config_-_GitHub": [
+                                "SUCCEEDED"
+                            ]
+                        }
                     }
                 },
                 "runAfter": {}
             },
-            "Response": {
-                "type": "Response",
-                "kind": "http",
-                "inputs": {
-                    "statusCode": 200,
-                    "body": "@body('Call_a_local_function_in_this_logic_app')"
-                },
+            "Scope-Catch": {
+                "type": "Scope",
+                "actions": {},
                 "runAfter": {
-                    "Call_a_local_function_in_this_logic_app": [
-                        "Succeeded"
+                    "Scope-Try": [
+                        "FAILED"
                     ]
                 }
             }
@@ -36,12 +50,11 @@
         "triggers": {
             "When_a_HTTP_request_is_received": {
                 "type": "Request",
-                "kind": "Http",
-                "inputs": {}
+                "kind": "Http"
             }
         },
         "contentVersion": "1.0.0.0",
         "outputs": {}
     },
-    "kind": "Stateful"
+    "kind": "stateful"
 }

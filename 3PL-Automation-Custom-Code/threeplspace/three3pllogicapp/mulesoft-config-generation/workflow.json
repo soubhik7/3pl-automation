@@ -1,45 +1,58 @@
 {
-  "definition": {
-    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-    "actions": {
-      "Call_a_local_function_in_this_logic_app": {
-        "type": "InvokeFunction",
-        "inputs": {
-          "functionName": "GenerateMuleSoftConfig",
-          "parameters": {
-            "csvContent": "@triggerBody()?['csvContent']",
-            "updateExisting": "@coalesce(triggerBody()?['updateExisting'], false)",
-            "existingAppYaml": "@coalesce(triggerBody()?['existingAppYaml'], '')",
-            "existingDevYaml": "@coalesce(triggerBody()?['existingDevYaml'], '')",
-            "existingTstYaml": "@coalesce(triggerBody()?['existingTstYaml'], '')",
-            "existingProdYaml": "@coalesce(triggerBody()?['existingProdYaml'], '')"
-          }
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Call_a_local_function-Generate_MuleSoft_Config_YAML": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "GenerateMuleSoftConfig",
+                            "parameters": {
+                                "csvContent": "@triggerBody()?['csvContent']",
+                                "updateExisting": "@coalesce(triggerBody()?['updateExisting'], false)",
+                                "existingAppYaml": "@coalesce(triggerBody()?['existingAppYaml'], '')",
+                                "existingDevYaml": "@coalesce(triggerBody()?['existingDevYaml'], '')",
+                                "existingTstYaml": "@coalesce(triggerBody()?['existingTstYaml'], '')",
+                                "existingProdYaml": "@coalesce(triggerBody()?['existingProdYaml'], '')"
+                            }
+                        }
+                    },
+                    "Response-Success": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": "@body('Call_a_local_function-Generate_MuleSoft_Config_YAML')"
+                        },
+                        "runAfter": {
+                            "Call_a_local_function-Generate_MuleSoft_Config_YAML": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {}
+            },
+            "Scope": {
+                "type": "Scope",
+                "actions": {},
+                "runAfter": {
+                    "Scope-Try": [
+                        "FAILED"
+                    ]
+                }
+            }
         },
-        "runAfter": {}
-      },
-      "Response": {
-        "type": "Response",
-        "kind": "http",
-        "inputs": {
-          "statusCode": 200,
-          "body": "@body('Call_a_local_function_in_this_logic_app')"
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http"
+            }
         },
-        "runAfter": {
-          "Call_a_local_function_in_this_logic_app": [
-            "Succeeded"
-          ]
-        }
-      }
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
     },
-    "triggers": {
-      "When_a_HTTP_request_is_received": {
-        "type": "Request",
-        "kind": "Http",
-        "inputs": {}
-      }
-    },
-    "contentVersion": "1.0.0.0",
-    "outputs": {}
-  },
-  "kind": "Stateful"
+    "kind": "stateful"
 }

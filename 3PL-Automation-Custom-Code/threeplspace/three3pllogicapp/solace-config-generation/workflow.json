@@ -1,40 +1,53 @@
 {
-  "definition": {
-    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
-    "actions": {
-      "Call_a_local_function_in_this_logic_app": {
-        "type": "InvokeFunction",
-        "inputs": {
-          "functionName": "GenerateSolaceConfig",
-          "parameters": {
-            "csvContent": "@coalesce(triggerBody()?['csvContent'], 'Brand,Env,SystemName,ThreePLCode,EncryptedPassword,Action,ClientProfileAllowGuaranteedMsgSendEnabled,ClientProfileAllowGuaranteedMsgReceiveEnabled,ClientProfileCompressionEnabled,ClientProfileReplicationAllowClientConnectWhenStandbyEnabled,ClientProfileAllowTransactedSessionsEnabled,ClientProfileAllowBridgeConnectionsEnabled,ClientProfileAllowGuaranteedEndpointCreateEnabled,ClientProfileAllowSharedSubscriptionsEnabled,AclClientConnectDefaultAction,AclPublishTopicDefaultAction,AclSubscribeShareNameDefaultAction,AclSubscribeTopicDefaultAction,ClientUserEnabled,ClientUserGuaranteedEndpointPermissionOverrideEnabled,ClientUserSubscriptionManagerEnabled,MessageType,Topic,QueuePermission,QueueEgressEnabled,QueueMaxRedeliveryCount\npetc,rc,navision,3plpnp,\"![+ycEERpRxxm5RfqLRNxBXw==]\",FullOnboarding,,,,,,,,,,,,,,,,DespatchStock,topic1,,,\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,DespatchStock,topic2,,,\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,SourcingStock,topic1,,,')"
-          }
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Call_a_local_function-_Generate_Solace_Config": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "GenerateSolaceConfig",
+                            "parameters": {
+                                "csvContent": "@triggerBody()?['csvContent']"
+                            }
+                        }
+                    },
+                    "Response-Success": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": "@body('Call_a_local_function-_Generate_Solace_Config')"
+                        },
+                        "runAfter": {
+                            "Call_a_local_function-_Generate_Solace_Config": [
+                                "SUCCEEDED"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {}
+            },
+            "Scope-Catch": {
+                "type": "Scope",
+                "actions": {},
+                "runAfter": {
+                    "Scope-Try": [
+                        "FAILED"
+                    ]
+                }
+            }
         },
-        "runAfter": {}
-      },
-      "Response": {
-        "type": "Response",
-        "kind": "http",
-        "inputs": {
-          "statusCode": 200,
-          "body": "@body('Call_a_local_function_in_this_logic_app')"
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http"
+            }
         },
-        "runAfter": {
-          "Call_a_local_function_in_this_logic_app": [
-            "Succeeded"
-          ]
-        }
-      }
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
     },
-    "triggers": {
-      "When_a_HTTP_request_is_received": {
-        "type": "Request",
-        "kind": "Http",
-        "inputs": {}
-      }
-    },
-    "contentVersion": "1.0.0.0",
-    "outputs": {}
-  },
-  "kind": "Stateful"
+    "kind": "stateful"
 }

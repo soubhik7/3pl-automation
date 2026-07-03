@@ -1,0 +1,329 @@
+{
+  "info": {
+    "_postman_id": "8f2b6e2a-7b1a-4d3a-9d3d-3pl-logicapps-0001",
+    "name": "3PL Automation - Logic Apps",
+    "description": "Requests for the 5 Request-triggered Logic Apps (Standard) workflows in three3pllogicapp:\n- btp-config-publish\n- mulesoft-config-generation\n- mulesoft-config-publish\n- solace-config-generation\n- solace-config-publish\n\nEach workflow has a single `When_a_HTTP_request_is_received` trigger that calls one local .NET function (see lib/custom/*/function.json) and returns its output as the HTTP response body.\n\n**Local testing (default):** run the project with `func host start` (or F5 in VS Code with the Logic Apps Standard extension). The `baseUrl` collection variable defaults to `http://localhost:7071`, and no signature is required locally.\n\n**Deployed/Azure testing:** set `baseUrl` to `https://<your-logic-app-name>.azurewebsites.net`, then enable the disabled `sv`/`sp`/`sig` query params on the request (values come from the workflow's Callback URL in the Azure Portal, or `az rest`/`az logicapp` callback-url APIs) since Standard Logic App HTTP triggers are SAS-signed when hosted in Azure.\n\nNote: `githubToken` for the mulesoft/solace publish workflows and TriggerBtpDeployment's `githubToken` are both read from the `githubToken` app setting on the server side (`appsetting('githubToken')`), not from the request body, so they are intentionally omitted from these request bodies.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:7071",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "2020-05-01-preview",
+      "type": "string"
+    },
+    {
+      "key": "sig",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('Status code is 200', function () {",
+          "    pm.response.to.have.status(200);",
+          "});",
+          "",
+          "pm.test('Response is JSON', function () {",
+          "    pm.response.to.be.json;",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "BTP Config Publish (TriggerBtpDeployment)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repoOwner\": \"Mars-Incorporated\",\n  \"repoName\": \"marsis-az-core-pipeline\",\n  \"workflowFileName\": \"btp-Api-management-deploy.yml\",\n  \"branchRef\": \"feature-kk-btp-app-creation\",\n  \"subAccount\": \"Global\",\n  \"mode\": \"Create_Application_with_Product\",\n  \"environment\": \"Dev\",\n  \"developerId\": \"jdoe@effem.com\",\n  \"title\": \"MyNewApplication\",\n  \"shortText\": \"Short description here\",\n  \"productName\": \"cicd,TestAIS\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/btp-config-publish/triggers/When_a_HTTP_request_is_received/invoke?api-version={{apiVersion}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "btp-config-publish",
+            "triggers",
+            "When_a_HTTP_request_is_received",
+            "invoke"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "{{apiVersion}}"
+            },
+            {
+              "key": "sv",
+              "value": "1.0",
+              "disabled": true
+            },
+            {
+              "key": "sp",
+              "value": "/triggers/When_a_HTTP_request_is_received/run",
+              "disabled": true
+            },
+            {
+              "key": "sig",
+              "value": "{{sig}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Triggers a GitHub Actions workflow_dispatch (btp-Api-management-deploy.yml) via TriggerBtpDeployment. All body fields fall back to defaults baked into btp-config-publish/workflow.json if omitted; githubToken always comes from the server-side `githubToken` app setting."
+      },
+      "response": []
+    },
+    {
+      "name": "MuleSoft Config Generation (GenerateMuleSoftConfig)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"csvContent\": \"CountryKey,CountryCode,PartnerComment,CreatedBy,NavProtocol,NavPort,NavUsername,NavDomain,NavService,NavSoapPort,NavUseCommonCert,TranslationReceiverName,RowType,Environment,NavHost,NavCompany,NavSoapPath,NavRoutingCode,TransactionTypeCode,TransactionTypeEnabled,TransactionTypeLabel,MessageType,SourceDestinationFrom,SourceDestinationTo,UomFrom,UomTo\\nroyal-canin-france,fr,Royal Canin France NAV onboarding,integration-pulse-mulesoft-publisher,https,7124,SVC_UAT_MULESOFT,mars-ad.net,InterfaceWebServices,7124,true,petc-rc-navision-3plspl-sys,Environment,app,azr-xxx1234.mars-ad.net,Company(UAT - Royal Canin France),/sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_UAT_FRA,,,,,,,,\\n,,,,,,,,,,,,Environment,dev,azr-xxx1234-dev.mars-ad.net,Company(DEV - Royal Canin France),/sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_DEV_FRA,,,,,,,,\\n,,,,,,,,,,,,TransactionType,,,,,,sal_008,true,SHIPMENT,,,,,\\n,,,,,,,,,,,,MessageType,,,,,,,,,despatchStock,,,,\\n,,,,,,,,,,,,SourceDestination,,,,,,,,,,PLANT-FR1-PLANT-FR2,spl_001,,\\n,,,,,,,,,,,,UomMapping,,,,,,,,,,,,EA,UNIT\",\n  \"updateExisting\": false,\n  \"existingAppYaml\": \"\",\n  \"existingDevYaml\": \"\",\n  \"existingTstYaml\": \"\",\n  \"existingProdYaml\": \"\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mulesoft-config-generation/triggers/When_a_HTTP_request_is_received/invoke?api-version={{apiVersion}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "mulesoft-config-generation",
+            "triggers",
+            "When_a_HTTP_request_is_received",
+            "invoke"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "{{apiVersion}}"
+            },
+            {
+              "key": "sv",
+              "value": "1.0",
+              "disabled": true
+            },
+            {
+              "key": "sp",
+              "value": "/triggers/When_a_HTTP_request_is_received/run",
+              "disabled": true
+            },
+            {
+              "key": "sig",
+              "value": "{{sig}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Builds app/dev/tst/prod.yaml from a MuleSoft NAV onboarding requirements CSV (long format, one row per RowType: Environment/TransactionType/MessageType/SourceDestination/UomMapping). Set updateExisting=true and populate existingAppYaml/existingDevYaml/existingTstYaml/existingProdYaml to merge incrementally instead of building fresh. See MuleSoftCsvParser.cs for the full column reference."
+      },
+      "response": []
+    },
+    {
+      "name": "MuleSoft Config Publish (PublishMuleSoftConfigToFeatureBranch)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repoOwner\": \"Mars-Incorporated\",\n  \"repoName\": \"marsis-integration-configs\",\n  \"baseBranch\": \"main\",\n  \"featureBranchName\": \"feature/mulesoft-config-update\",\n  \"filePathPrefix\": \"config/mulesoft/royal-canin-france\",\n  \"appYaml\": \"# app.yaml content here\",\n  \"devYaml\": \"# dev.yaml content here\",\n  \"tstYaml\": \"\",\n  \"prodYaml\": \"\",\n  \"commitMessage\": \"Update MuleSoft NAV onboarding config via 3PL-Automation\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mulesoft-config-publish/triggers/When_a_HTTP_request_is_received/invoke?api-version={{apiVersion}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "mulesoft-config-publish",
+            "triggers",
+            "When_a_HTTP_request_is_received",
+            "invoke"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "{{apiVersion}}"
+            },
+            {
+              "key": "sv",
+              "value": "1.0",
+              "disabled": true
+            },
+            {
+              "key": "sp",
+              "value": "/triggers/When_a_HTTP_request_is_received/run",
+              "disabled": true
+            },
+            {
+              "key": "sig",
+              "value": "{{sig}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Commits non-blank appYaml/devYaml/tstYaml/prodYaml content to a GitHub feature branch under filePathPrefix (creating the branch from baseBranch if needed). Normally chained after 'MuleSoft Config Generation' in the real pipeline, but can be called standalone for testing. githubToken is not accepted in the body here (Logic App reads it from the githubToken app setting)."
+      },
+      "response": []
+    },
+    {
+      "name": "Solace Config Generation (GenerateSolaceConfig)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"csvContent\": \"Brand,Env,SystemName,ThreePLCode,EncryptedPassword,Action,ClientProfileAllowGuaranteedMsgSendEnabled,ClientProfileAllowGuaranteedMsgReceiveEnabled,ClientProfileCompressionEnabled,ClientProfileReplicationAllowClientConnectWhenStandbyEnabled,ClientProfileAllowTransactedSessionsEnabled,ClientProfileAllowBridgeConnectionsEnabled,ClientProfileAllowGuaranteedEndpointCreateEnabled,ClientProfileAllowSharedSubscriptionsEnabled,AclClientConnectDefaultAction,AclPublishTopicDefaultAction,AclSubscribeShareNameDefaultAction,AclSubscribeTopicDefaultAction,ClientUserEnabled,ClientUserGuaranteedEndpointPermissionOverrideEnabled,ClientUserSubscriptionManagerEnabled,MessageType,Topic,QueuePermission,QueueEgressEnabled,QueueMaxRedeliveryCount\\npetc,rc,navision,3plpnp,\\\"![+ycEERpRxxm5RfqLRNxBXw==]\\\",FullOnboarding,,,,,,,,,,,,,,,,DespatchStock,topic1,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,DespatchStock,topic2,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,SourcingStock,topic1,,,\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/solace-config-generation/triggers/When_a_HTTP_request_is_received/invoke?api-version={{apiVersion}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "solace-config-generation",
+            "triggers",
+            "When_a_HTTP_request_is_received",
+            "invoke"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "{{apiVersion}}"
+            },
+            {
+              "key": "sv",
+              "value": "1.0",
+              "disabled": true
+            },
+            {
+              "key": "sp",
+              "value": "/triggers/When_a_HTTP_request_is_received/run",
+              "disabled": true
+            },
+            {
+              "key": "sig",
+              "value": "{{sig}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Generates Solace onboarding config JSON from a CSV batch (multiple Brand/Env/SystemName/ThreePLCode records per call, unlike MuleSoft's single-record CSV). csvContent is required: solace-config-generation/workflow.json now reads it straight from the trigger body (`@triggerBody()?['csvContent']`) with no hardcoded fallback, so an empty/missing csvContent will fail in GenerateSolaceConfig rather than silently falling back to the old built-in sample."
+      },
+      "response": []
+    },
+    {
+      "name": "Solace Config Publish (PublishSolaceConfigToFeatureBranch)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"repoOwner\": \"Mars-Incorporated\",\n  \"repoName\": \"marsis-integration-configs\",\n  \"baseBranch\": \"main\",\n  \"featureBranchName\": \"feature/solace-config-update\",\n  \"filePath\": \"config/solace/petc-rc-navision-3plpnp.json\",\n  \"solaceConfigJson\": \"{}\",\n  \"commitMessage\": \"Update Solace onboarding config via 3PL-Automation\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/solace-config-publish/triggers/When_a_HTTP_request_is_received/invoke?api-version={{apiVersion}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "solace-config-publish",
+            "triggers",
+            "When_a_HTTP_request_is_received",
+            "invoke"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "{{apiVersion}}"
+            },
+            {
+              "key": "sv",
+              "value": "1.0",
+              "disabled": true
+            },
+            {
+              "key": "sp",
+              "value": "/triggers/When_a_HTTP_request_is_received/run",
+              "disabled": true
+            },
+            {
+              "key": "sig",
+              "value": "{{sig}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Commits solaceConfigJson to a GitHub feature branch at filePath (creating the branch from baseBranch if needed). Normally chained after 'Solace Config Generation'; replace solaceConfigJson with real output from that call for an end-to-end test. githubToken is not accepted in the body here (Logic App reads it from the githubToken app setting)."
+      },
+      "response": []
+    }
+  ]
+}

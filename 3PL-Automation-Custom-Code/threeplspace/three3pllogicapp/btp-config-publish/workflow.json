@@ -2,37 +2,51 @@
     "definition": {
         "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
         "actions": {
-            "Call_a_local_function_in_this_logic_app": {
-                "type": "InvokeFunction",
-                "inputs": {
-                    "functionName": "TriggerBtpDeployment",
-                    "parameters": {
-                        "repoOwner": "@coalesce(triggerBody()?['repoOwner'], 'Mars-Incorporated')",
-                        "repoName": "@coalesce(triggerBody()?['repoName'], 'marsis-az-core-pipeline')",
-                        "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], 'btp-Api-management-deploy.yml')",
-                        "branchRef": "@coalesce(triggerBody()?['branchRef'], 'feature-kk-btp-app-creation')",
-                        "githubToken": "@coalesce(appsetting('githubToken'), '')",
-                        "subAccount": "@coalesce(triggerBody()?['subAccount'], 'Global')",
-                        "mode": "@coalesce(triggerBody()?['mode'], 'Create_Application_with_Product')",
-                        "environment": "@coalesce(triggerBody()?['environment'], 'Dev')",
-                        "developerId": "@coalesce(triggerBody()?['developerId'], '@effem.com')",
-                        "title": "@coalesce(triggerBody()?['title'], 'MyNewApplication')",
-                        "shortText": "@coalesce(triggerBody()?['shortText'], 'Short description here')",
-                        "productName": "@coalesce(triggerBody()?['productName'], 'cicd,TestAIS')"
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Call_a_local_function-Trigger_BTP_GitHub_Action": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "TriggerBtpDeployment",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], 'Mars-Incorporated')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], 'marsis-az-core-pipeline')",
+                                "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], 'btp-Api-management-deploy.yml')",
+                                "branchRef": "@coalesce(triggerBody()?['branchRef'], 'feature-kk-btp-app-creation')",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')",
+                                "subAccount": "@coalesce(triggerBody()?['subAccount'], 'Global')",
+                                "mode": "@coalesce(triggerBody()?['mode'], 'Create_Application_with_Product')",
+                                "environment": "@coalesce(triggerBody()?['environment'], 'Dev')",
+                                "developerId": "@coalesce(triggerBody()?['developerId'], '@effem.com')",
+                                "title": "@coalesce(triggerBody()?['title'], 'MyNewApplication')",
+                                "shortText": "@coalesce(triggerBody()?['shortText'], 'Short description here')",
+                                "productName": "@coalesce(triggerBody()?['productName'], 'cicd,TestAIS')"
+                            }
+                        }
+                    },
+                    "Response-Success": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": "@body('Call_a_local_function-Trigger_BTP_GitHub_Action')"
+                        },
+                        "runAfter": {
+                            "Call_a_local_function-Trigger_BTP_GitHub_Action": [
+                                "SUCCEEDED"
+                            ]
+                        }
                     }
                 },
                 "runAfter": {}
             },
-            "Response": {
-                "type": "Response",
-                "kind": "http",
-                "inputs": {
-                    "statusCode": 200,
-                    "body": "@body('Call_a_local_function_in_this_logic_app')"
-                },
+            "Scope-Catch": {
+                "type": "Scope",
+                "actions": {},
                 "runAfter": {
-                    "Call_a_local_function_in_this_logic_app": [
-                        "Succeeded"
+                    "Scope-Try": [
+                        "FAILED"
                     ]
                 }
             }
@@ -46,5 +60,5 @@
         "contentVersion": "1.0.0.0",
         "outputs": {}
     },
-    "kind": "Stateful"
+    "kind": "stateful"
 }
