@@ -1,0 +1,187 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Scope-BTP": {
+                        "type": "Scope",
+                        "actions": {
+                            "Invoke_BTP_Config_Publish": {
+                                "type": "Workflow",
+                                "inputs": {
+                                    "host": {
+                                        "triggerName": "When_a_HTTP_request_is_received",
+                                        "workflow": {
+                                            "id": "btp-config-publish"
+                                        }
+                                    },
+                                    "body": "@coalesce(triggerBody()?['btp'], json('{}'))"
+                                },
+                                "runAfter": {}
+                            }
+                        },
+                        "runAfter": {}
+                    },
+                    "Scope-MuleSoft": {
+                        "type": "Scope",
+                        "actions": {
+                            "Invoke_MuleSoft_Config_Generation": {
+                                "type": "Workflow",
+                                "inputs": {
+                                    "host": {
+                                        "triggerName": "When_a_HTTP_request_is_received",
+                                        "workflow": {
+                                            "id": "mulesoft-config-generation"
+                                        }
+                                    },
+                                    "body": "@triggerBody()?['mulesoft']?['generate']"
+                                },
+                                "runAfter": {}
+                            },
+                            "Invoke_MuleSoft_Config_Publish": {
+                                "type": "Workflow",
+                                "inputs": {
+                                    "host": {
+                                        "triggerName": "When_a_HTTP_request_is_received",
+                                        "workflow": {
+                                            "id": "mulesoft-config-publish"
+                                        }
+                                    },
+                                    "body": {
+                                        "repoOwner": "@triggerBody()?['mulesoft']?['publish']?['repoOwner']",
+                                        "repoName": "@triggerBody()?['mulesoft']?['publish']?['repoName']",
+                                        "baseBranch": "@triggerBody()?['mulesoft']?['publish']?['baseBranch']",
+                                        "featureBranchName": "@triggerBody()?['mulesoft']?['publish']?['featureBranchName']",
+                                        "filePathPrefix": "@triggerBody()?['mulesoft']?['publish']?['filePathPrefix']",
+                                        "appYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['app.yaml'], '')",
+                                        "devYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['dev.yaml'], '')",
+                                        "tstYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['tst.yaml'], '')",
+                                        "prodYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['prod.yaml'], '')",
+                                        "commitMessage": "@triggerBody()?['mulesoft']?['publish']?['commitMessage']"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Invoke_MuleSoft_Config_Generation": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {}
+                    },
+                    "Scope-Solace": {
+                        "type": "Scope",
+                        "actions": {
+                            "Invoke_Solace_Config_Generation": {
+                                "type": "Workflow",
+                                "inputs": {
+                                    "host": {
+                                        "triggerName": "When_a_HTTP_request_is_received",
+                                        "workflow": {
+                                            "id": "solace-config-generation"
+                                        }
+                                    },
+                                    "body": "@triggerBody()?['solace']?['generate']"
+                                },
+                                "runAfter": {}
+                            },
+                            "Invoke_Solace_Config_Publish": {
+                                "type": "Workflow",
+                                "inputs": {
+                                    "host": {
+                                        "triggerName": "When_a_HTTP_request_is_received",
+                                        "workflow": {
+                                            "id": "solace-config-publish"
+                                        }
+                                    },
+                                    "body": {
+                                        "repoOwner": "@triggerBody()?['solace']?['publish']?['repoOwner']",
+                                        "repoName": "@triggerBody()?['solace']?['publish']?['repoName']",
+                                        "baseBranch": "@triggerBody()?['solace']?['publish']?['baseBranch']",
+                                        "featureBranchName": "@triggerBody()?['solace']?['publish']?['featureBranchName']",
+                                        "filePath": "@triggerBody()?['solace']?['publish']?['filePath']",
+                                        "solaceConfigJson": "@body('Invoke_Solace_Config_Generation')?['mergedConfigJson']",
+                                        "commitMessage": "@triggerBody()?['solace']?['publish']?['commitMessage']"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Invoke_Solace_Config_Generation": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "runAfter": {}
+                    },
+                    "Response-Success": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 200,
+                            "body": {
+                                "status": "All child workflows completed successfully.",
+                                "btp": "@body('Invoke_BTP_Config_Publish')",
+                                "mulesoft": {
+                                    "generate": "@body('Invoke_MuleSoft_Config_Generation')",
+                                    "publish": "@body('Invoke_MuleSoft_Config_Publish')"
+                                },
+                                "solace": {
+                                    "generate": "@body('Invoke_Solace_Config_Generation')",
+                                    "publish": "@body('Invoke_Solace_Config_Publish')"
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Scope-BTP": [
+                                "Succeeded"
+                            ],
+                            "Scope-MuleSoft": [
+                                "Succeeded"
+                            ],
+                            "Scope-Solace": [
+                                "Succeeded"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {}
+            },
+            "Scope-Catch": {
+                "type": "Scope",
+                "actions": {
+                    "Response-Error": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                            "statusCode": 500,
+                            "body": {
+                                "status": "One or more child workflows failed during orchestration.",
+                                "summary": "@result('Scope-Try')",
+                                "btpDetails": "@result('Scope-BTP')",
+                                "mulesoftDetails": "@result('Scope-MuleSoft')",
+                                "solaceDetails": "@result('Scope-Solace')"
+                            }
+                        },
+                        "runAfter": {}
+                    }
+                },
+                "runAfter": {
+                    "Scope-Try": [
+                        "FAILED"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "When_a_HTTP_request_is_received": {
+                "type": "Request",
+                "kind": "Http"
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "stateful"
+}

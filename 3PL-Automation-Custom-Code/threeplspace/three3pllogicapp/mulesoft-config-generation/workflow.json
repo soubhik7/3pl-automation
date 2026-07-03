@@ -5,6 +5,91 @@
             "Scope-Try": {
                 "type": "Scope",
                 "actions": {
+                    "Initialize_Normalized_FilePathPrefix": {
+                        "type": "InitializeVariable",
+                        "inputs": {
+                            "variables": [
+                                {
+                                    "name": "normalizedFilePathPrefix",
+                                    "type": "string",
+                                    "value": "@if(or(empty(coalesce(triggerBody()?['filePathPrefix'], '')), endsWith(coalesce(triggerBody()?['filePathPrefix'], ''), '/')), coalesce(triggerBody()?['filePathPrefix'], ''), concat(coalesce(triggerBody()?['filePathPrefix'], ''), '/'))"
+                                }
+                            ]
+                        },
+                        "runAfter": {}
+                    },
+                    "Fetch_Existing_App_Yaml": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "FetchExistingConfigFile",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'app.yaml'))",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        },
+                        "runAfter": {
+                            "Initialize_Normalized_FilePathPrefix": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Fetch_Existing_Dev_Yaml": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "FetchExistingConfigFile",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'dev.yaml'))",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        },
+                        "runAfter": {
+                            "Initialize_Normalized_FilePathPrefix": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Fetch_Existing_Tst_Yaml": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "FetchExistingConfigFile",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'tst.yaml'))",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        },
+                        "runAfter": {
+                            "Initialize_Normalized_FilePathPrefix": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
+                    "Fetch_Existing_Prod_Yaml": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "FetchExistingConfigFile",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "filePath": "@if(empty(variables('normalizedFilePathPrefix')), '', concat(variables('normalizedFilePathPrefix'), 'prod.yaml'))",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        },
+                        "runAfter": {
+                            "Initialize_Normalized_FilePathPrefix": [
+                                "Succeeded"
+                            ]
+                        }
+                    },
                     "Call_a_local_function-Generate_MuleSoft_Config_YAML": {
                         "type": "InvokeFunction",
                         "inputs": {
@@ -12,11 +97,25 @@
                             "parameters": {
                                 "csvContent": "@triggerBody()?['csvContent']",
                                 "updateExisting": "@coalesce(triggerBody()?['updateExisting'], false)",
-                                "existingAppYaml": "@coalesce(triggerBody()?['existingAppYaml'], '')",
-                                "existingDevYaml": "@coalesce(triggerBody()?['existingDevYaml'], '')",
-                                "existingTstYaml": "@coalesce(triggerBody()?['existingTstYaml'], '')",
-                                "existingProdYaml": "@coalesce(triggerBody()?['existingProdYaml'], '')"
+                                "existingAppYaml": "@coalesce(triggerBody()?['existingAppYaml'], body('Fetch_Existing_App_Yaml')?['content'], '')",
+                                "existingDevYaml": "@coalesce(triggerBody()?['existingDevYaml'], body('Fetch_Existing_Dev_Yaml')?['content'], '')",
+                                "existingTstYaml": "@coalesce(triggerBody()?['existingTstYaml'], body('Fetch_Existing_Tst_Yaml')?['content'], '')",
+                                "existingProdYaml": "@coalesce(triggerBody()?['existingProdYaml'], body('Fetch_Existing_Prod_Yaml')?['content'], '')"
                             }
+                        },
+                        "runAfter": {
+                            "Fetch_Existing_App_Yaml": [
+                                "Succeeded"
+                            ],
+                            "Fetch_Existing_Dev_Yaml": [
+                                "Succeeded"
+                            ],
+                            "Fetch_Existing_Tst_Yaml": [
+                                "Succeeded"
+                            ],
+                            "Fetch_Existing_Prod_Yaml": [
+                                "Succeeded"
+                            ]
                         }
                     },
                     "Response-Success": {

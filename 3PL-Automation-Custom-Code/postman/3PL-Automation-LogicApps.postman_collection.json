@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8f2b6e2a-7b1a-4d3a-9d3d-3pl-logicapps-0001",
     "name": "3PL Automation - Logic Apps",
-    "description": "Requests for the 5 Request-triggered Logic Apps (Standard) workflows in three3pllogicapp:\n- btp-config-publish\n- mulesoft-config-generation\n- mulesoft-config-publish\n- solace-config-generation\n- solace-config-publish\n\nEach workflow has a single `When_a_HTTP_request_is_received` trigger that calls one local .NET function (see lib/custom/*/function.json) and returns its output as the HTTP response body.\n\n**Local testing (default):** run the project with `func host start` (or F5 in VS Code with the Logic Apps Standard extension). The `baseUrl` collection variable defaults to `http://localhost:7071`, and no signature is required locally.\n\n**Deployed/Azure testing:** set `baseUrl` to `https://<your-logic-app-name>.azurewebsites.net`, then enable the disabled `sv`/`sp`/`sig` query params on the request (values come from the workflow's Callback URL in the Azure Portal, or `az rest`/`az logicapp` callback-url APIs) since Standard Logic App HTTP triggers are SAS-signed when hosted in Azure.\n\nNote: `githubToken` for the mulesoft/solace publish workflows and TriggerBtpDeployment's `githubToken` are both read from the `githubToken` app setting on the server side (`appsetting('githubToken')`), not from the request body, so they are intentionally omitted from these request bodies.",
+    "description": "Requests for the 6 Request-triggered Logic Apps (Standard) workflows in three3pllogicapp:\n- onboarding-orchestrator (calls the other 5 via the native 'Invoke a workflow in this logic app' action)\n- btp-config-publish\n- mulesoft-config-generation\n- mulesoft-config-publish\n- solace-config-generation\n- solace-config-publish\n\nEach workflow has a single `When_a_HTTP_request_is_received` trigger. The 5 leaf workflows each call one local .NET function (see lib/custom/*/function.json) and return its output as the HTTP response body. `onboarding-orchestrator` doesn't call any function directly — it fans out to BTP/MuleSoft/Solace in parallel (each wrapped in its own Scope for isolated error reporting), chaining MuleSoft's and Solace's generate step output straight into their publish step, and joins on a single Response.\n\n**Update-existing-config support:** mulesoft-config-generation and solace-config-generation can now auto-fetch a partner's current config file from GitHub (via the new FetchExistingConfigFile function) and merge this run's CSV-derived entries onto it (via GenerateMuleSoftConfig's existing updateExisting merge logic for MuleSoft, or the new MergeSolaceConfig function for Solace) instead of only ever building fresh. This is opt-in: supply repoOwner/repoName/branch/filePathPrefix (MuleSoft) or repoOwner/repoName/branch/filePath (Solace) in the request body; omit them and behavior is unchanged from before. See the 'MuleSoft Config Generation' and 'Solace Config Generation' request descriptions below for details.\n\n**Local testing (default):** run the project with `func host start` (or F5 in VS Code with the Logic Apps Standard extension). The `baseUrl` collection variable defaults to `http://localhost:7071`, and no signature is required locally.\n\n**Deployed/Azure testing:** set `baseUrl` to `https://<your-logic-app-name>.azurewebsites.net`, then enable the disabled `sv`/`sp`/`sig` query params on the request (values come from the workflow's Callback URL in the Azure Portal, or `az rest`/`az logicapp` callback-url APIs) since Standard Logic App HTTP triggers are SAS-signed when hosted in Azure.\n\nNote: `githubToken` for the mulesoft/solace publish workflows and TriggerBtpDeployment's `githubToken` are both read from the `githubToken` app setting on the server side (`appsetting('githubToken')`), not from the request body, so they are intentionally omitted from these request bodies.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -40,6 +40,63 @@
     }
   ],
   "item": [
+    {
+      "name": "Onboarding Orchestrator (calls all 5 child workflows)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"btp\": {\n    \"repoOwner\": \"Mars-Incorporated\",\n    \"repoName\": \"marsis-az-core-pipeline\",\n    \"workflowFileName\": \"btp-Api-management-deploy.yml\",\n    \"branchRef\": \"feature-kk-btp-app-creation\",\n    \"subAccount\": \"Global\",\n    \"mode\": \"Create_Application_with_Product\",\n    \"environment\": \"Dev\",\n    \"developerId\": \"jdoe@effem.com\",\n    \"title\": \"MyNewApplication\",\n    \"shortText\": \"Short description here\",\n    \"productName\": \"cicd,TestAIS\"\n  },\n  \"mulesoft\": {\n    \"generate\": {\n      \"csvContent\": \"CountryKey,CountryCode,PartnerComment,CreatedBy,NavProtocol,NavPort,NavUsername,NavDomain,NavService,NavSoapPort,NavUseCommonCert,TranslationReceiverName,RowType,Environment,NavHost,NavCompany,NavSoapPath,NavRoutingCode,TransactionTypeCode,TransactionTypeEnabled,TransactionTypeLabel,MessageType,SourceDestinationFrom,SourceDestinationTo,UomFrom,UomTo\\nroyal-canin-france,fr,Royal Canin France NAV onboarding,integration-pulse-mulesoft-publisher,https,7124,SVC_UAT_MULESOFT,mars-ad.net,InterfaceWebServices,7124,true,petc-rc-navision-3plspl-sys,Environment,app,azr-xxx1234.mars-ad.net,Company(UAT - Royal Canin France),/sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_UAT_FRA,,,,,,,,\\n,,,,,,,,,,,,Environment,dev,azr-xxx1234-dev.mars-ad.net,Company(DEV - Royal Canin France),/sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_DEV_FRA,,,,,,,,\\n,,,,,,,,,,,,TransactionType,,,,,,sal_008,true,SHIPMENT,,,,,\\n,,,,,,,,,,,,MessageType,,,,,,,,,despatchStock,,,,\\n,,,,,,,,,,,,SourceDestination,,,,,,,,,,PLANT-FR1-PLANT-FR2,spl_001,,\\n,,,,,,,,,,,,UomMapping,,,,,,,,,,,,EA,UNIT\",\n      \"updateExisting\": true,\n      \"existingAppYaml\": \"\",\n      \"existingDevYaml\": \"\",\n      \"existingTstYaml\": \"\",\n      \"existingProdYaml\": \"\",\n      \"repoOwner\": \"Mars-Incorporated\",\n      \"repoName\": \"marsis-integration-configs\",\n      \"branch\": \"main\",\n      \"filePathPrefix\": \"config/mulesoft/royal-canin-france\"\n    },\n    \"publish\": {\n      \"repoOwner\": \"Mars-Incorporated\",\n      \"repoName\": \"marsis-integration-configs\",\n      \"baseBranch\": \"main\",\n      \"featureBranchName\": \"feature/mulesoft-config-update\",\n      \"filePathPrefix\": \"config/mulesoft/royal-canin-france\",\n      \"commitMessage\": \"Update MuleSoft NAV onboarding config via 3PL-Automation\"\n    }\n  },\n  \"solace\": {\n    \"generate\": {\n      \"csvContent\": \"Brand,Env,SystemName,ThreePLCode,EncryptedPassword,Action,ClientProfileAllowGuaranteedMsgSendEnabled,ClientProfileAllowGuaranteedMsgReceiveEnabled,ClientProfileCompressionEnabled,ClientProfileReplicationAllowClientConnectWhenStandbyEnabled,ClientProfileAllowTransactedSessionsEnabled,ClientProfileAllowBridgeConnectionsEnabled,ClientProfileAllowGuaranteedEndpointCreateEnabled,ClientProfileAllowSharedSubscriptionsEnabled,AclClientConnectDefaultAction,AclPublishTopicDefaultAction,AclSubscribeShareNameDefaultAction,AclSubscribeTopicDefaultAction,ClientUserEnabled,ClientUserGuaranteedEndpointPermissionOverrideEnabled,ClientUserSubscriptionManagerEnabled,MessageType,Topic,QueuePermission,QueueEgressEnabled,QueueMaxRedeliveryCount\\npetc,rc,navision,3plpnp,\\\"![+ycEERpRxxm5RfqLRNxBXw==]\\\",FullOnboarding,,,,,,,,,,,,,,,,DespatchStock,topic1,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,DespatchStock,topic2,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,SourcingStock,topic1,,,\",\n      \"repoOwner\": \"Mars-Incorporated\",\n      \"repoName\": \"marsis-integration-configs\",\n      \"branch\": \"main\",\n      \"filePath\": \"config/solace/petc-rc-navision-3plpnp.json\"\n    },\n    \"publish\": {\n      \"repoOwner\": \"Mars-Incorporated\",\n      \"repoName\": \"marsis-integration-configs\",\n      \"baseBranch\": \"main\",\n      \"featureBranchName\": \"feature/solace-config-update\",\n      \"filePath\": \"config/solace/petc-rc-navision-3plpnp.json\",\n      \"commitMessage\": \"Update Solace onboarding config via 3PL-Automation\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/onboarding-orchestrator/triggers/When_a_HTTP_request_is_received/invoke?api-version={{apiVersion}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "onboarding-orchestrator",
+            "triggers",
+            "When_a_HTTP_request_is_received",
+            "invoke"
+          ],
+          "query": [
+            {
+              "key": "api-version",
+              "value": "{{apiVersion}}"
+            },
+            {
+              "key": "sv",
+              "value": "1.0",
+              "disabled": true
+            },
+            {
+              "key": "sp",
+              "value": "/triggers/When_a_HTTP_request_is_received/run",
+              "disabled": true
+            },
+            {
+              "key": "sig",
+              "value": "{{sig}}",
+              "disabled": true
+            }
+          ]
+        },
+        "description": "Fans out to btp-config-publish, mulesoft-config-generation→mulesoft-config-publish, and solace-config-generation→solace-config-publish in parallel, each wrapped in its own Scope (Scope-BTP/Scope-MuleSoft/Scope-Solace) inside an outer Scope-Try/Scope-Catch. Do NOT send appYaml/devYaml/tstYaml/prodYaml under mulesoft.publish or solaceConfigJson under solace.publish — the orchestrator wires those in itself from the matching generate step's output (body('Invoke_MuleSoft_Config_Generation') / body('Invoke_Solace_Config_Generation')?['mergedConfigJson']). Only send the fields each generate/publish step actually needs from the caller (csvContent, repo/branch/path, commitMessage).\n\nrepoOwner/repoName/branch/filePathPrefix (mulesoft.generate) and repoOwner/repoName/branch/filePath (solace.generate) are optional but recommended: when supplied, each generate step auto-fetches its existing config from GitHub first and merges this run's entries onto it (MuleSoft via updateExisting=true; Solace always) instead of building from the CSV alone — so re-running the orchestrator for a partner that's already onboarded adds to their config instead of overwriting it. Omit them to build fresh, same as before this capability existed.\n\nOn success returns 200 with all 5 child outputs nested under btp/mulesoft/solace; on any child failure returns 500 with per-branch failure detail (result('Scope-Try') plus each domain's own result())."
+      },
+      "response": []
+    },
     {
       "name": "BTP Config Publish (TriggerBtpDeployment)",
       "request": {
@@ -109,7 +166,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"csvContent\": \"CountryKey,CountryCode,PartnerComment,CreatedBy,NavProtocol,NavPort,NavUsername,NavDomain,NavService,NavSoapPort,NavUseCommonCert,TranslationReceiverName,RowType,Environment,NavHost,NavCompany,NavSoapPath,NavRoutingCode,TransactionTypeCode,TransactionTypeEnabled,TransactionTypeLabel,MessageType,SourceDestinationFrom,SourceDestinationTo,UomFrom,UomTo\\nroyal-canin-france,fr,Royal Canin France NAV onboarding,integration-pulse-mulesoft-publisher,https,7124,SVC_UAT_MULESOFT,mars-ad.net,InterfaceWebServices,7124,true,petc-rc-navision-3plspl-sys,Environment,app,azr-xxx1234.mars-ad.net,Company(UAT - Royal Canin France),/sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_UAT_FRA,,,,,,,,\\n,,,,,,,,,,,,Environment,dev,azr-xxx1234-dev.mars-ad.net,Company(DEV - Royal Canin France),/sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_DEV_FRA,,,,,,,,\\n,,,,,,,,,,,,TransactionType,,,,,,sal_008,true,SHIPMENT,,,,,\\n,,,,,,,,,,,,MessageType,,,,,,,,,despatchStock,,,,\\n,,,,,,,,,,,,SourceDestination,,,,,,,,,,PLANT-FR1-PLANT-FR2,spl_001,,\\n,,,,,,,,,,,,UomMapping,,,,,,,,,,,,EA,UNIT\",\n  \"updateExisting\": false,\n  \"existingAppYaml\": \"\",\n  \"existingDevYaml\": \"\",\n  \"existingTstYaml\": \"\",\n  \"existingProdYaml\": \"\"\n}",
+          "raw": "{\n  \"csvContent\": \"CountryKey,CountryCode,PartnerComment,CreatedBy,NavProtocol,NavPort,NavUsername,NavDomain,NavService,NavSoapPort,NavUseCommonCert,TranslationReceiverName,RowType,Environment,NavHost,NavCompany,NavSoapPath,NavRoutingCode,TransactionTypeCode,TransactionTypeEnabled,TransactionTypeLabel,MessageType,SourceDestinationFrom,SourceDestinationTo,UomFrom,UomTo\\nroyal-canin-france,fr,Royal Canin France NAV onboarding,integration-pulse-mulesoft-publisher,https,7124,SVC_UAT_MULESOFT,mars-ad.net,InterfaceWebServices,7124,true,petc-rc-navision-3plspl-sys,Environment,app,azr-xxx1234.mars-ad.net,Company(UAT - Royal Canin France),/sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_UAT_FRA,,,,,,,,\\n,,,,,,,,,,,,Environment,dev,azr-xxx1234-dev.mars-ad.net,Company(DEV - Royal Canin France),/sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl,NAV_FM_IN_DEV_FRA,,,,,,,,\\n,,,,,,,,,,,,TransactionType,,,,,,sal_008,true,SHIPMENT,,,,,\\n,,,,,,,,,,,,MessageType,,,,,,,,,despatchStock,,,,\\n,,,,,,,,,,,,SourceDestination,,,,,,,,,,PLANT-FR1-PLANT-FR2,spl_001,,\\n,,,,,,,,,,,,UomMapping,,,,,,,,,,,,EA,UNIT\",\n  \"updateExisting\": true,\n  \"existingAppYaml\": \"\",\n  \"existingDevYaml\": \"\",\n  \"existingTstYaml\": \"\",\n  \"existingProdYaml\": \"\",\n  \"repoOwner\": \"Mars-Incorporated\",\n  \"repoName\": \"marsis-integration-configs\",\n  \"branch\": \"main\",\n  \"filePathPrefix\": \"config/mulesoft/royal-canin-france\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -150,7 +207,7 @@
             }
           ]
         },
-        "description": "Builds app/dev/tst/prod.yaml from a MuleSoft NAV onboarding requirements CSV (long format, one row per RowType: Environment/TransactionType/MessageType/SourceDestination/UomMapping). Set updateExisting=true and populate existingAppYaml/existingDevYaml/existingTstYaml/existingProdYaml to merge incrementally instead of building fresh. See MuleSoftCsvParser.cs for the full column reference."
+        "description": "Builds app/dev/tst/prod.yaml from a MuleSoft NAV onboarding requirements CSV (long format, one row per RowType: Environment/TransactionType/MessageType/SourceDestination/UomMapping). Set updateExisting=true to merge onto existing config instead of building fresh. As of the new Fetch_Existing_*_Yaml actions, you no longer have to paste the existing YAML in yourself: leave existingAppYaml/existingDevYaml/existingTstYaml/existingProdYaml blank and supply repoOwner/repoName/branch/filePathPrefix instead — the workflow auto-fetches each file from that branch first (via the new FetchExistingConfigFile function) and merges onto whatever it finds (blank/404 = nothing to merge against, same as a brand-new onboarding). filePathPrefix works with or without a trailing slash, same as the publish step. The existing*Yaml fields still work as a direct override if you'd rather not hit GitHub. See MuleSoftCsvParser.cs for the full CSV column reference."
       },
       "response": []
     },
@@ -223,7 +280,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"csvContent\": \"Brand,Env,SystemName,ThreePLCode,EncryptedPassword,Action,ClientProfileAllowGuaranteedMsgSendEnabled,ClientProfileAllowGuaranteedMsgReceiveEnabled,ClientProfileCompressionEnabled,ClientProfileReplicationAllowClientConnectWhenStandbyEnabled,ClientProfileAllowTransactedSessionsEnabled,ClientProfileAllowBridgeConnectionsEnabled,ClientProfileAllowGuaranteedEndpointCreateEnabled,ClientProfileAllowSharedSubscriptionsEnabled,AclClientConnectDefaultAction,AclPublishTopicDefaultAction,AclSubscribeShareNameDefaultAction,AclSubscribeTopicDefaultAction,ClientUserEnabled,ClientUserGuaranteedEndpointPermissionOverrideEnabled,ClientUserSubscriptionManagerEnabled,MessageType,Topic,QueuePermission,QueueEgressEnabled,QueueMaxRedeliveryCount\\npetc,rc,navision,3plpnp,\\\"![+ycEERpRxxm5RfqLRNxBXw==]\\\",FullOnboarding,,,,,,,,,,,,,,,,DespatchStock,topic1,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,DespatchStock,topic2,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,SourcingStock,topic1,,,\"\n}",
+          "raw": "{\n  \"csvContent\": \"Brand,Env,SystemName,ThreePLCode,EncryptedPassword,Action,ClientProfileAllowGuaranteedMsgSendEnabled,ClientProfileAllowGuaranteedMsgReceiveEnabled,ClientProfileCompressionEnabled,ClientProfileReplicationAllowClientConnectWhenStandbyEnabled,ClientProfileAllowTransactedSessionsEnabled,ClientProfileAllowBridgeConnectionsEnabled,ClientProfileAllowGuaranteedEndpointCreateEnabled,ClientProfileAllowSharedSubscriptionsEnabled,AclClientConnectDefaultAction,AclPublishTopicDefaultAction,AclSubscribeShareNameDefaultAction,AclSubscribeTopicDefaultAction,ClientUserEnabled,ClientUserGuaranteedEndpointPermissionOverrideEnabled,ClientUserSubscriptionManagerEnabled,MessageType,Topic,QueuePermission,QueueEgressEnabled,QueueMaxRedeliveryCount\\npetc,rc,navision,3plpnp,\\\"![+ycEERpRxxm5RfqLRNxBXw==]\\\",FullOnboarding,,,,,,,,,,,,,,,,DespatchStock,topic1,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,DespatchStock,topic2,,,\\npetc,rc,navision,3plpnp,,,,,,,,,,,,,,,,,,SourcingStock,topic1,,,\",\n  \"repoOwner\": \"Mars-Incorporated\",\n  \"repoName\": \"marsis-integration-configs\",\n  \"branch\": \"main\",\n  \"filePath\": \"config/solace/petc-rc-navision-3plpnp.json\"\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -264,7 +321,7 @@
             }
           ]
         },
-        "description": "Generates Solace onboarding config JSON from a CSV batch (multiple Brand/Env/SystemName/ThreePLCode records per call, unlike MuleSoft's single-record CSV). csvContent is required: solace-config-generation/workflow.json now reads it straight from the trigger body (`@triggerBody()?['csvContent']`) with no hardcoded fallback, so an empty/missing csvContent will fail in GenerateSolaceConfig rather than silently falling back to the old built-in sample."
+        "description": "Generates Solace onboarding config JSON from a CSV batch (multiple Brand/Env/SystemName/ThreePLCode records per call, unlike MuleSoft's single-record CSV). csvContent is required: solace-config-generation/workflow.json reads it straight from the trigger body with no hardcoded fallback, so an empty/missing csvContent will fail in GenerateSolaceConfig rather than silently falling back to a built-in sample.\n\nrepoOwner/repoName/branch/filePath are optional but unlock the new merge behavior: if supplied, the workflow fetches that file's current content from GitHub (via the new FetchExistingConfigFile function) and merges this run's generated entries onto it (via the new MergeSolaceConfig function) — upserting by name/aclProfileName/clientUsername/queueName per section, and unioning SUBSCRIPTION_LIST topics for a queue that's already subscribed, rather than overwriting the file. Omit them and the response is unchanged from before (fresh CSV-only build). The response body is now `{ generated: <raw GenerateSolaceConfig output>, mergedConfigJson: <string, ready to hand to Solace Config Publish> }` instead of the raw function output directly — use mergedConfigJson as the solaceConfigJson value for 'Solace Config Publish'."
       },
       "response": []
     },
@@ -321,7 +378,7 @@
             }
           ]
         },
-        "description": "Commits solaceConfigJson to a GitHub feature branch at filePath (creating the branch from baseBranch if needed). Normally chained after 'Solace Config Generation'; replace solaceConfigJson with real output from that call for an end-to-end test. githubToken is not accepted in the body here (Logic App reads it from the githubToken app setting)."
+        "description": "Commits solaceConfigJson to a GitHub feature branch at filePath (creating the branch from baseBranch if needed). Normally chained after 'Solace Config Generation' — use that call's response `mergedConfigJson` field directly as solaceConfigJson here (it's already merged with whatever existed at filePath, if anything did) for an end-to-end test. githubToken is not accepted in the body here (Logic App reads it from the githubToken app setting)."
       },
       "response": []
     }

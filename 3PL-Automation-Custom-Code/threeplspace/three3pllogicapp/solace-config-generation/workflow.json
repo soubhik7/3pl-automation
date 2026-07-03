@@ -5,6 +5,20 @@
             "Scope-Try": {
                 "type": "Scope",
                 "actions": {
+                    "Fetch_Existing_Solace_Config": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "FetchExistingConfigFile",
+                            "parameters": {
+                                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                                "branch": "@coalesce(triggerBody()?['branch'], 'main')",
+                                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
+                                "githubToken": "@coalesce(appsetting('githubToken'), '')"
+                            }
+                        },
+                        "runAfter": {}
+                    },
                     "Call_a_local_function-_Generate_Solace_Config": {
                         "type": "InvokeFunction",
                         "inputs": {
@@ -12,6 +26,25 @@
                             "parameters": {
                                 "csvContent": "@triggerBody()?['csvContent']"
                             }
+                        },
+                        "runAfter": {}
+                    },
+                    "Merge_Solace_Config": {
+                        "type": "InvokeFunction",
+                        "inputs": {
+                            "functionName": "MergeSolaceConfig",
+                            "parameters": {
+                                "newConfigJson": "@string(coalesce(body('Call_a_local_function-_Generate_Solace_Config')?['Results']?[0]?['SolaceConfig'], body('Call_a_local_function-_Generate_Solace_Config')?['results']?[0]?['solaceConfig']))",
+                                "existingConfigJson": "@coalesce(body('Fetch_Existing_Solace_Config')?['content'], '')"
+                            }
+                        },
+                        "runAfter": {
+                            "Fetch_Existing_Solace_Config": [
+                                "Succeeded"
+                            ],
+                            "Call_a_local_function-_Generate_Solace_Config": [
+                                "Succeeded"
+                            ]
                         }
                     },
                     "Response-Success": {
@@ -19,10 +52,13 @@
                         "kind": "Http",
                         "inputs": {
                             "statusCode": 200,
-                            "body": "@body('Call_a_local_function-_Generate_Solace_Config')"
+                            "body": {
+                                "generated": "@body('Call_a_local_function-_Generate_Solace_Config')",
+                                "mergedConfigJson": "@body('Merge_Solace_Config')?['mergedConfigJson']"
+                            }
                         },
                         "runAfter": {
-                            "Call_a_local_function-_Generate_Solace_Config": [
+                            "Merge_Solace_Config": [
                                 "SUCCEEDED"
                             ]
                         }
