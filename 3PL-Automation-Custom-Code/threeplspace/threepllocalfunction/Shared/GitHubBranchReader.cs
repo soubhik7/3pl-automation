@@ -103,8 +103,11 @@ public static class GitHubBranchReader
                 return FailureResult(repo, branch, filePath, (int)response.StatusCode,
                     $"'{filePath}' is a directory on {repo}@{branch}, not a file.");
 
-            var base64Content = root.GetProperty("content").GetString() ?? "";
-            var content = Encoding.UTF8.GetString(Convert.FromBase64String(base64Content));
+            if (!root.TryGetProperty("content", out var contentElement))
+                throw new FormatException(
+                    $"GitHub returned an unexpected response reading '{filePath}' from branch '{branch}' (missing content).");
+
+            var content = Encoding.UTF8.GetString(Convert.FromBase64String(contentElement.GetString() ?? ""));
 
             return new Dictionary<string, object>
             {
@@ -120,6 +123,10 @@ public static class GitHubBranchReader
         catch (GitHubApiException ex)
         {
             return FailureResult(repo, branch, filePath, (int)ex.StatusCode, ex.Message);
+        }
+        catch (Exception ex) when (ex is JsonException or FormatException)
+        {
+            return FailureResult(repo, branch, filePath, 0, $"Unexpected response from GitHub: {ex.Message}");
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {

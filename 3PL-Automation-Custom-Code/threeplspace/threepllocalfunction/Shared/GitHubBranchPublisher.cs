@@ -96,6 +96,11 @@ public static class GitHubBranchPublisher
         {
             return FailureResult(repo, baseBranch, featureBranchName, filesPushed, (int)ex.StatusCode, ex.Message);
         }
+        catch (Exception ex) when (ex is JsonException or FormatException)
+        {
+            return FailureResult(repo, baseBranch, featureBranchName, filesPushed, 0,
+                $"Unexpected response from GitHub: {ex.Message}");
+        }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             return FailureResult(repo, baseBranch, featureBranchName, filesPushed, 0,
@@ -162,8 +167,16 @@ public static class GitHubBranchPublisher
 
         var body = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(body);
-        return doc.RootElement.GetProperty("object").GetProperty("sha").GetString()
-            ?? throw new InvalidOperationException($"GitHub returned no commit sha for branch '{branch}'.");
+
+        if (!doc.RootElement.TryGetProperty("object", out var objectElement) ||
+            !objectElement.TryGetProperty("sha", out var shaElement) ||
+            shaElement.GetString() is not { Length: > 0 } sha)
+        {
+            throw new FormatException(
+                $"GitHub returned an unexpected response reading branch '{branch}' (missing object.sha).");
+        }
+
+        return sha;
     }
 
     private static async Task PutFileAsync(
@@ -206,7 +219,12 @@ public static class GitHubBranchPublisher
 
         var body = await response.Content.ReadAsStringAsync();
         using var doc = JsonDocument.Parse(body);
-        return doc.RootElement.GetProperty("sha").GetString();
+
+        if (!doc.RootElement.TryGetProperty("sha", out var shaElement))
+            throw new FormatException(
+                $"GitHub returned an unexpected response checking existing file '{encodedPath}' (missing sha).");
+
+        return shaElement.GetString();
     }
 
     private static StringContent JsonBody(object payload) =>

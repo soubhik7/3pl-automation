@@ -67,10 +67,8 @@ public static class SolaceConfigMerger
         if (string.IsNullOrWhiteSpace(existingConfigJson))
             return newConfigJson;
 
-        var incomingRoot = JsonNode.Parse(newConfigJson) as JsonObject
-            ?? throw new FormatException("newConfigJson is not a valid JSON object.");
-        var merged = (JsonNode.Parse(existingConfigJson) as JsonObject)?.DeepClone().AsObject()
-            ?? throw new FormatException("existingConfigJson is not a valid JSON object.");
+        var incomingRoot = ParseAsObject(newConfigJson, nameof(newConfigJson));
+        var merged = ParseAsObject(existingConfigJson, nameof(existingConfigJson)).DeepClone().AsObject();
 
         foreach (var (sectionKey, sectionNode) in incomingRoot)
         {
@@ -92,6 +90,24 @@ public static class SolaceConfigMerger
         }
 
         return merged.ToJsonString(WriteOptions);
+    }
+
+    // Wraps JsonNode.Parse so both a syntax error (invalid JSON) and a structurally
+    // wrong shape (valid JSON that isn't an object) surface as the same clear,
+    // parameter-named FormatException instead of a raw JsonException with no context.
+    private static JsonObject ParseAsObject(string json, string paramName)
+    {
+        JsonNode? node;
+        try
+        {
+            node = JsonNode.Parse(json);
+        }
+        catch (JsonException ex)
+        {
+            throw new FormatException($"{paramName} is not valid JSON: {ex.Message}", ex);
+        }
+
+        return node as JsonObject ?? throw new FormatException($"{paramName} is not a valid JSON object.");
     }
 
     private static JsonArray UpsertItems(

@@ -24,14 +24,16 @@ namespace ThreePlLocalFunction.Shared;
 //   Http is a single static instance reused across every call in the process
 //   (per .NET guidance — a fresh HttpClient per call risks socket exhaustion).
 //   A 30s timeout is set so a hung GitHub request fails the Logic Apps action
-//   in a bounded time instead of hanging indefinitely.
+//   in a bounded time instead of hanging indefinitely — that budget covers
+//   every retry attempt combined, not each one individually (see
+//   GitHubRetryHandler, which transparently retries transient GET failures).
 // ============================================================================
 public static class GitHubApiClient
 {
     private const string ApiVersion = "2022-11-28";
     private const string DefaultTokenEnvVar = "GITHUB_TOKEN";
 
-    public static readonly HttpClient Http = new()
+    public static readonly HttpClient Http = new(new GitHubRetryHandler())
     {
         Timeout = TimeSpan.FromSeconds(30)
     };
