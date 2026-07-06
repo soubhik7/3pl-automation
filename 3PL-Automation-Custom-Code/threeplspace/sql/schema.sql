@@ -49,6 +49,24 @@ BEGIN
 END
 GO
 
+-- Enrichment tracking columns (added after initial rollout -- ALTER, not part
+-- of the CREATE above, so this applies correctly to an already-created table
+-- too). EnrichmentStatus is the flag a future orchestrator integration will
+-- filter on ('Complete' = ready to use); CardSentAt/CardRespondedAt let
+-- data-enrichment-notifier find not-yet-notified rows and detect timeouts.
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.BtpConfig') AND name = 'EnrichmentStatus')
+    ALTER TABLE dbo.BtpConfig ADD EnrichmentStatus NVARCHAR(20) NOT NULL CONSTRAINT DF_BtpConfig_EnrichmentStatus DEFAULT ('AwaitingInput');
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_BtpConfig_EnrichmentStatus')
+    ALTER TABLE dbo.BtpConfig ADD CONSTRAINT CK_BtpConfig_EnrichmentStatus CHECK (EnrichmentStatus IN ('AwaitingInput', 'Complete', 'CardTimedOut'));
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.BtpConfig') AND name = 'CardSentAt')
+    ALTER TABLE dbo.BtpConfig ADD CardSentAt DATETIME2 NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.BtpConfig') AND name = 'CardRespondedAt')
+    ALTER TABLE dbo.BtpConfig ADD CardRespondedAt DATETIME2 NULL;
+GO
+
 -- ============================================================================
 -- dbo.SolaceClient (parent) + dbo.SolaceMessageType (child)
 -- Mirrors the Solace onboarding CSV: Brand,Env,SystemName,ThreePLCode identify
@@ -102,6 +120,19 @@ BEGIN
         CONSTRAINT CK_SolaceClient_DeploymentStatus CHECK (DeploymentStatus IN ('Pending', 'InProgress', 'Deployed', 'Failed'))
     );
 END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'EnrichmentStatus')
+    ALTER TABLE dbo.SolaceClient ADD EnrichmentStatus NVARCHAR(20) NOT NULL CONSTRAINT DF_SolaceClient_EnrichmentStatus DEFAULT ('AwaitingInput');
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_SolaceClient_EnrichmentStatus')
+    ALTER TABLE dbo.SolaceClient ADD CONSTRAINT CK_SolaceClient_EnrichmentStatus CHECK (EnrichmentStatus IN ('AwaitingInput', 'Complete', 'CardTimedOut'));
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'CardSentAt')
+    ALTER TABLE dbo.SolaceClient ADD CardSentAt DATETIME2 NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'CardRespondedAt')
+    ALTER TABLE dbo.SolaceClient ADD CardRespondedAt DATETIME2 NULL;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'SolaceMessageType' AND schema_id = SCHEMA_ID('dbo'))
@@ -167,6 +198,19 @@ BEGIN
         CONSTRAINT CK_MuleSoftPartner_DeploymentStatus CHECK (DeploymentStatus IN ('Pending', 'InProgress', 'Deployed', 'Failed'))
     );
 END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'EnrichmentStatus')
+    ALTER TABLE dbo.MuleSoftPartner ADD EnrichmentStatus NVARCHAR(20) NOT NULL CONSTRAINT DF_MuleSoftPartner_EnrichmentStatus DEFAULT ('AwaitingInput');
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_MuleSoftPartner_EnrichmentStatus')
+    ALTER TABLE dbo.MuleSoftPartner ADD CONSTRAINT CK_MuleSoftPartner_EnrichmentStatus CHECK (EnrichmentStatus IN ('AwaitingInput', 'Complete', 'CardTimedOut'));
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'CardSentAt')
+    ALTER TABLE dbo.MuleSoftPartner ADD CardSentAt DATETIME2 NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'CardRespondedAt')
+    ALTER TABLE dbo.MuleSoftPartner ADD CardRespondedAt DATETIME2 NULL;
 GO
 
 IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'MuleSoftEnvironment' AND schema_id = SCHEMA_ID('dbo'))
@@ -253,6 +297,38 @@ END
 GO
 
 -- ============================================================================
+-- dbo.EnrichmentAuditLog
+-- Append-only event trail across every data-enrichment channel/workflow
+-- (data-enrichment, data-enrichment-notifier, data-enrichment-mail-intake).
+-- "WHERE CorrelationId = X" reconstructs a request's full lifecycle
+-- regardless of which channel touched it -- the actual mechanism behind
+-- end-to-end tracking, since App Insights logging is not durable today.
+-- ============================================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'EnrichmentAuditLog' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.EnrichmentAuditLog
+    (
+        Id              BIGINT IDENTITY(1,1)   NOT NULL,
+        Domain          NVARCHAR(20)            NOT NULL,
+        CorrelationId   NVARCHAR(100)           NOT NULL,
+        EntityKey       NVARCHAR(400)           NULL,
+        Channel         NVARCHAR(20)            NOT NULL,
+        ActorEmail      NVARCHAR(320)           NULL,       -- PII: requester/responder identity when known
+        EventType       NVARCHAR(50)            NOT NULL,
+        EventDetail     NVARCHAR(MAX)           NULL,
+        CreatedAt       DATETIME2               NOT NULL CONSTRAINT DF_EnrichmentAuditLog_CreatedAt DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT PK_EnrichmentAuditLog PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT CK_EnrichmentAuditLog_Channel CHECK (Channel IN ('Api', 'Mail', 'AdaptiveCard', 'System')),
+        CONSTRAINT CK_EnrichmentAuditLog_EventType CHECK (EventType IN (
+            'Received', 'ValidationFailed', 'Upserted', 'CardSent', 'CardResponded',
+            'CardTimedOut', 'MailRejected', 'Error'
+        ))
+    );
+    CREATE INDEX IX_EnrichmentAuditLog_CorrelationId ON dbo.EnrichmentAuditLog (CorrelationId);
+END
+GO
+
+-- ============================================================================
 -- Least-privileged identity for the Logic App's built-in SQL connection.
 -- This is an Azure SQL Database CONTAINED user (password lives in this
 -- database, no server-level CREATE LOGIN / [master] step required) -- the
@@ -281,4 +357,5 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MuleSoftTransactionType    TO [three
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MuleSoftMessageType        TO [threepl-logicapp-svc];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MuleSoftSourceDestination  TO [threepl-logicapp-svc];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MuleSoftUomMapping         TO [threepl-logicapp-svc];
+GRANT SELECT, INSERT                 ON dbo.EnrichmentAuditLog          TO [threepl-logicapp-svc];
 GO

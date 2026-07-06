@@ -1,0 +1,1924 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Scope-Btp": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_Btp_Pending_Rows": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "query": "SELECT TOP 20 * FROM [dbo].[BtpConfig] WHERE EnrichmentStatus = 'AwaitingInput' AND CardSentAt IS NULL"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "sql",
+                                        "operationId": "executeQuery",
+                                        "serviceProviderId": "/serviceProviders/sql"
+                                    },
+                                    "retryPolicy": {
+                                        "type": "exponential",
+                                        "count": 3,
+                                        "interval": "PT5S",
+                                        "maximumInterval": "PT1M"
+                                    }
+                                }
+                            },
+                            "Compose_Btp_Pending_Rows": {
+                                "type": "Compose",
+                                "inputs": "@coalesce(body('Get_Btp_Pending_Rows')?[0], body('Get_Btp_Pending_Rows'), json('[]'))",
+                                "runAfter": {
+                                    "Get_Btp_Pending_Rows": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "For_each_Btp_Pending_Row": {
+                                "type": "Foreach",
+                                "foreach": "@outputs('Compose_Btp_Pending_Rows')",
+                                "actions": {
+                                    "Set_Btp_CardSentAt": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[BtpConfig]",
+                                                "setColumns": {
+                                                    "CardSentAt": "@utcNow()"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        }
+                                    },
+                                    "Insert_Btp_Audit_CardSent": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "Btp",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@concat(coalesce(item()?['SubAccount'],''), '/', coalesce(item()?['ProductName'],''), '/', coalesce(item()?['Environment'],''))",
+                                                    "Channel": "System",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardSent",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Set_Btp_CardSentAt": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Build_Btp_Notify_Card": {
+                                        "type": "Compose",
+                                        "inputs": {
+                                            "type": "AdaptiveCard",
+                                            "version": "1.4",
+                                            "body": [
+                                                {
+                                                    "type": "Container",
+                                                    "style": "emphasis",
+                                                    "bleed": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "BTP onboarding — please fill in the missing details",
+                                                            "size": "Large",
+                                                            "weight": "Bolder"
+                                                        },
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "@{concat('Tracking: ', item()?['CorrelationId'])}",
+                                                            "size": "Small",
+                                                            "isSubtle": true
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "items": [
+                                                        {
+                                                            "type": "FactSet",
+                                                            "facts": [
+                                                                {
+                                                                    "title": "Sub-account",
+                                                                    "value": "@{item()?['SubAccount']}"
+                                                                },
+                                                                {
+                                                                    "title": "Product",
+                                                                    "value": "@{item()?['ProductName']}"
+                                                                },
+                                                                {
+                                                                    "title": "Environment",
+                                                                    "value": "@{item()?['Environment']}"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Details",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "mode",
+                                                            "label": "Mode",
+                                                            "value": "@{item()?['Mode']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Mode is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "developerId",
+                                                            "label": "Developer Id",
+                                                            "value": "@{item()?['DeveloperId']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Developer Id is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "title",
+                                                            "label": "Title",
+                                                            "value": "@{item()?['Title']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Title is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "shortText",
+                                                            "label": "Short text (optional)",
+                                                            "value": "@{item()?['ShortText']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Short text (optional) is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "repoOwner",
+                                                            "label": "Repo owner",
+                                                            "value": "@{item()?['RepoOwner']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Repo owner is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "repoName",
+                                                            "label": "Repo name",
+                                                            "value": "@{item()?['RepoName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Repo name is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "workflowFileName",
+                                                            "label": "GitHub Actions workflow file",
+                                                            "value": "@{item()?['WorkflowFileName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "GitHub Actions workflow file is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "branchRef",
+                                                            "label": "Branch ref",
+                                                            "value": "@{item()?['BranchRef']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Branch ref is required."
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Service status",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "serviceExists",
+                                                            "label": "Does this service already exist?",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ServiceExists'], true), 'Yes', if(equals(item()?['ServiceExists'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Submit",
+                                                    "title": "Save & Continue",
+                                                    "style": "positive",
+                                                    "data": {
+                                                        "action": "submit"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "runAfter": {
+                                            "Insert_Btp_Audit_CardSent": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Send_Btp_Tracking_Email": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "outlook"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "body": {
+                                                "To": "@item()?['RecipientEmail']",
+                                                "Subject": "@concat('[Tracking: ', item()?['CorrelationId'], '] Btp onboarding — information needed')",
+                                                "Body": "@concat('A few details are still needed to finish onboarding. Reply to this email with the missing fields, or use the Teams card if you received one. Tracking ID: ', item()?['CorrelationId'])",
+                                                "Importance": "Normal"
+                                            },
+                                            "path": "/v2/Mail",
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Build_Btp_Notify_Card": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Post_Btp_Notify_Card_And_Wait": {
+                                        "type": "ApiConnectionWebhook",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "teams-3"
+                                                }
+                                            },
+                                            "body": {
+                                                "notificationUrl": "@listCallbackUrl()",
+                                                "body": {
+                                                    "messageBody": "@string(outputs('Build_Btp_Notify_Card'))",
+                                                    "updateMessage": "Thanks — saving your answer to SQL now.",
+                                                    "recipient": {
+                                                        "to": "@item()?['RecipientEmail']"
+                                                    }
+                                                }
+                                            },
+                                            "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions",
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Send_Btp_Tracking_Email": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "limit": {
+                                            "timeout": "P5D"
+                                        }
+                                    },
+                                    "Update_Btp_Row_From_Card_Response": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[BtpConfig]",
+                                                "setColumns": {
+                                                    "Mode": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['mode'], item()?['Mode'])",
+                                                    "DeveloperId": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['developerId'], item()?['DeveloperId'])",
+                                                    "Title": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['title'], item()?['Title'])",
+                                                    "ShortText": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['shortText'], item()?['ShortText'])",
+                                                    "RepoOwner": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['repoOwner'], item()?['RepoOwner'])",
+                                                    "RepoName": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['repoName'], item()?['RepoName'])",
+                                                    "WorkflowFileName": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['workflowFileName'], item()?['WorkflowFileName'])",
+                                                    "BranchRef": "@coalesce(body('Post_Btp_Notify_Card_And_Wait')?['data']?['branchRef'], item()?['BranchRef'])",
+                                                    "ServiceExists": "@if(equals(body('Post_Btp_Notify_Card_And_Wait')?['data']?['serviceExists'], 'Yes'), true, if(equals(body('Post_Btp_Notify_Card_And_Wait')?['data']?['serviceExists'], 'No'), false, item()?['ServiceExists']))",
+                                                    "EnrichmentStatus": "Complete",
+                                                    "CardRespondedAt": "@utcNow()"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Post_Btp_Notify_Card_And_Wait": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Insert_Btp_Audit_CardResponded": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "Btp",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@concat(coalesce(item()?['SubAccount'],''), '/', coalesce(item()?['ProductName'],''), '/', coalesce(item()?['Environment'],''))",
+                                                    "Channel": "AdaptiveCard",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardResponded",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Update_Btp_Row_From_Card_Response": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Update_Btp_Row_CardTimedOut": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[BtpConfig]",
+                                                "setColumns": {
+                                                    "EnrichmentStatus": "CardTimedOut"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Post_Btp_Notify_Card_And_Wait": [
+                                                "TimedOut"
+                                            ]
+                                        }
+                                    },
+                                    "Insert_Btp_Audit_CardTimedOut": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "Btp",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@concat(coalesce(item()?['SubAccount'],''), '/', coalesce(item()?['ProductName'],''), '/', coalesce(item()?['Environment'],''))",
+                                                    "Channel": "System",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardTimedOut",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Update_Btp_Row_CardTimedOut": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Compose_Btp_Pending_Rows": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "runtimeConfiguration": {
+                                    "concurrency": {
+                                        "repetitions": 5
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "Scope-Solace": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_Solace_Pending_Rows": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "query": "SELECT TOP 20 * FROM [dbo].[SolaceClient] WHERE EnrichmentStatus = 'AwaitingInput' AND CardSentAt IS NULL"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "sql",
+                                        "operationId": "executeQuery",
+                                        "serviceProviderId": "/serviceProviders/sql"
+                                    },
+                                    "retryPolicy": {
+                                        "type": "exponential",
+                                        "count": 3,
+                                        "interval": "PT5S",
+                                        "maximumInterval": "PT1M"
+                                    }
+                                }
+                            },
+                            "Compose_Solace_Pending_Rows": {
+                                "type": "Compose",
+                                "inputs": "@coalesce(body('Get_Solace_Pending_Rows')?[0], body('Get_Solace_Pending_Rows'), json('[]'))",
+                                "runAfter": {
+                                    "Get_Solace_Pending_Rows": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "For_each_Solace_Pending_Row": {
+                                "type": "Foreach",
+                                "foreach": "@outputs('Compose_Solace_Pending_Rows')",
+                                "actions": {
+                                    "Set_Solace_CardSentAt": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[SolaceClient]",
+                                                "setColumns": {
+                                                    "CardSentAt": "@utcNow()"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        }
+                                    },
+                                    "Insert_Solace_Audit_CardSent": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "Solace",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@concat(concat(coalesce(item()?['Brand'],''), '/', coalesce(item()?['Env'],'')), '/', concat(coalesce(item()?['SystemName'],''), '/', coalesce(item()?['ThreePLCode'],'')))",
+                                                    "Channel": "System",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardSent",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Set_Solace_CardSentAt": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Build_Solace_Notify_Card": {
+                                        "type": "Compose",
+                                        "inputs": {
+                                            "type": "AdaptiveCard",
+                                            "version": "1.4",
+                                            "body": [
+                                                {
+                                                    "type": "Container",
+                                                    "style": "emphasis",
+                                                    "bleed": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Solace onboarding — please fill in the missing details",
+                                                            "size": "Large",
+                                                            "weight": "Bolder"
+                                                        },
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "@{concat('Tracking: ', item()?['CorrelationId'])}",
+                                                            "size": "Small",
+                                                            "isSubtle": true
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "items": [
+                                                        {
+                                                            "type": "FactSet",
+                                                            "facts": [
+                                                                {
+                                                                    "title": "Brand",
+                                                                    "value": "@{item()?['Brand']}"
+                                                                },
+                                                                {
+                                                                    "title": "Env",
+                                                                    "value": "@{item()?['Env']}"
+                                                                },
+                                                                {
+                                                                    "title": "System",
+                                                                    "value": "@{item()?['SystemName']}"
+                                                                },
+                                                                {
+                                                                    "title": "3PL code",
+                                                                    "value": "@{item()?['ThreePLCode']}"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Client profile & ACL",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "action",
+                                                            "label": "Action",
+                                                            "value": "@{item()?['Action']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Action is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "aclClientConnectDefaultAction",
+                                                            "label": "ACL client-connect default action",
+                                                            "value": "@{item()?['AclClientConnectDefaultAction']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "ACL client-connect default action is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "aclPublishTopicDefaultAction",
+                                                            "label": "ACL publish-topic default action",
+                                                            "value": "@{item()?['AclPublishTopicDefaultAction']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "ACL publish-topic default action is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "aclSubscribeShareNameDefaultAction",
+                                                            "label": "ACL subscribe-share-name default action",
+                                                            "value": "@{item()?['AclSubscribeShareNameDefaultAction']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "ACL subscribe-share-name default action is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "aclSubscribeTopicDefaultAction",
+                                                            "label": "ACL subscribe-topic default action",
+                                                            "value": "@{item()?['AclSubscribeTopicDefaultAction']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "ACL subscribe-topic default action is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileAllowGuaranteedMsgSendEnabled",
+                                                            "label": "Allow guaranteed message send",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileAllowGuaranteedMsgSendEnabled'], true), 'Yes', if(equals(item()?['ClientProfileAllowGuaranteedMsgSendEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileAllowGuaranteedMsgReceiveEnabled",
+                                                            "label": "Allow guaranteed message receive",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileAllowGuaranteedMsgReceiveEnabled'], true), 'Yes', if(equals(item()?['ClientProfileAllowGuaranteedMsgReceiveEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileCompressionEnabled",
+                                                            "label": "Compression enabled",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileCompressionEnabled'], true), 'Yes', if(equals(item()?['ClientProfileCompressionEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileReplicationAllowClientConnectWhenStandbyEnabled",
+                                                            "label": "Allow connect when standby (replication)",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled'], true), 'Yes', if(equals(item()?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileAllowTransactedSessionsEnabled",
+                                                            "label": "Allow transacted sessions",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileAllowTransactedSessionsEnabled'], true), 'Yes', if(equals(item()?['ClientProfileAllowTransactedSessionsEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileAllowBridgeConnectionsEnabled",
+                                                            "label": "Allow bridge connections",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileAllowBridgeConnectionsEnabled'], true), 'Yes', if(equals(item()?['ClientProfileAllowBridgeConnectionsEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileAllowGuaranteedEndpointCreateEnabled",
+                                                            "label": "Allow guaranteed endpoint create",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileAllowGuaranteedEndpointCreateEnabled'], true), 'Yes', if(equals(item()?['ClientProfileAllowGuaranteedEndpointCreateEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientProfileAllowSharedSubscriptionsEnabled",
+                                                            "label": "Allow shared subscriptions",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientProfileAllowSharedSubscriptionsEnabled'], true), 'Yes', if(equals(item()?['ClientProfileAllowSharedSubscriptionsEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientUserEnabled",
+                                                            "label": "Client user enabled",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientUserEnabled'], true), 'Yes', if(equals(item()?['ClientUserEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientUserGuaranteedEndpointPermissionOverrideEnabled",
+                                                            "label": "Client user can override endpoint permission",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientUserGuaranteedEndpointPermissionOverrideEnabled'], true), 'Yes', if(equals(item()?['ClientUserGuaranteedEndpointPermissionOverrideEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "clientUserSubscriptionManagerEnabled",
+                                                            "label": "Client user is subscription manager",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ClientUserSubscriptionManagerEnabled'], true), 'Yes', if(equals(item()?['ClientUserSubscriptionManagerEnabled'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Pipeline / Git",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "repoOwner",
+                                                            "label": "Repo owner",
+                                                            "value": "@{item()?['RepoOwner']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Repo owner is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "repoName",
+                                                            "label": "Repo name",
+                                                            "value": "@{item()?['RepoName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Repo name is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "filePath",
+                                                            "label": "Config file path",
+                                                            "value": "@{item()?['FilePath']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Config file path is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "branch",
+                                                            "label": "Branch",
+                                                            "value": "@{item()?['Branch']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Branch is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "baseBranch",
+                                                            "label": "Base branch",
+                                                            "value": "@{item()?['BaseBranch']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Base branch is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "featureBranchName",
+                                                            "label": "Feature branch name",
+                                                            "value": "@{item()?['FeatureBranchName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Feature branch name is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "requesterEmail",
+                                                            "label": "Requester email",
+                                                            "value": "@{item()?['RequesterEmail']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Requester email is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "recipientEmail",
+                                                            "label": "Recipient email",
+                                                            "value": "@{item()?['RecipientEmail']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Recipient email is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "commitMessage",
+                                                            "label": "Commit message",
+                                                            "value": "@{item()?['CommitMessage']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Commit message is required."
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Service status",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "serviceExists",
+                                                            "label": "Does this service already exist?",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ServiceExists'], true), 'Yes', if(equals(item()?['ServiceExists'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Submit",
+                                                    "title": "Save & Continue",
+                                                    "style": "positive",
+                                                    "data": {
+                                                        "action": "submit"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "runAfter": {
+                                            "Insert_Solace_Audit_CardSent": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Send_Solace_Tracking_Email": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "outlook"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "body": {
+                                                "To": "@item()?['RecipientEmail']",
+                                                "Subject": "@concat('[Tracking: ', item()?['CorrelationId'], '] Solace onboarding — information needed')",
+                                                "Body": "@concat('A few details are still needed to finish onboarding. Reply to this email with the missing fields, or use the Teams card if you received one. Tracking ID: ', item()?['CorrelationId'])",
+                                                "Importance": "Normal"
+                                            },
+                                            "path": "/v2/Mail",
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Build_Solace_Notify_Card": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Post_Solace_Notify_Card_And_Wait": {
+                                        "type": "ApiConnectionWebhook",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "teams-3"
+                                                }
+                                            },
+                                            "body": {
+                                                "notificationUrl": "@listCallbackUrl()",
+                                                "body": {
+                                                    "messageBody": "@string(outputs('Build_Solace_Notify_Card'))",
+                                                    "updateMessage": "Thanks — saving your answer to SQL now.",
+                                                    "recipient": {
+                                                        "to": "@item()?['RecipientEmail']"
+                                                    }
+                                                }
+                                            },
+                                            "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions",
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Send_Solace_Tracking_Email": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "limit": {
+                                            "timeout": "P5D"
+                                        }
+                                    },
+                                    "Update_Solace_Row_From_Card_Response": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[SolaceClient]",
+                                                "setColumns": {
+                                                    "Action": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['action'], item()?['Action'])",
+                                                    "AclClientConnectDefaultAction": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['aclClientConnectDefaultAction'], item()?['AclClientConnectDefaultAction'])",
+                                                    "AclPublishTopicDefaultAction": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['aclPublishTopicDefaultAction'], item()?['AclPublishTopicDefaultAction'])",
+                                                    "AclSubscribeShareNameDefaultAction": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['aclSubscribeShareNameDefaultAction'], item()?['AclSubscribeShareNameDefaultAction'])",
+                                                    "AclSubscribeTopicDefaultAction": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['aclSubscribeTopicDefaultAction'], item()?['AclSubscribeTopicDefaultAction'])",
+                                                    "RepoOwner": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['repoOwner'], item()?['RepoOwner'])",
+                                                    "RepoName": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['repoName'], item()?['RepoName'])",
+                                                    "FilePath": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['filePath'], item()?['FilePath'])",
+                                                    "Branch": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['branch'], item()?['Branch'])",
+                                                    "BaseBranch": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['baseBranch'], item()?['BaseBranch'])",
+                                                    "FeatureBranchName": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['featureBranchName'], item()?['FeatureBranchName'])",
+                                                    "RequesterEmail": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['requesterEmail'], item()?['RequesterEmail'])",
+                                                    "RecipientEmail": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['recipientEmail'], item()?['RecipientEmail'])",
+                                                    "CommitMessage": "@coalesce(body('Post_Solace_Notify_Card_And_Wait')?['data']?['commitMessage'], item()?['CommitMessage'])",
+                                                    "ClientProfileAllowGuaranteedMsgSendEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgSendEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgSendEnabled'], 'No'), false, item()?['ClientProfileAllowGuaranteedMsgSendEnabled']))",
+                                                    "ClientProfileAllowGuaranteedMsgReceiveEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgReceiveEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgReceiveEnabled'], 'No'), false, item()?['ClientProfileAllowGuaranteedMsgReceiveEnabled']))",
+                                                    "ClientProfileCompressionEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileCompressionEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileCompressionEnabled'], 'No'), false, item()?['ClientProfileCompressionEnabled']))",
+                                                    "ClientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], 'No'), false, item()?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled']))",
+                                                    "ClientProfileAllowTransactedSessionsEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowTransactedSessionsEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowTransactedSessionsEnabled'], 'No'), false, item()?['ClientProfileAllowTransactedSessionsEnabled']))",
+                                                    "ClientProfileAllowBridgeConnectionsEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowBridgeConnectionsEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowBridgeConnectionsEnabled'], 'No'), false, item()?['ClientProfileAllowBridgeConnectionsEnabled']))",
+                                                    "ClientProfileAllowGuaranteedEndpointCreateEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedEndpointCreateEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedEndpointCreateEnabled'], 'No'), false, item()?['ClientProfileAllowGuaranteedEndpointCreateEnabled']))",
+                                                    "ClientProfileAllowSharedSubscriptionsEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowSharedSubscriptionsEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientProfileAllowSharedSubscriptionsEnabled'], 'No'), false, item()?['ClientProfileAllowSharedSubscriptionsEnabled']))",
+                                                    "ClientUserEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientUserEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientUserEnabled'], 'No'), false, item()?['ClientUserEnabled']))",
+                                                    "ClientUserGuaranteedEndpointPermissionOverrideEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], 'No'), false, item()?['ClientUserGuaranteedEndpointPermissionOverrideEnabled']))",
+                                                    "ClientUserSubscriptionManagerEnabled": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientUserSubscriptionManagerEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['clientUserSubscriptionManagerEnabled'], 'No'), false, item()?['ClientUserSubscriptionManagerEnabled']))",
+                                                    "ServiceExists": "@if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['serviceExists'], 'Yes'), true, if(equals(body('Post_Solace_Notify_Card_And_Wait')?['data']?['serviceExists'], 'No'), false, item()?['ServiceExists']))",
+                                                    "EnrichmentStatus": "Complete",
+                                                    "CardRespondedAt": "@utcNow()"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Post_Solace_Notify_Card_And_Wait": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Insert_Solace_Audit_CardResponded": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "Solace",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@concat(concat(coalesce(item()?['Brand'],''), '/', coalesce(item()?['Env'],'')), '/', concat(coalesce(item()?['SystemName'],''), '/', coalesce(item()?['ThreePLCode'],'')))",
+                                                    "Channel": "AdaptiveCard",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardResponded",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Update_Solace_Row_From_Card_Response": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Update_Solace_Row_CardTimedOut": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[SolaceClient]",
+                                                "setColumns": {
+                                                    "EnrichmentStatus": "CardTimedOut"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Post_Solace_Notify_Card_And_Wait": [
+                                                "TimedOut"
+                                            ]
+                                        }
+                                    },
+                                    "Insert_Solace_Audit_CardTimedOut": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "Solace",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@concat(concat(coalesce(item()?['Brand'],''), '/', coalesce(item()?['Env'],'')), '/', concat(coalesce(item()?['SystemName'],''), '/', coalesce(item()?['ThreePLCode'],'')))",
+                                                    "Channel": "System",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardTimedOut",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Update_Solace_Row_CardTimedOut": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Compose_Solace_Pending_Rows": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "runtimeConfiguration": {
+                                    "concurrency": {
+                                        "repetitions": 5
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "Scope-MuleSoft": {
+                        "type": "Scope",
+                        "actions": {
+                            "Get_MuleSoft_Pending_Rows": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "query": "SELECT TOP 20 * FROM [dbo].[MuleSoftPartner] WHERE EnrichmentStatus = 'AwaitingInput' AND CardSentAt IS NULL"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "sql",
+                                        "operationId": "executeQuery",
+                                        "serviceProviderId": "/serviceProviders/sql"
+                                    },
+                                    "retryPolicy": {
+                                        "type": "exponential",
+                                        "count": 3,
+                                        "interval": "PT5S",
+                                        "maximumInterval": "PT1M"
+                                    }
+                                }
+                            },
+                            "Compose_MuleSoft_Pending_Rows": {
+                                "type": "Compose",
+                                "inputs": "@coalesce(body('Get_MuleSoft_Pending_Rows')?[0], body('Get_MuleSoft_Pending_Rows'), json('[]'))",
+                                "runAfter": {
+                                    "Get_MuleSoft_Pending_Rows": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "For_each_MuleSoft_Pending_Row": {
+                                "type": "Foreach",
+                                "foreach": "@outputs('Compose_MuleSoft_Pending_Rows')",
+                                "actions": {
+                                    "Set_MuleSoft_CardSentAt": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[MuleSoftPartner]",
+                                                "setColumns": {
+                                                    "CardSentAt": "@utcNow()"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        }
+                                    },
+                                    "Insert_MuleSoft_Audit_CardSent": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "MuleSoft",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@coalesce(item()?['CountryKey'], '')",
+                                                    "Channel": "System",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardSent",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Set_MuleSoft_CardSentAt": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Build_MuleSoft_Notify_Card": {
+                                        "type": "Compose",
+                                        "inputs": {
+                                            "type": "AdaptiveCard",
+                                            "version": "1.4",
+                                            "body": [
+                                                {
+                                                    "type": "Container",
+                                                    "style": "emphasis",
+                                                    "bleed": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "MuleSoft onboarding — please fill in the missing details",
+                                                            "size": "Large",
+                                                            "weight": "Bolder"
+                                                        },
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "@{concat('Tracking: ', item()?['CorrelationId'])}",
+                                                            "size": "Small",
+                                                            "isSubtle": true
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "items": [
+                                                        {
+                                                            "type": "FactSet",
+                                                            "facts": [
+                                                                {
+                                                                    "title": "Country key",
+                                                                    "value": "@{item()?['CountryKey']}"
+                                                                }
+                                                            ]
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "NAV connection",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "countryCode",
+                                                            "label": "Country code",
+                                                            "value": "@{item()?['CountryCode']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Country code is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "partnerComment",
+                                                            "label": "Partner comment",
+                                                            "value": "@{item()?['PartnerComment']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Partner comment is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "createdBy",
+                                                            "label": "Created by",
+                                                            "value": "@{item()?['CreatedBy']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Created by is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "navProtocol",
+                                                            "label": "NAV protocol",
+                                                            "value": "@{item()?['NavProtocol']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "NAV protocol is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "navPort",
+                                                            "label": "NAV port",
+                                                            "value": "@{item()?['NavPort']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "NAV port is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "navUsername",
+                                                            "label": "NAV username",
+                                                            "value": "@{item()?['NavUsername']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "NAV username is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "navDomain",
+                                                            "label": "NAV domain",
+                                                            "value": "@{item()?['NavDomain']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "NAV domain is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "navService",
+                                                            "label": "NAV service",
+                                                            "value": "@{item()?['NavService']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "NAV service is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "navSoapPort",
+                                                            "label": "NAV SOAP port",
+                                                            "value": "@{item()?['NavSoapPort']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "NAV SOAP port is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "translationReceiverName",
+                                                            "label": "Translation receiver name",
+                                                            "value": "@{item()?['TranslationReceiverName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Translation receiver name is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "navUseCommonCert",
+                                                            "label": "Use common cert",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['NavUseCommonCert'], true), 'Yes', if(equals(item()?['NavUseCommonCert'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Pipeline / Git",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "repoOwner",
+                                                            "label": "Repo owner",
+                                                            "value": "@{item()?['RepoOwner']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Repo owner is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "repoName",
+                                                            "label": "Repo name",
+                                                            "value": "@{item()?['RepoName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Repo name is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "filePathPrefix",
+                                                            "label": "Config path prefix",
+                                                            "value": "@{item()?['FilePathPrefix']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Config path prefix is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "branch",
+                                                            "label": "Branch",
+                                                            "value": "@{item()?['Branch']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Branch is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "baseBranch",
+                                                            "label": "Base branch",
+                                                            "value": "@{item()?['BaseBranch']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Base branch is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "featureBranchName",
+                                                            "label": "Feature branch name",
+                                                            "value": "@{item()?['FeatureBranchName']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Feature branch name is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "requesterEmail",
+                                                            "label": "Requester email",
+                                                            "value": "@{item()?['RequesterEmail']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Requester email is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "recipientEmail",
+                                                            "label": "Recipient email",
+                                                            "value": "@{item()?['RecipientEmail']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Recipient email is required."
+                                                        },
+                                                        {
+                                                            "type": "Input.Text",
+                                                            "id": "commitMessage",
+                                                            "label": "Commit message",
+                                                            "value": "@{item()?['CommitMessage']}",
+                                                            "isRequired": true,
+                                                            "errorMessage": "Commit message is required."
+                                                        }
+                                                    ]
+                                                },
+                                                {
+                                                    "type": "Container",
+                                                    "spacing": "Medium",
+                                                    "separator": true,
+                                                    "items": [
+                                                        {
+                                                            "type": "TextBlock",
+                                                            "text": "Service status",
+                                                            "weight": "Bolder",
+                                                            "size": "Small"
+                                                        },
+                                                        {
+                                                            "type": "Input.ChoiceSet",
+                                                            "id": "serviceExists",
+                                                            "label": "Does this service already exist?",
+                                                            "style": "expanded",
+                                                            "value": "@if(equals(item()?['ServiceExists'], true), 'Yes', if(equals(item()?['ServiceExists'], false), 'No', ''))",
+                                                            "choices": [
+                                                                {
+                                                                    "title": "Yes",
+                                                                    "value": "Yes"
+                                                                },
+                                                                {
+                                                                    "title": "No",
+                                                                    "value": "No"
+                                                                }
+                                                            ],
+                                                            "isRequired": true,
+                                                            "errorMessage": "Please choose Yes or No."
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "actions": [
+                                                {
+                                                    "type": "Action.Submit",
+                                                    "title": "Save & Continue",
+                                                    "style": "positive",
+                                                    "data": {
+                                                        "action": "submit"
+                                                    }
+                                                }
+                                            ]
+                                        },
+                                        "runAfter": {
+                                            "Insert_MuleSoft_Audit_CardSent": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Send_MuleSoft_Tracking_Email": {
+                                        "type": "ApiConnection",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "outlook"
+                                                }
+                                            },
+                                            "method": "post",
+                                            "body": {
+                                                "To": "@item()?['RecipientEmail']",
+                                                "Subject": "@concat('[Tracking: ', item()?['CorrelationId'], '] MuleSoft onboarding — information needed')",
+                                                "Body": "@concat('A few details are still needed to finish onboarding. Reply to this email with the missing fields, or use the Teams card if you received one. Tracking ID: ', item()?['CorrelationId'])",
+                                                "Importance": "Normal"
+                                            },
+                                            "path": "/v2/Mail",
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Build_MuleSoft_Notify_Card": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Post_MuleSoft_Notify_Card_And_Wait": {
+                                        "type": "ApiConnectionWebhook",
+                                        "inputs": {
+                                            "host": {
+                                                "connection": {
+                                                    "referenceName": "teams-3"
+                                                }
+                                            },
+                                            "body": {
+                                                "notificationUrl": "@listCallbackUrl()",
+                                                "body": {
+                                                    "messageBody": "@string(outputs('Build_MuleSoft_Notify_Card'))",
+                                                    "updateMessage": "Thanks — saving your answer to SQL now.",
+                                                    "recipient": {
+                                                        "to": "@item()?['RecipientEmail']"
+                                                    }
+                                                }
+                                            },
+                                            "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions",
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Send_MuleSoft_Tracking_Email": [
+                                                "Succeeded"
+                                            ]
+                                        },
+                                        "limit": {
+                                            "timeout": "P5D"
+                                        }
+                                    },
+                                    "Update_MuleSoft_Row_From_Card_Response": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[MuleSoftPartner]",
+                                                "setColumns": {
+                                                    "CountryCode": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['countryCode'], item()?['CountryCode'])",
+                                                    "PartnerComment": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['partnerComment'], item()?['PartnerComment'])",
+                                                    "CreatedBy": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['createdBy'], item()?['CreatedBy'])",
+                                                    "NavProtocol": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navProtocol'], item()?['NavProtocol'])",
+                                                    "NavPort": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navPort'], item()?['NavPort'])",
+                                                    "NavUsername": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navUsername'], item()?['NavUsername'])",
+                                                    "NavDomain": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navDomain'], item()?['NavDomain'])",
+                                                    "NavService": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navService'], item()?['NavService'])",
+                                                    "NavSoapPort": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navSoapPort'], item()?['NavSoapPort'])",
+                                                    "TranslationReceiverName": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['translationReceiverName'], item()?['TranslationReceiverName'])",
+                                                    "RepoOwner": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['repoOwner'], item()?['RepoOwner'])",
+                                                    "RepoName": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['repoName'], item()?['RepoName'])",
+                                                    "FilePathPrefix": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['filePathPrefix'], item()?['FilePathPrefix'])",
+                                                    "Branch": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['branch'], item()?['Branch'])",
+                                                    "BaseBranch": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['baseBranch'], item()?['BaseBranch'])",
+                                                    "FeatureBranchName": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['featureBranchName'], item()?['FeatureBranchName'])",
+                                                    "RequesterEmail": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['requesterEmail'], item()?['RequesterEmail'])",
+                                                    "RecipientEmail": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['recipientEmail'], item()?['RecipientEmail'])",
+                                                    "CommitMessage": "@coalesce(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['commitMessage'], item()?['CommitMessage'])",
+                                                    "NavUseCommonCert": "@if(equals(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navUseCommonCert'], 'Yes'), true, if(equals(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['navUseCommonCert'], 'No'), false, item()?['NavUseCommonCert']))",
+                                                    "ServiceExists": "@if(equals(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['serviceExists'], 'Yes'), true, if(equals(body('Post_MuleSoft_Notify_Card_And_Wait')?['data']?['serviceExists'], 'No'), false, item()?['ServiceExists']))",
+                                                    "EnrichmentStatus": "Complete",
+                                                    "CardRespondedAt": "@utcNow()"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Post_MuleSoft_Notify_Card_And_Wait": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Insert_MuleSoft_Audit_CardResponded": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "MuleSoft",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@coalesce(item()?['CountryKey'], '')",
+                                                    "Channel": "AdaptiveCard",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardResponded",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Update_MuleSoft_Row_From_Card_Response": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Update_MuleSoft_Row_CardTimedOut": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[MuleSoftPartner]",
+                                                "setColumns": {
+                                                    "EnrichmentStatus": "CardTimedOut"
+                                                },
+                                                "columnValuesForWhereCondition": {
+                                                    "Id": "@item()?['Id']"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "updateRows",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Post_MuleSoft_Notify_Card_And_Wait": [
+                                                "TimedOut"
+                                            ]
+                                        }
+                                    },
+                                    "Insert_MuleSoft_Audit_CardTimedOut": {
+                                        "type": "ServiceProvider",
+                                        "inputs": {
+                                            "parameters": {
+                                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                "setColumns": {
+                                                    "Domain": "MuleSoft",
+                                                    "CorrelationId": "@item()?['CorrelationId']",
+                                                    "EntityKey": "@coalesce(item()?['CountryKey'], '')",
+                                                    "Channel": "System",
+                                                    "ActorEmail": "@item()?['RecipientEmail']",
+                                                    "EventType": "CardTimedOut",
+                                                    "EventDetail": "@null"
+                                                }
+                                            },
+                                            "serviceProviderConfiguration": {
+                                                "connectionName": "sql",
+                                                "operationId": "insertRow",
+                                                "serviceProviderId": "/serviceProviders/sql"
+                                            },
+                                            "retryPolicy": {
+                                                "type": "exponential",
+                                                "count": 3,
+                                                "interval": "PT5S",
+                                                "maximumInterval": "PT1M"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Update_MuleSoft_Row_CardTimedOut": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Compose_MuleSoft_Pending_Rows": [
+                                        "Succeeded"
+                                    ]
+                                },
+                                "runtimeConfiguration": {
+                                    "concurrency": {
+                                        "repetitions": 5
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "runAfter": {}
+            },
+            "Scope-Catch": {
+                "type": "Scope",
+                "actions": {
+                    "Insert_Audit_Error": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                            "parameters": {
+                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                "setColumns": {
+                                    "Domain": "System",
+                                    "CorrelationId": "@null",
+                                    "EntityKey": "@null",
+                                    "Channel": "System",
+                                    "ActorEmail": "@null",
+                                    "EventType": "Error",
+                                    "EventDetail": "@string(result('Scope-Try'))"
+                                }
+                            },
+                            "serviceProviderConfiguration": {
+                                "connectionName": "sql",
+                                "operationId": "insertRow",
+                                "serviceProviderId": "/serviceProviders/sql"
+                            },
+                            "retryPolicy": {
+                                "type": "exponential",
+                                "count": 3,
+                                "interval": "PT5S",
+                                "maximumInterval": "PT1M"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Scope-Try": [
+                        "FAILED"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "Recurrence": {
+                "type": "Recurrence",
+                "recurrence": {
+                    "frequency": "Minute",
+                    "interval": 5
+                }
+            }
+        },
+        "contentVersion": "1.0.0.0",
+        "outputs": {}
+    },
+    "kind": "stateful"
+}

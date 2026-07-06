@@ -1,0 +1,724 @@
+{
+    "definition": {
+        "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+        "actions": {
+            "Scope-Try": {
+                "type": "Scope",
+                "actions": {
+                    "Compose_Has_Tracking_Marker": {
+                        "type": "Compose",
+                        "inputs": "@and(contains(coalesce(triggerBody()?['Subject'], ''), '[Tracking: '), contains(coalesce(triggerBody()?['Subject'], ''), ']'))"
+                    },
+                    "If_Mail_Has_Tracking_Marker": {
+                        "type": "If",
+                        "expression": {
+                            "and": [
+                                {
+                                    "equals": [
+                                        "@outputs('Compose_Has_Tracking_Marker')",
+                                        true
+                                    ]
+                                }
+                            ]
+                        },
+                        "actions": {
+                            "Compose_Tracking_Id": {
+                                "type": "Compose",
+                                "inputs": "@trim(substring(substring(coalesce(triggerBody()?['Subject'], ''), add(indexOf(coalesce(triggerBody()?['Subject'], ''), '[Tracking: '), 11)), 0, indexOf(substring(coalesce(triggerBody()?['Subject'], ''), add(indexOf(coalesce(triggerBody()?['Subject'], ''), '[Tracking: '), 11)), ']')))"
+                            },
+                            "Get_Latest_Audit_For_Tracking_Id": {
+                                "type": "ServiceProvider",
+                                "inputs": {
+                                    "parameters": {
+                                        "query": "@concat('SELECT TOP 1 * FROM dbo.EnrichmentAuditLog WHERE CorrelationId = ''', replace(outputs('Compose_Tracking_Id'), '''', ''''''), ''' ORDER BY CreatedAt DESC')"
+                                    },
+                                    "serviceProviderConfiguration": {
+                                        "connectionName": "sql",
+                                        "operationId": "executeQuery",
+                                        "serviceProviderId": "/serviceProviders/sql"
+                                    },
+                                    "retryPolicy": {
+                                        "type": "exponential",
+                                        "count": 3,
+                                        "interval": "PT5S",
+                                        "maximumInterval": "PT1M"
+                                    }
+                                },
+                                "runAfter": {
+                                    "Compose_Tracking_Id": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            },
+                            "If_Audit_Found": {
+                                "type": "If",
+                                "expression": {
+                                    "and": [
+                                        {
+                                            "greater": [
+                                                "@length(coalesce(body('Get_Latest_Audit_For_Tracking_Id')?[0], body('Get_Latest_Audit_For_Tracking_Id'), json('[]')))",
+                                                0
+                                            ]
+                                        }
+                                    ]
+                                },
+                                "actions": {
+                                    "Compose_Audit_Row": {
+                                        "type": "Compose",
+                                        "inputs": "@first(coalesce(body('Get_Latest_Audit_For_Tracking_Id')?[0], body('Get_Latest_Audit_For_Tracking_Id'), json('[]')))"
+                                    },
+                                    "Compose_Audit_Domain": {
+                                        "type": "Compose",
+                                        "inputs": "@outputs('Compose_Audit_Row')?['Domain']",
+                                        "runAfter": {
+                                            "Compose_Audit_Row": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Compose_Audit_Entity_Key": {
+                                        "type": "Compose",
+                                        "inputs": "@outputs('Compose_Audit_Row')?['EntityKey']",
+                                        "runAfter": {
+                                            "Compose_Audit_Row": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    },
+                                    "Switch_On_Audit_Domain": {
+                                        "type": "Switch",
+                                        "expression": "@coalesce(outputs('Compose_Audit_Domain'), '')",
+                                        "default": {
+                                            "actions": {
+                                                "Insert_Audit_MailRejected_UnknownDomain": {
+                                                    "type": "ServiceProvider",
+                                                    "inputs": {
+                                                        "parameters": {
+                                                            "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                            "setColumns": {
+                                                                "Domain": "Unknown",
+                                                                "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                "Channel": "Mail",
+                                                                "ActorEmail": "@triggerBody()?['From']",
+                                                                "EventType": "MailRejected",
+                                                                "EventDetail": "'Audit row had an unrecognized domain'"
+                                                            }
+                                                        },
+                                                        "serviceProviderConfiguration": {
+                                                            "connectionName": "sql",
+                                                            "operationId": "insertRow",
+                                                            "serviceProviderId": "/serviceProviders/sql"
+                                                        },
+                                                        "retryPolicy": {
+                                                            "type": "exponential",
+                                                            "count": 3,
+                                                            "interval": "PT5S",
+                                                            "maximumInterval": "PT1M"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "cases": {
+                                            "Case_Btp": {
+                                                "actions": {
+                                                    "Get_Btp_Current_Row": {
+                                                        "type": "ServiceProvider",
+                                                        "inputs": {
+                                                            "parameters": {
+                                                                "query": "@concat('SELECT TOP 1 * FROM [dbo].[BtpConfig] WHERE SubAccount = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[0], '''', ''''''), ''' AND ProductName = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[1], '''', ''''''), ''' AND Environment = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[2], '''', ''''''), '''')"
+                                                            },
+                                                            "serviceProviderConfiguration": {
+                                                                "connectionName": "sql",
+                                                                "operationId": "executeQuery",
+                                                                "serviceProviderId": "/serviceProviders/sql"
+                                                            },
+                                                            "retryPolicy": {
+                                                                "type": "exponential",
+                                                                "count": 3,
+                                                                "interval": "PT5S",
+                                                                "maximumInterval": "PT1M"
+                                                            }
+                                                        }
+                                                    },
+                                                    "If_Btp_Still_Awaiting": {
+                                                        "type": "If",
+                                                        "expression": {
+                                                            "and": [
+                                                                {
+                                                                    "greater": [
+                                                                        "@length(coalesce(body('Get_Btp_Current_Row')?[0], body('Get_Btp_Current_Row'), json('[]')))",
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        "actions": {
+                                                            "If_Btp_Status_Is_Awaiting": {
+                                                                "type": "If",
+                                                                "expression": {
+                                                                    "and": [
+                                                                        {
+                                                                            "equals": [
+                                                                                "@first(coalesce(body('Get_Btp_Current_Row')?[0], body('Get_Btp_Current_Row'), json('[]')))?['EnrichmentStatus']",
+                                                                                "AwaitingInput"
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "actions": {
+                                                                    "Invoke_Data_Enrichment_Btp": {
+                                                                        "type": "Workflow",
+                                                                        "inputs": {
+                                                                            "host": {
+                                                                                "workflow": {
+                                                                                    "id": "data-enrichment"
+                                                                                }
+                                                                            },
+                                                                            "body": {
+                                                                                "channel": "Mail",
+                                                                                "correlationId": "@outputs('Compose_Tracking_Id')",
+                                                                                "domain": "Btp",
+                                                                                "mailReplyBody": "@triggerBody()?['Body']",
+                                                                                "mailReplySubject": "@triggerBody()?['Subject']",
+                                                                                "subAccount": "@split(outputs('Compose_Audit_Entity_Key'), '/')[0]",
+                                                                                "productName": "@split(outputs('Compose_Audit_Entity_Key'), '/')[1]",
+                                                                                "environment": "@split(outputs('Compose_Audit_Entity_Key'), '/')[2]"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "else": {
+                                                                    "actions": {
+                                                                        "Insert_Audit_MailRejected_Btp_AlreadyDone": {
+                                                                            "type": "ServiceProvider",
+                                                                            "inputs": {
+                                                                                "parameters": {
+                                                                                    "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                                                    "setColumns": {
+                                                                                        "Domain": "Unknown",
+                                                                                        "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                                        "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                                        "Channel": "Mail",
+                                                                                        "ActorEmail": "@triggerBody()?['From']",
+                                                                                        "EventType": "MailRejected",
+                                                                                        "EventDetail": "'Referenced entity is no longer AwaitingInput'"
+                                                                                    }
+                                                                                },
+                                                                                "serviceProviderConfiguration": {
+                                                                                    "connectionName": "sql",
+                                                                                    "operationId": "insertRow",
+                                                                                    "serviceProviderId": "/serviceProviders/sql"
+                                                                                },
+                                                                                "retryPolicy": {
+                                                                                    "type": "exponential",
+                                                                                    "count": 3,
+                                                                                    "interval": "PT5S",
+                                                                                    "maximumInterval": "PT1M"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "else": {
+                                                            "actions": {
+                                                                "Insert_Audit_MailRejected_Btp_NotFound": {
+                                                                    "type": "ServiceProvider",
+                                                                    "inputs": {
+                                                                        "parameters": {
+                                                                            "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                                            "setColumns": {
+                                                                                "Domain": "Unknown",
+                                                                                "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                                "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                                "Channel": "Mail",
+                                                                                "ActorEmail": "@triggerBody()?['From']",
+                                                                                "EventType": "MailRejected",
+                                                                                "EventDetail": "'Referenced entity no longer exists'"
+                                                                            }
+                                                                        },
+                                                                        "serviceProviderConfiguration": {
+                                                                            "connectionName": "sql",
+                                                                            "operationId": "insertRow",
+                                                                            "serviceProviderId": "/serviceProviders/sql"
+                                                                        },
+                                                                        "retryPolicy": {
+                                                                            "type": "exponential",
+                                                                            "count": 3,
+                                                                            "interval": "PT5S",
+                                                                            "maximumInterval": "PT1M"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "runAfter": {
+                                                            "Get_Btp_Current_Row": [
+                                                                "Succeeded"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "case": "Btp"
+                                            },
+                                            "Case_Solace": {
+                                                "actions": {
+                                                    "Get_Solace_Current_Row": {
+                                                        "type": "ServiceProvider",
+                                                        "inputs": {
+                                                            "parameters": {
+                                                                "query": "@concat('SELECT TOP 1 * FROM [dbo].[SolaceClient] WHERE Brand = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[0], '''', ''''''), ''' AND Env = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[1], '''', ''''''), ''' AND SystemName = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[2], '''', ''''''), ''' AND ThreePLCode = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[3], '''', ''''''), '''')"
+                                                            },
+                                                            "serviceProviderConfiguration": {
+                                                                "connectionName": "sql",
+                                                                "operationId": "executeQuery",
+                                                                "serviceProviderId": "/serviceProviders/sql"
+                                                            },
+                                                            "retryPolicy": {
+                                                                "type": "exponential",
+                                                                "count": 3,
+                                                                "interval": "PT5S",
+                                                                "maximumInterval": "PT1M"
+                                                            }
+                                                        }
+                                                    },
+                                                    "If_Solace_Still_Awaiting": {
+                                                        "type": "If",
+                                                        "expression": {
+                                                            "and": [
+                                                                {
+                                                                    "greater": [
+                                                                        "@length(coalesce(body('Get_Solace_Current_Row')?[0], body('Get_Solace_Current_Row'), json('[]')))",
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        "actions": {
+                                                            "If_Solace_Status_Is_Awaiting": {
+                                                                "type": "If",
+                                                                "expression": {
+                                                                    "and": [
+                                                                        {
+                                                                            "equals": [
+                                                                                "@first(coalesce(body('Get_Solace_Current_Row')?[0], body('Get_Solace_Current_Row'), json('[]')))?['EnrichmentStatus']",
+                                                                                "AwaitingInput"
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "actions": {
+                                                                    "Invoke_Data_Enrichment_Solace": {
+                                                                        "type": "Workflow",
+                                                                        "inputs": {
+                                                                            "host": {
+                                                                                "workflow": {
+                                                                                    "id": "data-enrichment"
+                                                                                }
+                                                                            },
+                                                                            "body": {
+                                                                                "channel": "Mail",
+                                                                                "correlationId": "@outputs('Compose_Tracking_Id')",
+                                                                                "domain": "Solace",
+                                                                                "mailReplyBody": "@triggerBody()?['Body']",
+                                                                                "mailReplySubject": "@triggerBody()?['Subject']",
+                                                                                "brand": "@split(outputs('Compose_Audit_Entity_Key'), '/')[0]",
+                                                                                "env": "@split(outputs('Compose_Audit_Entity_Key'), '/')[1]",
+                                                                                "systemName": "@split(outputs('Compose_Audit_Entity_Key'), '/')[2]",
+                                                                                "threePLCode": "@split(outputs('Compose_Audit_Entity_Key'), '/')[3]"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "else": {
+                                                                    "actions": {
+                                                                        "Insert_Audit_MailRejected_Solace_AlreadyDone": {
+                                                                            "type": "ServiceProvider",
+                                                                            "inputs": {
+                                                                                "parameters": {
+                                                                                    "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                                                    "setColumns": {
+                                                                                        "Domain": "Unknown",
+                                                                                        "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                                        "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                                        "Channel": "Mail",
+                                                                                        "ActorEmail": "@triggerBody()?['From']",
+                                                                                        "EventType": "MailRejected",
+                                                                                        "EventDetail": "'Referenced entity is no longer AwaitingInput'"
+                                                                                    }
+                                                                                },
+                                                                                "serviceProviderConfiguration": {
+                                                                                    "connectionName": "sql",
+                                                                                    "operationId": "insertRow",
+                                                                                    "serviceProviderId": "/serviceProviders/sql"
+                                                                                },
+                                                                                "retryPolicy": {
+                                                                                    "type": "exponential",
+                                                                                    "count": 3,
+                                                                                    "interval": "PT5S",
+                                                                                    "maximumInterval": "PT1M"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "else": {
+                                                            "actions": {
+                                                                "Insert_Audit_MailRejected_Solace_NotFound": {
+                                                                    "type": "ServiceProvider",
+                                                                    "inputs": {
+                                                                        "parameters": {
+                                                                            "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                                            "setColumns": {
+                                                                                "Domain": "Unknown",
+                                                                                "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                                "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                                "Channel": "Mail",
+                                                                                "ActorEmail": "@triggerBody()?['From']",
+                                                                                "EventType": "MailRejected",
+                                                                                "EventDetail": "'Referenced entity no longer exists'"
+                                                                            }
+                                                                        },
+                                                                        "serviceProviderConfiguration": {
+                                                                            "connectionName": "sql",
+                                                                            "operationId": "insertRow",
+                                                                            "serviceProviderId": "/serviceProviders/sql"
+                                                                        },
+                                                                        "retryPolicy": {
+                                                                            "type": "exponential",
+                                                                            "count": 3,
+                                                                            "interval": "PT5S",
+                                                                            "maximumInterval": "PT1M"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "runAfter": {
+                                                            "Get_Solace_Current_Row": [
+                                                                "Succeeded"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "case": "Solace"
+                                            },
+                                            "Case_MuleSoft": {
+                                                "actions": {
+                                                    "Get_MuleSoft_Current_Row": {
+                                                        "type": "ServiceProvider",
+                                                        "inputs": {
+                                                            "parameters": {
+                                                                "query": "@concat('SELECT TOP 1 * FROM [dbo].[MuleSoftPartner] WHERE CountryKey = ''', replace(split(outputs('Compose_Audit_Entity_Key'), '/')[0], '''', ''''''), '''')"
+                                                            },
+                                                            "serviceProviderConfiguration": {
+                                                                "connectionName": "sql",
+                                                                "operationId": "executeQuery",
+                                                                "serviceProviderId": "/serviceProviders/sql"
+                                                            },
+                                                            "retryPolicy": {
+                                                                "type": "exponential",
+                                                                "count": 3,
+                                                                "interval": "PT5S",
+                                                                "maximumInterval": "PT1M"
+                                                            }
+                                                        }
+                                                    },
+                                                    "If_MuleSoft_Still_Awaiting": {
+                                                        "type": "If",
+                                                        "expression": {
+                                                            "and": [
+                                                                {
+                                                                    "greater": [
+                                                                        "@length(coalesce(body('Get_MuleSoft_Current_Row')?[0], body('Get_MuleSoft_Current_Row'), json('[]')))",
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            ]
+                                                        },
+                                                        "actions": {
+                                                            "If_MuleSoft_Status_Is_Awaiting": {
+                                                                "type": "If",
+                                                                "expression": {
+                                                                    "and": [
+                                                                        {
+                                                                            "equals": [
+                                                                                "@first(coalesce(body('Get_MuleSoft_Current_Row')?[0], body('Get_MuleSoft_Current_Row'), json('[]')))?['EnrichmentStatus']",
+                                                                                "AwaitingInput"
+                                                                            ]
+                                                                        }
+                                                                    ]
+                                                                },
+                                                                "actions": {
+                                                                    "Invoke_Data_Enrichment_MuleSoft": {
+                                                                        "type": "Workflow",
+                                                                        "inputs": {
+                                                                            "host": {
+                                                                                "workflow": {
+                                                                                    "id": "data-enrichment"
+                                                                                }
+                                                                            },
+                                                                            "body": {
+                                                                                "channel": "Mail",
+                                                                                "correlationId": "@outputs('Compose_Tracking_Id')",
+                                                                                "domain": "MuleSoft",
+                                                                                "mailReplyBody": "@triggerBody()?['Body']",
+                                                                                "mailReplySubject": "@triggerBody()?['Subject']",
+                                                                                "countryKey": "@split(outputs('Compose_Audit_Entity_Key'), '/')[0]"
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                },
+                                                                "else": {
+                                                                    "actions": {
+                                                                        "Insert_Audit_MailRejected_MuleSoft_AlreadyDone": {
+                                                                            "type": "ServiceProvider",
+                                                                            "inputs": {
+                                                                                "parameters": {
+                                                                                    "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                                                    "setColumns": {
+                                                                                        "Domain": "Unknown",
+                                                                                        "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                                        "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                                        "Channel": "Mail",
+                                                                                        "ActorEmail": "@triggerBody()?['From']",
+                                                                                        "EventType": "MailRejected",
+                                                                                        "EventDetail": "'Referenced entity is no longer AwaitingInput'"
+                                                                                    }
+                                                                                },
+                                                                                "serviceProviderConfiguration": {
+                                                                                    "connectionName": "sql",
+                                                                                    "operationId": "insertRow",
+                                                                                    "serviceProviderId": "/serviceProviders/sql"
+                                                                                },
+                                                                                "retryPolicy": {
+                                                                                    "type": "exponential",
+                                                                                    "count": 3,
+                                                                                    "interval": "PT5S",
+                                                                                    "maximumInterval": "PT1M"
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "else": {
+                                                            "actions": {
+                                                                "Insert_Audit_MailRejected_MuleSoft_NotFound": {
+                                                                    "type": "ServiceProvider",
+                                                                    "inputs": {
+                                                                        "parameters": {
+                                                                            "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                                            "setColumns": {
+                                                                                "Domain": "Unknown",
+                                                                                "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                                                "EntityKey": "@outputs('Compose_Audit_Entity_Key')",
+                                                                                "Channel": "Mail",
+                                                                                "ActorEmail": "@triggerBody()?['From']",
+                                                                                "EventType": "MailRejected",
+                                                                                "EventDetail": "'Referenced entity no longer exists'"
+                                                                            }
+                                                                        },
+                                                                        "serviceProviderConfiguration": {
+                                                                            "connectionName": "sql",
+                                                                            "operationId": "insertRow",
+                                                                            "serviceProviderId": "/serviceProviders/sql"
+                                                                        },
+                                                                        "retryPolicy": {
+                                                                            "type": "exponential",
+                                                                            "count": 3,
+                                                                            "interval": "PT5S",
+                                                                            "maximumInterval": "PT1M"
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+                                                        },
+                                                        "runAfter": {
+                                                            "Get_MuleSoft_Current_Row": [
+                                                                "Succeeded"
+                                                            ]
+                                                        }
+                                                    }
+                                                },
+                                                "case": "MuleSoft"
+                                            }
+                                        },
+                                        "runAfter": {
+                                            "Compose_Audit_Entity_Key": [
+                                                "Succeeded"
+                                            ],
+                                            "Compose_Audit_Domain": [
+                                                "Succeeded"
+                                            ]
+                                        }
+                                    }
+                                },
+                                "else": {
+                                    "actions": {
+                                        "Insert_Audit_MailRejected_UnknownId": {
+                                            "type": "ServiceProvider",
+                                            "inputs": {
+                                                "parameters": {
+                                                    "tableName": "[dbo].[EnrichmentAuditLog]",
+                                                    "setColumns": {
+                                                        "Domain": "Unknown",
+                                                        "CorrelationId": "@outputs('Compose_Tracking_Id')",
+                                                        "EntityKey": "@null",
+                                                        "Channel": "Mail",
+                                                        "ActorEmail": "@triggerBody()?['From']",
+                                                        "EventType": "MailRejected",
+                                                        "EventDetail": "'Tracking id not found in audit log'"
+                                                    }
+                                                },
+                                                "serviceProviderConfiguration": {
+                                                    "connectionName": "sql",
+                                                    "operationId": "insertRow",
+                                                    "serviceProviderId": "/serviceProviders/sql"
+                                                },
+                                                "retryPolicy": {
+                                                    "type": "exponential",
+                                                    "count": 3,
+                                                    "interval": "PT5S",
+                                                    "maximumInterval": "PT1M"
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "runAfter": {
+                                    "Get_Latest_Audit_For_Tracking_Id": [
+                                        "Succeeded"
+                                    ]
+                                }
+                            }
+                        },
+                        "else": {
+                            "actions": {
+                                "Insert_Audit_MailRejected_NoMarker": {
+                                    "type": "ServiceProvider",
+                                    "inputs": {
+                                        "parameters": {
+                                            "tableName": "[dbo].[EnrichmentAuditLog]",
+                                            "setColumns": {
+                                                "Domain": "Unknown",
+                                                "CorrelationId": "@null",
+                                                "EntityKey": "@null",
+                                                "Channel": "Mail",
+                                                "ActorEmail": "@triggerBody()?['From']",
+                                                "EventType": "MailRejected",
+                                                "EventDetail": "'No tracking marker found in subject'"
+                                            }
+                                        },
+                                        "serviceProviderConfiguration": {
+                                            "connectionName": "sql",
+                                            "operationId": "insertRow",
+                                            "serviceProviderId": "/serviceProviders/sql"
+                                        },
+                                        "retryPolicy": {
+                                            "type": "exponential",
+                                            "count": 3,
+                                            "interval": "PT5S",
+                                            "maximumInterval": "PT1M"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "runAfter": {
+                            "Compose_Has_Tracking_Marker": [
+                                "Succeeded"
+                            ]
+                        }
+                    }
+                },
+                "runAfter": {}
+            },
+            "Scope-Catch": {
+                "type": "Scope",
+                "actions": {
+                    "Insert_Audit_Error": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                            "parameters": {
+                                "tableName": "[dbo].[EnrichmentAuditLog]",
+                                "setColumns": {
+                                    "Domain": "Unknown",
+                                    "CorrelationId": "@null",
+                                    "EntityKey": "@null",
+                                    "Channel": "Mail",
+                                    "ActorEmail": "@triggerBody()?['From']",
+                                    "EventType": "Error",
+                                    "EventDetail": "@string(result('Scope-Try'))"
+                                }
+                            },
+                            "serviceProviderConfiguration": {
+                                "connectionName": "sql",
+                                "operationId": "insertRow",
+                                "serviceProviderId": "/serviceProviders/sql"
+                            },
+                            "retryPolicy": {
+                                "type": "exponential",
+                                "count": 3,
+                                "interval": "PT5S",
+                                "maximumInterval": "PT1M"
+                            }
+                        }
+                    }
+                },
+                "runAfter": {
+                    "Scope-Try": [
+                        "FAILED"
+                    ]
+                }
+            }
+        },
+        "triggers": {
+            "When_a_new_email_arrives_(V2)": {
+                "type": "ApiConnectionNotification",
+                "inputs": {
+                    "host": {
+                        "connection": {
+                            "referenceName": "outlook"
+                        }
+                    },
+                    "fetch": {
+                        "pathTemplate": {
+                            "template": "/v2/Mail/OnNewEmail"
+                        },
+                        "method": "get",
+                        "queries": {
+                            "from": "sou7bhik@gmail.com",
+                            "importance": "Any",
+                            "fetchOnlyWithAttachment": false,
+                            "includeAttachments": false,
+                            "folderPath": "Inbox"
+                        }
+                    },
+                    "subscribe": {
+                        "body": {
+                            "NotificationUrl": "@listCallbackUrl()"
+                        },
+                        "pathTemplate": {
+                            "template": "/MailSubscriptionPoke/$subscriptions"
+                        },
+                        "method": "post",
+                        "queries": {
+                            "importance": "Any",
+                            "fetchOnlyWithAttachment": false,
+                            "folderPath": "Inbox"
+                        }
+                    }
+                },
+                "splitOn": "@triggerBody()?['value']"
+            }
+        }
+    },
+    "kind": "stateful"
+}
