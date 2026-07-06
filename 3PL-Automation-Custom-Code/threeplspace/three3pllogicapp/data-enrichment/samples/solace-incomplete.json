@@ -1,0 +1,9 @@
+{
+  "domain": "Solace",
+  "correlationId": "test-solace-002-incomplete",
+  "brand": "petc",
+  "env": "qa",
+  "systemName": "navision",
+  "threePLCode": "3plpnp2",
+  "recipientEmail": "devops-owner@example.com"
+}

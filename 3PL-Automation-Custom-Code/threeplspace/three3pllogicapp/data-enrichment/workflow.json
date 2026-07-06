@@ -1,0 +1,3248 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Initialize_Correlation_Id": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], trigger().clientTrackingId)"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
+      "Initialize_Btp_Final_Fields": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "btpFinalFields",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_Correlation_Id": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_Solace_Final_Fields": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "solaceFinalFields",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_Btp_Final_Fields": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoft_Final_Fields": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftFinalFields",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_Solace_Final_Fields": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_SolaceClientId": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "solaceClientId",
+              "type": "integer",
+              "value": 0
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoft_Final_Fields": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_SolaceMessageTypeSeed": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "solaceMessageTypeSeed",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_SolaceClientId": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftPartnerId": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftPartnerId",
+              "type": "integer",
+              "value": 0
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_SolaceMessageTypeSeed": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftEnvironmentSeed": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftEnvironmentSeed",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoftPartnerId": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftTransactionTypeSeed": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftTransactionTypeSeed",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoftEnvironmentSeed": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftMessageTypeSeed": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftMessageTypeSeed",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoftTransactionTypeSeed": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftSourceDestinationSeed": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftSourceDestinationSeed",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoftMessageTypeSeed": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftUomMappingSeed": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftUomMappingSeed",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoftSourceDestinationSeed": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_BtpRow": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "btpRow",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoftUomMappingSeed": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_SolaceRow": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "solaceRow",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_BtpRow": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Initialize_MuleSoftRow": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "muleSoftRow",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_SolaceRow": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Scope-Try": {
+        "type": "Scope",
+        "actions": {
+          "Switch_On_Domain": {
+            "type": "Switch",
+            "expression": "@coalesce(triggerBody()?['domain'], '')",
+            "cases": {
+              "Case_Btp": {
+                "case": "Btp",
+                "actions": {
+                  "Get_Btp_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "query": "@concat('SELECT TOP 1 * FROM dbo.BtpConfig WHERE SubAccount = ''', replace(coalesce(triggerBody()?['subAccount'], ''), '''', ''''''), ''' AND ProductName = ''', replace(coalesce(triggerBody()?['productName'], ''), '''', ''''''), ''' AND Environment = ''', replace(coalesce(triggerBody()?['environment'], ''), '''', ''''''), '''')"
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "executeQuery",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "If_Btp_Row_Found": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(body('Get_Btp_Row')?[0])",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Set_Btp_Row": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "btpRow",
+                          "value": "@first(body('Get_Btp_Row')?[0])"
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Get_Btp_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Known_Btp_Fields": {
+                    "type": "Compose",
+                    "inputs": {
+                      "subAccount": "@coalesce(triggerBody()?['subAccount'], variables('btpRow')?['SubAccount'], '')",
+                      "productName": "@coalesce(triggerBody()?['productName'], variables('btpRow')?['ProductName'], '')",
+                      "environment": "@coalesce(triggerBody()?['environment'], variables('btpRow')?['Environment'], '')",
+                      "mode": "@coalesce(triggerBody()?['mode'], variables('btpRow')?['Mode'], '')",
+                      "developerId": "@coalesce(triggerBody()?['developerId'], variables('btpRow')?['DeveloperId'], '')",
+                      "title": "@coalesce(triggerBody()?['title'], variables('btpRow')?['Title'], '')",
+                      "shortText": "@coalesce(triggerBody()?['shortText'], variables('btpRow')?['ShortText'], '')",
+                      "repoOwner": "@coalesce(triggerBody()?['repoOwner'], variables('btpRow')?['RepoOwner'], '')",
+                      "repoName": "@coalesce(triggerBody()?['repoName'], variables('btpRow')?['RepoName'], '')",
+                      "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], variables('btpRow')?['WorkflowFileName'], '')",
+                      "branchRef": "@coalesce(triggerBody()?['branchRef'], variables('btpRow')?['BranchRef'], '')",
+                      "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('btpRow')?['ServiceExists'])"
+                    },
+                    "runAfter": {
+                      "If_Btp_Row_Found": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Set_Btp_Final_Fields_Initial": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "btpFinalFields",
+                      "value": "@outputs('Compose_Known_Btp_Fields')"
+                    },
+                    "runAfter": {
+                      "Compose_Known_Btp_Fields": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "If_Btp_Fields_Missing": {
+                    "type": "If",
+                    "expression": {
+                      "or": [
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['mode'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['developerId'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['title'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['repoOwner'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['repoName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['workflowFileName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('btpFinalFields')?['branchRef'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('btpFinalFields')?['serviceExists']",
+                            null
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Build_Btp_Adaptive_Card": {
+                        "type": "Compose",
+                        "inputs": {
+                          "type": "AdaptiveCard",
+                          "version": "1.4",
+                          "body": [
+                            {
+                              "type": "Container",
+                              "style": "emphasis",
+                              "bleed": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "@{coalesce(triggerBody()?['title'], 'BTP onboarding — missing information')}",
+                                  "size": "Large",
+                                  "weight": "Bolder"
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "text": "@{coalesce(triggerBody()?['subtitle'], 'A few fields are not yet in SQL. Please fill them in below.')}",
+                                  "size": "Small",
+                                  "isSubtle": true
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "items": [
+                                {
+                                  "type": "FactSet",
+                                  "facts": [
+                                    {
+                                      "title": "Sub-account",
+                                      "value": "@{variables('btpFinalFields')?['subAccount']}"
+                                    },
+                                    {
+                                      "title": "Product",
+                                      "value": "@{variables('btpFinalFields')?['productName']}"
+                                    },
+                                    {
+                                      "title": "Environment",
+                                      "value": "@{variables('btpFinalFields')?['environment']}"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "items": [
+                                {
+                                  "type": "Input.Text",
+                                  "id": "mode",
+                                  "label": "Mode",
+                                  "value": "@{variables('btpFinalFields')?['mode']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Mode is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "developerId",
+                                  "label": "Developer Id",
+                                  "value": "@{variables('btpFinalFields')?['developerId']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Developer Id is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "title",
+                                  "label": "Title",
+                                  "value": "@{variables('btpFinalFields')?['title']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Title is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "shortText",
+                                  "label": "Short text (optional)",
+                                  "value": "@{variables('btpFinalFields')?['shortText']}"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "repoOwner",
+                                  "label": "Repo owner",
+                                  "value": "@{variables('btpFinalFields')?['repoOwner']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Repo owner is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "repoName",
+                                  "label": "Repo name",
+                                  "value": "@{variables('btpFinalFields')?['repoName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Repo name is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "workflowFileName",
+                                  "label": "GitHub Actions workflow file",
+                                  "value": "@{variables('btpFinalFields')?['workflowFileName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Workflow file name is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "branchRef",
+                                  "label": "Branch ref",
+                                  "value": "@{variables('btpFinalFields')?['branchRef']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Branch ref is required."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "serviceExists",
+                                  "label": "Does this BTP service already exist?",
+                                  "style": "expanded",
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No.",
+                                  "value": "@{if(equals(variables('btpFinalFields')?['serviceExists'], true), 'Yes', if(equals(variables('btpFinalFields')?['serviceExists'], false), 'No', ''))}",
+                                  "choices": [
+                                    {
+                                      "title": "Yes, it already exists",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No, this is new",
+                                      "value": "No"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Submit",
+                              "title": "Save & Continue",
+                              "style": "positive",
+                              "data": {
+                                "action": "submit"
+                              }
+                            }
+                          ]
+                        },
+                        "runAfter": {}
+                      },
+                      "Post_Btp_Adaptive_Card_And_Wait": {
+                        "type": "ApiConnectionWebhook",
+                        "inputs": {
+                          "host": {
+                            "connection": {
+                              "referenceName": "teams"
+                            }
+                          },
+                          "body": {
+                            "notificationUrl": "@listCallbackUrl()",
+                            "body": {
+                              "messageBody": "@string(outputs('Build_Btp_Adaptive_Card'))",
+                              "updateMessage": "Thanks — saving to SQL now.",
+                              "recipient": {
+                                "to": "@coalesce(triggerBody()?['recipientEmail'], appsetting('BtpDevOpsOwnerEmail'))"
+                              }
+                            }
+                          },
+                          "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions"
+                        },
+                        "runAfter": {
+                          "Build_Btp_Adaptive_Card": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_Btp_Final_Fields_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "btpFinalFields",
+                          "value": {
+                            "subAccount": "@outputs('Compose_Known_Btp_Fields')?['subAccount']",
+                            "productName": "@outputs('Compose_Known_Btp_Fields')?['productName']",
+                            "environment": "@outputs('Compose_Known_Btp_Fields')?['environment']",
+                            "mode": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['mode'], outputs('Compose_Known_Btp_Fields')?['mode'])",
+                            "developerId": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['developerId'], outputs('Compose_Known_Btp_Fields')?['developerId'])",
+                            "title": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['title'], outputs('Compose_Known_Btp_Fields')?['title'])",
+                            "shortText": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['shortText'], outputs('Compose_Known_Btp_Fields')?['shortText'])",
+                            "repoOwner": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['repoOwner'], outputs('Compose_Known_Btp_Fields')?['repoOwner'])",
+                            "repoName": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['repoName'], outputs('Compose_Known_Btp_Fields')?['repoName'])",
+                            "workflowFileName": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['workflowFileName'], outputs('Compose_Known_Btp_Fields')?['workflowFileName'])",
+                            "branchRef": "@coalesce(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['branchRef'], outputs('Compose_Known_Btp_Fields')?['branchRef'])",
+                            "serviceExists": "@if(equals(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['serviceExists'], 'Yes'), true, if(equals(body('Post_Btp_Adaptive_Card_And_Wait')?['data']?['serviceExists'], 'No'), false, outputs('Compose_Known_Btp_Fields')?['serviceExists']))"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_Btp_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Set_Btp_Final_Fields_Initial": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "If_Btp_Row_Exists": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(body('Get_Btp_Row')?[0])",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Update_Btp_Row": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[BtpConfig]",
+                            "setColumns": {
+                              "Mode": "@variables('btpFinalFields')?['mode']",
+                              "DeveloperId": "@variables('btpFinalFields')?['developerId']",
+                              "Title": "@variables('btpFinalFields')?['title']",
+                              "ShortText": "@variables('btpFinalFields')?['shortText']",
+                              "RepoOwner": "@variables('btpFinalFields')?['repoOwner']",
+                              "RepoName": "@variables('btpFinalFields')?['repoName']",
+                              "WorkflowFileName": "@variables('btpFinalFields')?['workflowFileName']",
+                              "BranchRef": "@variables('btpFinalFields')?['branchRef']",
+                              "ServiceExists": "@variables('btpFinalFields')?['serviceExists']",
+                              "CorrelationId": "@variables('correlationId')",
+                              "UpdatedAt": "@utcNow()"
+                            },
+                            "columnValuesForWhereCondition": {
+                              "SubAccount": "@variables('btpFinalFields')?['subAccount']",
+                              "ProductName": "@variables('btpFinalFields')?['productName']",
+                              "Environment": "@variables('btpFinalFields')?['environment']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "updateRows",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Insert_Btp_Row": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[BtpConfig]",
+                              "setColumns": {
+                                "SubAccount": "@variables('btpFinalFields')?['subAccount']",
+                                "ProductName": "@variables('btpFinalFields')?['productName']",
+                                "Environment": "@variables('btpFinalFields')?['environment']",
+                                "Mode": "@variables('btpFinalFields')?['mode']",
+                                "DeveloperId": "@variables('btpFinalFields')?['developerId']",
+                                "Title": "@variables('btpFinalFields')?['title']",
+                                "ShortText": "@variables('btpFinalFields')?['shortText']",
+                                "RepoOwner": "@variables('btpFinalFields')?['repoOwner']",
+                                "RepoName": "@variables('btpFinalFields')?['repoName']",
+                                "WorkflowFileName": "@variables('btpFinalFields')?['workflowFileName']",
+                                "BranchRef": "@variables('btpFinalFields')?['branchRef']",
+                                "ServiceExists": "@variables('btpFinalFields')?['serviceExists']",
+                                "DeploymentStatus": "Pending",
+                                "CorrelationId": "@variables('correlationId')",
+                                "CreatedAt": "@utcNow()",
+                                "UpdatedAt": "@utcNow()"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "insertRow",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            }
+                          },
+                          "runAfter": {}
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "If_Btp_Fields_Missing": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Response-Btp-Success": {
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200,
+                      "body": {
+                        "domain": "Btp",
+                        "correlationId": "@variables('correlationId')",
+                        "record": "@variables('btpFinalFields')"
+                      }
+                    },
+                    "runAfter": {
+                      "If_Btp_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
+              "Case_Solace": {
+                "case": "Solace",
+                "actions": {
+                  "Get_Solace_Client_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "query": "@concat('SELECT TOP 1 * FROM dbo.SolaceClient WHERE Brand = ''', replace(coalesce(triggerBody()?['brand'], ''), '''', ''''''), ''' AND Env = ''', replace(coalesce(triggerBody()?['env'], ''), '''', ''''''), ''' AND SystemName = ''', replace(coalesce(triggerBody()?['systemName'], ''), '''', ''''''), ''' AND ThreePLCode = ''', replace(coalesce(triggerBody()?['threePLCode'], ''), '''', ''''''), '''')"
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "executeQuery",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "If_Solace_Row_Found": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(body('Get_Solace_Client_Row')?[0])",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Set_Solace_Row": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "solaceRow",
+                          "value": "@first(body('Get_Solace_Client_Row')?[0])"
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Get_Solace_Client_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Known_Solace_Fields": {
+                    "type": "Compose",
+                    "inputs": {
+                      "brand": "@coalesce(triggerBody()?['brand'], variables('solaceRow')?['Brand'], '')",
+                      "env": "@coalesce(triggerBody()?['env'], variables('solaceRow')?['Env'], '')",
+                      "systemName": "@coalesce(triggerBody()?['systemName'], variables('solaceRow')?['SystemName'], '')",
+                      "threePLCode": "@coalesce(triggerBody()?['threePLCode'], variables('solaceRow')?['ThreePLCode'], '')",
+                      "encryptedPassword": "@coalesce(triggerBody()?['encryptedPassword'], variables('solaceRow')?['EncryptedPassword'], '')",
+                      "action": "@coalesce(triggerBody()?['action'], variables('solaceRow')?['Action'], '')",
+                      "aclClientConnectDefaultAction": "@coalesce(triggerBody()?['aclClientConnectDefaultAction'], variables('solaceRow')?['AclClientConnectDefaultAction'], '')",
+                      "aclPublishTopicDefaultAction": "@coalesce(triggerBody()?['aclPublishTopicDefaultAction'], variables('solaceRow')?['AclPublishTopicDefaultAction'], '')",
+                      "aclSubscribeShareNameDefaultAction": "@coalesce(triggerBody()?['aclSubscribeShareNameDefaultAction'], variables('solaceRow')?['AclSubscribeShareNameDefaultAction'], '')",
+                      "aclSubscribeTopicDefaultAction": "@coalesce(triggerBody()?['aclSubscribeTopicDefaultAction'], variables('solaceRow')?['AclSubscribeTopicDefaultAction'], '')",
+                      "clientProfileAllowGuaranteedMsgSendEnabled": "@coalesce(triggerBody()?['clientProfileAllowGuaranteedMsgSendEnabled'], variables('solaceRow')?['ClientProfileAllowGuaranteedMsgSendEnabled'])",
+                      "clientProfileAllowGuaranteedMsgReceiveEnabled": "@coalesce(triggerBody()?['clientProfileAllowGuaranteedMsgReceiveEnabled'], variables('solaceRow')?['ClientProfileAllowGuaranteedMsgReceiveEnabled'])",
+                      "clientProfileCompressionEnabled": "@coalesce(triggerBody()?['clientProfileCompressionEnabled'], variables('solaceRow')?['ClientProfileCompressionEnabled'])",
+                      "clientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@coalesce(triggerBody()?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], variables('solaceRow')?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled'])",
+                      "clientProfileAllowTransactedSessionsEnabled": "@coalesce(triggerBody()?['clientProfileAllowTransactedSessionsEnabled'], variables('solaceRow')?['ClientProfileAllowTransactedSessionsEnabled'])",
+                      "clientProfileAllowBridgeConnectionsEnabled": "@coalesce(triggerBody()?['clientProfileAllowBridgeConnectionsEnabled'], variables('solaceRow')?['ClientProfileAllowBridgeConnectionsEnabled'])",
+                      "clientProfileAllowGuaranteedEndpointCreateEnabled": "@coalesce(triggerBody()?['clientProfileAllowGuaranteedEndpointCreateEnabled'], variables('solaceRow')?['ClientProfileAllowGuaranteedEndpointCreateEnabled'])",
+                      "clientProfileAllowSharedSubscriptionsEnabled": "@coalesce(triggerBody()?['clientProfileAllowSharedSubscriptionsEnabled'], variables('solaceRow')?['ClientProfileAllowSharedSubscriptionsEnabled'])",
+                      "clientUserEnabled": "@coalesce(triggerBody()?['clientUserEnabled'], variables('solaceRow')?['ClientUserEnabled'])",
+                      "clientUserGuaranteedEndpointPermissionOverrideEnabled": "@coalesce(triggerBody()?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], variables('solaceRow')?['ClientUserGuaranteedEndpointPermissionOverrideEnabled'])",
+                      "clientUserSubscriptionManagerEnabled": "@coalesce(triggerBody()?['clientUserSubscriptionManagerEnabled'], variables('solaceRow')?['ClientUserSubscriptionManagerEnabled'])",
+                      "repoOwner": "@coalesce(triggerBody()?['repoOwner'], variables('solaceRow')?['RepoOwner'], '')",
+                      "repoName": "@coalesce(triggerBody()?['repoName'], variables('solaceRow')?['RepoName'], '')",
+                      "filePath": "@coalesce(triggerBody()?['filePath'], variables('solaceRow')?['FilePath'], '')",
+                      "branch": "@coalesce(triggerBody()?['branch'], variables('solaceRow')?['Branch'], '')",
+                      "baseBranch": "@coalesce(triggerBody()?['baseBranch'], variables('solaceRow')?['BaseBranch'], '')",
+                      "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], variables('solaceRow')?['FeatureBranchName'], '')",
+                      "requesterEmail": "@coalesce(triggerBody()?['requesterEmail'], variables('solaceRow')?['RequesterEmail'], '')",
+                      "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], variables('solaceRow')?['RecipientEmail'], '')",
+                      "commitMessage": "@coalesce(triggerBody()?['commitMessage'], variables('solaceRow')?['CommitMessage'], '')",
+                      "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('solaceRow')?['ServiceExists'])"
+                    },
+                    "runAfter": {
+                      "If_Solace_Row_Found": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Set_Solace_Final_Fields_Initial": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "solaceFinalFields",
+                      "value": "@outputs('Compose_Known_Solace_Fields')"
+                    },
+                    "runAfter": {
+                      "Compose_Known_Solace_Fields": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "If_Solace_Fields_Missing": {
+                    "type": "If",
+                    "expression": {
+                      "or": [
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['action'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['aclClientConnectDefaultAction'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['aclPublishTopicDefaultAction'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['aclSubscribeShareNameDefaultAction'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['aclSubscribeTopicDefaultAction'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileCompressionEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientUserEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['repoOwner'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['repoName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['filePath'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['branch'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['baseBranch'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['featureBranchName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['requesterEmail'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['recipientEmail'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('solaceFinalFields')?['commitMessage'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('solaceFinalFields')?['serviceExists']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@length(coalesce(triggerBody()?['messageTypes'], json('[]')))",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Build_Solace_Adaptive_Card": {
+                        "type": "Compose",
+                        "inputs": {
+                          "type": "AdaptiveCard",
+                          "version": "1.4",
+                          "body": [
+                            {
+                              "type": "Container",
+                              "style": "emphasis",
+                              "bleed": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "@{coalesce(triggerBody()?['title'], 'Solace onboarding — missing information')}",
+                                  "size": "Large",
+                                  "weight": "Bolder"
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "text": "@{coalesce(triggerBody()?['subtitle'], 'A few fields are not yet in SQL. Please fill them in below.')}",
+                                  "size": "Small",
+                                  "isSubtle": true
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "items": [
+                                {
+                                  "type": "FactSet",
+                                  "facts": [
+                                    {
+                                      "title": "Brand",
+                                      "value": "@{variables('solaceFinalFields')?['brand']}"
+                                    },
+                                    {
+                                      "title": "Env",
+                                      "value": "@{variables('solaceFinalFields')?['env']}"
+                                    },
+                                    {
+                                      "title": "System",
+                                      "value": "@{variables('solaceFinalFields')?['systemName']}"
+                                    },
+                                    {
+                                      "title": "3PL code",
+                                      "value": "@{variables('solaceFinalFields')?['threePLCode']}"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Client profile & action",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "action",
+                                  "label": "Action",
+                                  "value": "@{variables('solaceFinalFields')?['action']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Action is required."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileAllowGuaranteedMsgSendEnabled",
+                                  "label": "Allow guaranteed message send",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileAllowGuaranteedMsgReceiveEnabled",
+                                  "label": "Allow guaranteed message receive",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileCompressionEnabled",
+                                  "label": "Compression enabled",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileCompressionEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileCompressionEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileReplicationAllowClientConnectWhenStandbyEnabled",
+                                  "label": "Allow connect when standby (replication)",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileAllowTransactedSessionsEnabled",
+                                  "label": "Allow transacted sessions",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileAllowBridgeConnectionsEnabled",
+                                  "label": "Allow bridge connections",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileAllowGuaranteedEndpointCreateEnabled",
+                                  "label": "Allow guaranteed endpoint create",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientProfileAllowSharedSubscriptionsEnabled",
+                                  "label": "Allow shared subscriptions",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "ACL settings",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "aclClientConnectDefaultAction",
+                                  "label": "ACL client-connect default action",
+                                  "value": "@{variables('solaceFinalFields')?['aclClientConnectDefaultAction']}",
+                                  "isRequired": true,
+                                  "errorMessage": "ACL client-connect default action is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "aclPublishTopicDefaultAction",
+                                  "label": "ACL publish-topic default action",
+                                  "value": "@{variables('solaceFinalFields')?['aclPublishTopicDefaultAction']}",
+                                  "isRequired": true,
+                                  "errorMessage": "ACL publish-topic default action is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "aclSubscribeShareNameDefaultAction",
+                                  "label": "ACL subscribe-share-name default action",
+                                  "value": "@{variables('solaceFinalFields')?['aclSubscribeShareNameDefaultAction']}",
+                                  "isRequired": true,
+                                  "errorMessage": "ACL subscribe-share-name default action is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "aclSubscribeTopicDefaultAction",
+                                  "label": "ACL subscribe-topic default action",
+                                  "value": "@{variables('solaceFinalFields')?['aclSubscribeTopicDefaultAction']}",
+                                  "isRequired": true,
+                                  "errorMessage": "ACL subscribe-topic default action is required."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Client user settings",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientUserEnabled",
+                                  "label": "Client user enabled",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientUserEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientUserEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientUserGuaranteedEndpointPermissionOverrideEnabled",
+                                  "label": "Client user can override endpoint permission",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "clientUserSubscriptionManagerEnabled",
+                                  "label": "Client user is subscription manager",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled'], true), 'Yes', if(equals(variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Pipeline / Git",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "repoOwner",
+                                  "label": "Repo owner",
+                                  "value": "@{variables('solaceFinalFields')?['repoOwner']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Repo owner is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "repoName",
+                                  "label": "Repo name",
+                                  "value": "@{variables('solaceFinalFields')?['repoName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Repo name is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "filePath",
+                                  "label": "Config file path",
+                                  "value": "@{variables('solaceFinalFields')?['filePath']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Config file path is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "branch",
+                                  "label": "Branch",
+                                  "value": "@{variables('solaceFinalFields')?['branch']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Branch is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "baseBranch",
+                                  "label": "Base branch",
+                                  "value": "@{variables('solaceFinalFields')?['baseBranch']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Base branch is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "featureBranchName",
+                                  "label": "Feature branch name",
+                                  "value": "@{variables('solaceFinalFields')?['featureBranchName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Feature branch name is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "requesterEmail",
+                                  "label": "Requester email",
+                                  "value": "@{variables('solaceFinalFields')?['requesterEmail']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Requester email is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "recipientEmail",
+                                  "label": "Recipient email",
+                                  "value": "@{variables('solaceFinalFields')?['recipientEmail']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Recipient email is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "commitMessage",
+                                  "label": "Commit message",
+                                  "value": "@{variables('solaceFinalFields')?['commitMessage']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Commit message is required."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Service status",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "serviceExists",
+                                  "label": "Does this Solace service already exist?",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('solaceFinalFields')?['serviceExists'], true), 'Yes', if(equals(variables('solaceFinalFields')?['serviceExists'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Message type (optional — only needed if none were supplied)",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seedMessageType",
+                                  "label": "Message type",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seedTopic",
+                                  "label": "Topic",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seedQueuePermission",
+                                  "label": "Queue permission",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "seedQueueEgressEnabled",
+                                  "label": "Queue egress enabled",
+                                  "style": "expanded",
+                                  "value": "",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seedQueueMaxRedeliveryCount",
+                                  "label": "Queue max redelivery count",
+                                  "value": ""
+                                }
+                              ]
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Submit",
+                              "title": "Save & Continue",
+                              "style": "positive",
+                              "data": {
+                                "action": "submit"
+                              }
+                            }
+                          ]
+                        },
+                        "runAfter": {}
+                      },
+                      "Post_Solace_Adaptive_Card_And_Wait": {
+                        "type": "ApiConnectionWebhook",
+                        "inputs": {
+                          "host": {
+                            "connection": {
+                              "referenceName": "teams"
+                            }
+                          },
+                          "body": {
+                            "notificationUrl": "@listCallbackUrl()",
+                            "body": {
+                              "messageBody": "@string(outputs('Build_Solace_Adaptive_Card'))",
+                              "updateMessage": "Thanks — saving to SQL now.",
+                              "recipient": {
+                                "to": "@coalesce(triggerBody()?['recipientEmail'], appsetting('SolaceDevOpsOwnerEmail'))"
+                              }
+                            }
+                          },
+                          "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions"
+                        },
+                        "runAfter": {
+                          "Build_Solace_Adaptive_Card": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_Solace_Final_Fields_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "solaceFinalFields",
+                          "value": {
+                            "brand": "@outputs('Compose_Known_Solace_Fields')?['brand']",
+                            "env": "@outputs('Compose_Known_Solace_Fields')?['env']",
+                            "systemName": "@outputs('Compose_Known_Solace_Fields')?['systemName']",
+                            "threePLCode": "@outputs('Compose_Known_Solace_Fields')?['threePLCode']",
+                            "encryptedPassword": "@outputs('Compose_Known_Solace_Fields')?['encryptedPassword']",
+                            "action": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['action'], outputs('Compose_Known_Solace_Fields')?['action'])",
+                            "aclClientConnectDefaultAction": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['aclClientConnectDefaultAction'], outputs('Compose_Known_Solace_Fields')?['aclClientConnectDefaultAction'])",
+                            "aclPublishTopicDefaultAction": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['aclPublishTopicDefaultAction'], outputs('Compose_Known_Solace_Fields')?['aclPublishTopicDefaultAction'])",
+                            "aclSubscribeShareNameDefaultAction": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['aclSubscribeShareNameDefaultAction'], outputs('Compose_Known_Solace_Fields')?['aclSubscribeShareNameDefaultAction'])",
+                            "aclSubscribeTopicDefaultAction": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['aclSubscribeTopicDefaultAction'], outputs('Compose_Known_Solace_Fields')?['aclSubscribeTopicDefaultAction'])",
+                            "repoOwner": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['repoOwner'], outputs('Compose_Known_Solace_Fields')?['repoOwner'])",
+                            "repoName": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['repoName'], outputs('Compose_Known_Solace_Fields')?['repoName'])",
+                            "filePath": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['filePath'], outputs('Compose_Known_Solace_Fields')?['filePath'])",
+                            "branch": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['branch'], outputs('Compose_Known_Solace_Fields')?['branch'])",
+                            "baseBranch": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['baseBranch'], outputs('Compose_Known_Solace_Fields')?['baseBranch'])",
+                            "featureBranchName": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['featureBranchName'], outputs('Compose_Known_Solace_Fields')?['featureBranchName'])",
+                            "requesterEmail": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['requesterEmail'], outputs('Compose_Known_Solace_Fields')?['requesterEmail'])",
+                            "recipientEmail": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['recipientEmail'], outputs('Compose_Known_Solace_Fields')?['recipientEmail'])",
+                            "commitMessage": "@coalesce(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['commitMessage'], outputs('Compose_Known_Solace_Fields')?['commitMessage'])",
+                            "clientProfileAllowGuaranteedMsgSendEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgSendEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgSendEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileAllowGuaranteedMsgSendEnabled']))",
+                            "clientProfileAllowGuaranteedMsgReceiveEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgReceiveEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedMsgReceiveEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileAllowGuaranteedMsgReceiveEnabled']))",
+                            "clientProfileCompressionEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileCompressionEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileCompressionEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileCompressionEnabled']))",
+                            "clientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled']))",
+                            "clientProfileAllowTransactedSessionsEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowTransactedSessionsEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowTransactedSessionsEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileAllowTransactedSessionsEnabled']))",
+                            "clientProfileAllowBridgeConnectionsEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowBridgeConnectionsEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowBridgeConnectionsEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileAllowBridgeConnectionsEnabled']))",
+                            "clientProfileAllowGuaranteedEndpointCreateEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedEndpointCreateEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowGuaranteedEndpointCreateEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileAllowGuaranteedEndpointCreateEnabled']))",
+                            "clientProfileAllowSharedSubscriptionsEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowSharedSubscriptionsEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientProfileAllowSharedSubscriptionsEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientProfileAllowSharedSubscriptionsEnabled']))",
+                            "clientUserEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientUserEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientUserEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientUserEnabled']))",
+                            "clientUserGuaranteedEndpointPermissionOverrideEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled']))",
+                            "clientUserSubscriptionManagerEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientUserSubscriptionManagerEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['clientUserSubscriptionManagerEnabled'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['clientUserSubscriptionManagerEnabled']))",
+                            "serviceExists": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['serviceExists'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['serviceExists'], 'No'), false, outputs('Compose_Known_Solace_Fields')?['serviceExists']))"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_Solace_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_Solace_Message_Type_Seed_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "solaceMessageTypeSeed",
+                          "value": {
+                            "messageType": "@body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedMessageType']",
+                            "topic": "@body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedTopic']",
+                            "queuePermission": "@body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedQueuePermission']",
+                            "queueEgressEnabled": "@if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedQueueEgressEnabled'], 'Yes'), true, if(equals(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedQueueEgressEnabled'], 'No'), false, null))",
+                            "queueMaxRedeliveryCount": "@if(empty(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedQueueMaxRedeliveryCount']), null, int(body('Post_Solace_Adaptive_Card_And_Wait')?['data']?['seedQueueMaxRedeliveryCount']))"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_Solace_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Set_Solace_Final_Fields_Initial": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "If_Solace_Client_Row_Exists": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(body('Get_Solace_Client_Row')?[0])",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Update_Solace_Client_Row": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[SolaceClient]",
+                            "setColumns": {
+                              "Action": "@variables('solaceFinalFields')?['action']",
+                              "AclClientConnectDefaultAction": "@variables('solaceFinalFields')?['aclClientConnectDefaultAction']",
+                              "AclPublishTopicDefaultAction": "@variables('solaceFinalFields')?['aclPublishTopicDefaultAction']",
+                              "AclSubscribeShareNameDefaultAction": "@variables('solaceFinalFields')?['aclSubscribeShareNameDefaultAction']",
+                              "AclSubscribeTopicDefaultAction": "@variables('solaceFinalFields')?['aclSubscribeTopicDefaultAction']",
+                              "RepoOwner": "@variables('solaceFinalFields')?['repoOwner']",
+                              "RepoName": "@variables('solaceFinalFields')?['repoName']",
+                              "FilePath": "@variables('solaceFinalFields')?['filePath']",
+                              "Branch": "@variables('solaceFinalFields')?['branch']",
+                              "BaseBranch": "@variables('solaceFinalFields')?['baseBranch']",
+                              "FeatureBranchName": "@variables('solaceFinalFields')?['featureBranchName']",
+                              "RequesterEmail": "@variables('solaceFinalFields')?['requesterEmail']",
+                              "RecipientEmail": "@variables('solaceFinalFields')?['recipientEmail']",
+                              "CommitMessage": "@variables('solaceFinalFields')?['commitMessage']",
+                              "ClientProfileAllowGuaranteedMsgSendEnabled": "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled']",
+                              "ClientProfileAllowGuaranteedMsgReceiveEnabled": "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled']",
+                              "ClientProfileCompressionEnabled": "@variables('solaceFinalFields')?['clientProfileCompressionEnabled']",
+                              "ClientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled']",
+                              "ClientProfileAllowTransactedSessionsEnabled": "@variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled']",
+                              "ClientProfileAllowBridgeConnectionsEnabled": "@variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled']",
+                              "ClientProfileAllowGuaranteedEndpointCreateEnabled": "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled']",
+                              "ClientProfileAllowSharedSubscriptionsEnabled": "@variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled']",
+                              "ClientUserEnabled": "@variables('solaceFinalFields')?['clientUserEnabled']",
+                              "ClientUserGuaranteedEndpointPermissionOverrideEnabled": "@variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled']",
+                              "ClientUserSubscriptionManagerEnabled": "@variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled']",
+                              "EncryptedPassword": "@variables('solaceFinalFields')?['encryptedPassword']",
+                              "ServiceExists": "@variables('solaceFinalFields')?['serviceExists']",
+                              "CorrelationId": "@variables('correlationId')",
+                              "UpdatedAt": "@utcNow()"
+                            },
+                            "columnValuesForWhereCondition": {
+                              "Brand": "@variables('solaceFinalFields')?['brand']",
+                              "Env": "@variables('solaceFinalFields')?['env']",
+                              "SystemName": "@variables('solaceFinalFields')?['systemName']",
+                              "ThreePLCode": "@variables('solaceFinalFields')?['threePLCode']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "updateRows",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      },
+                      "Set_Solace_Client_Id": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "solaceClientId",
+                          "value": "@body('Get_Solace_Client_Row')?[0]?[0]?['Id']"
+                        },
+                        "runAfter": {
+                          "Update_Solace_Client_Row": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Insert_Solace_Client_Row": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[SolaceClient]",
+                              "setColumns": {
+                                "Action": "@variables('solaceFinalFields')?['action']",
+                                "AclClientConnectDefaultAction": "@variables('solaceFinalFields')?['aclClientConnectDefaultAction']",
+                                "AclPublishTopicDefaultAction": "@variables('solaceFinalFields')?['aclPublishTopicDefaultAction']",
+                                "AclSubscribeShareNameDefaultAction": "@variables('solaceFinalFields')?['aclSubscribeShareNameDefaultAction']",
+                                "AclSubscribeTopicDefaultAction": "@variables('solaceFinalFields')?['aclSubscribeTopicDefaultAction']",
+                                "RepoOwner": "@variables('solaceFinalFields')?['repoOwner']",
+                                "RepoName": "@variables('solaceFinalFields')?['repoName']",
+                                "FilePath": "@variables('solaceFinalFields')?['filePath']",
+                                "Branch": "@variables('solaceFinalFields')?['branch']",
+                                "BaseBranch": "@variables('solaceFinalFields')?['baseBranch']",
+                                "FeatureBranchName": "@variables('solaceFinalFields')?['featureBranchName']",
+                                "RequesterEmail": "@variables('solaceFinalFields')?['requesterEmail']",
+                                "RecipientEmail": "@variables('solaceFinalFields')?['recipientEmail']",
+                                "CommitMessage": "@variables('solaceFinalFields')?['commitMessage']",
+                                "ClientProfileAllowGuaranteedMsgSendEnabled": "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled']",
+                                "ClientProfileAllowGuaranteedMsgReceiveEnabled": "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled']",
+                                "ClientProfileCompressionEnabled": "@variables('solaceFinalFields')?['clientProfileCompressionEnabled']",
+                                "ClientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled']",
+                                "ClientProfileAllowTransactedSessionsEnabled": "@variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled']",
+                                "ClientProfileAllowBridgeConnectionsEnabled": "@variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled']",
+                                "ClientProfileAllowGuaranteedEndpointCreateEnabled": "@variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled']",
+                                "ClientProfileAllowSharedSubscriptionsEnabled": "@variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled']",
+                                "ClientUserEnabled": "@variables('solaceFinalFields')?['clientUserEnabled']",
+                                "ClientUserGuaranteedEndpointPermissionOverrideEnabled": "@variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled']",
+                                "ClientUserSubscriptionManagerEnabled": "@variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled']",
+                                "EncryptedPassword": "@variables('solaceFinalFields')?['encryptedPassword']",
+                                "ServiceExists": "@variables('solaceFinalFields')?['serviceExists']",
+                                "CorrelationId": "@variables('correlationId')",
+                                "UpdatedAt": "@utcNow()",
+                                "Brand": "@variables('solaceFinalFields')?['brand']",
+                                "Env": "@variables('solaceFinalFields')?['env']",
+                                "SystemName": "@variables('solaceFinalFields')?['systemName']",
+                                "ThreePLCode": "@variables('solaceFinalFields')?['threePLCode']",
+                                "DeploymentStatus": "Pending",
+                                "CreatedAt": "@utcNow()"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "insertRow",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            }
+                          },
+                          "runAfter": {}
+                        },
+                        "Get_Solace_Client_Row_After_Insert": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "query": "@concat('SELECT TOP 1 * FROM dbo.SolaceClient WHERE Brand = ''', replace(variables('solaceFinalFields')?['brand'], '''', ''''''), ''' AND Env = ''', replace(variables('solaceFinalFields')?['env'], '''', ''''''), ''' AND SystemName = ''', replace(variables('solaceFinalFields')?['systemName'], '''', ''''''), ''' AND ThreePLCode = ''', replace(variables('solaceFinalFields')?['threePLCode'], '''', ''''''), '''')"
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "executeQuery",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            }
+                          },
+                          "runAfter": {
+                            "Insert_Solace_Client_Row": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Set_Solace_Client_Id_After_Insert": {
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "solaceClientId",
+                            "value": "@body('Get_Solace_Client_Row_After_Insert')?[0]?[0]?['Id']"
+                          },
+                          "runAfter": {
+                            "Get_Solace_Client_Row_After_Insert": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "If_Solace_Fields_Missing": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Final_Solace_Message_Types": {
+                    "type": "Compose",
+                    "inputs": "@if(equals(length(coalesce(triggerBody()?['messageTypes'], json('[]'))), 0), if(empty(variables('solaceMessageTypeSeed')?['messageType']), json('[]'), array(variables('solaceMessageTypeSeed'))), triggerBody()?['messageTypes'])",
+                    "runAfter": {
+                      "If_Solace_Client_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Delete_Solace_Message_Types": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[SolaceMessageType]",
+                        "columnValuesForWhereCondition": {
+                          "ClientId": "@variables('solaceClientId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "deleteRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Final_Solace_Message_Types": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "For_each_Solace_Message_Type": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Compose_Final_Solace_Message_Types')",
+                    "actions": {
+                      "Insert_Solace_Message_Type": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[SolaceMessageType]",
+                            "setColumns": {
+                              "ClientId": "@variables('solaceClientId')",
+                              "MessageType": "@item()?['messageType']",
+                              "Topic": "@item()?['topic']",
+                              "QueuePermission": "@item()?['queuePermission']",
+                              "QueueEgressEnabled": "@item()?['queueEgressEnabled']",
+                              "QueueMaxRedeliveryCount": "@item()?['queueMaxRedeliveryCount']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "insertRow",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "runAfter": {
+                      "Delete_Solace_Message_Types": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Response-Solace-Success": {
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200,
+                      "body": {
+                        "domain": "Solace",
+                        "correlationId": "@variables('correlationId')",
+                        "clientId": "@variables('solaceClientId')",
+                        "record": "@variables('solaceFinalFields')",
+                        "messageTypes": "@outputs('Compose_Final_Solace_Message_Types')"
+                      }
+                    },
+                    "runAfter": {
+                      "For_each_Solace_Message_Type": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
+              "Case_MuleSoft": {
+                "case": "MuleSoft",
+                "actions": {
+                  "Get_MuleSoft_Partner_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "query": "@concat('SELECT TOP 1 * FROM dbo.MuleSoftPartner WHERE CountryKey = ''', replace(coalesce(triggerBody()?['countryKey'], ''), '''', ''''''), '''')"
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "executeQuery",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "If_MuleSoft_Row_Found": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(body('Get_MuleSoft_Partner_Row')?[0])",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Set_MuleSoft_Row": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftRow",
+                          "value": "@first(body('Get_MuleSoft_Partner_Row')?[0])"
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Get_MuleSoft_Partner_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Known_MuleSoft_Fields": {
+                    "type": "Compose",
+                    "inputs": {
+                      "countryKey": "@coalesce(triggerBody()?['countryKey'], variables('muleSoftRow')?['CountryKey'], '')",
+                      "countryCode": "@coalesce(triggerBody()?['countryCode'], variables('muleSoftRow')?['CountryCode'], '')",
+                      "partnerComment": "@coalesce(triggerBody()?['partnerComment'], variables('muleSoftRow')?['PartnerComment'], '')",
+                      "createdBy": "@coalesce(triggerBody()?['createdBy'], variables('muleSoftRow')?['CreatedBy'], '')",
+                      "navProtocol": "@coalesce(triggerBody()?['navProtocol'], variables('muleSoftRow')?['NavProtocol'], '')",
+                      "navPort": "@coalesce(triggerBody()?['navPort'], variables('muleSoftRow')?['NavPort'], '')",
+                      "navUsername": "@coalesce(triggerBody()?['navUsername'], variables('muleSoftRow')?['NavUsername'], '')",
+                      "navDomain": "@coalesce(triggerBody()?['navDomain'], variables('muleSoftRow')?['NavDomain'], '')",
+                      "navService": "@coalesce(triggerBody()?['navService'], variables('muleSoftRow')?['NavService'], '')",
+                      "navSoapPort": "@coalesce(triggerBody()?['navSoapPort'], variables('muleSoftRow')?['NavSoapPort'], '')",
+                      "translationReceiverName": "@coalesce(triggerBody()?['translationReceiverName'], variables('muleSoftRow')?['TranslationReceiverName'], '')",
+                      "repoOwner": "@coalesce(triggerBody()?['repoOwner'], variables('muleSoftRow')?['RepoOwner'], '')",
+                      "repoName": "@coalesce(triggerBody()?['repoName'], variables('muleSoftRow')?['RepoName'], '')",
+                      "filePathPrefix": "@coalesce(triggerBody()?['filePathPrefix'], variables('muleSoftRow')?['FilePathPrefix'], '')",
+                      "branch": "@coalesce(triggerBody()?['branch'], variables('muleSoftRow')?['Branch'], '')",
+                      "baseBranch": "@coalesce(triggerBody()?['baseBranch'], variables('muleSoftRow')?['BaseBranch'], '')",
+                      "featureBranchName": "@coalesce(triggerBody()?['featureBranchName'], variables('muleSoftRow')?['FeatureBranchName'], '')",
+                      "requesterEmail": "@coalesce(triggerBody()?['requesterEmail'], variables('muleSoftRow')?['RequesterEmail'], '')",
+                      "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], variables('muleSoftRow')?['RecipientEmail'], '')",
+                      "commitMessage": "@coalesce(triggerBody()?['commitMessage'], variables('muleSoftRow')?['CommitMessage'], '')",
+                      "navUseCommonCert": "@coalesce(triggerBody()?['navUseCommonCert'], variables('muleSoftRow')?['NavUseCommonCert'])",
+                      "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('muleSoftRow')?['ServiceExists'])"
+                    },
+                    "runAfter": {
+                      "If_MuleSoft_Row_Found": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Set_MuleSoft_Final_Fields_Initial": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "muleSoftFinalFields",
+                      "value": "@outputs('Compose_Known_MuleSoft_Fields')"
+                    },
+                    "runAfter": {
+                      "Compose_Known_MuleSoft_Fields": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "If_MuleSoft_Fields_Missing": {
+                    "type": "If",
+                    "expression": {
+                      "or": [
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['countryCode'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['partnerComment'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['createdBy'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['navProtocol'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['navPort'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['navUsername'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['navDomain'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['navService'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['navSoapPort'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['translationReceiverName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('muleSoftFinalFields')?['navUseCommonCert']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['repoOwner'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['repoName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['filePathPrefix'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['branch'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['baseBranch'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['featureBranchName'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['requesterEmail'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['recipientEmail'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@empty(variables('muleSoftFinalFields')?['commitMessage'])",
+                            true
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@variables('muleSoftFinalFields')?['serviceExists']",
+                            null
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@length(coalesce(triggerBody()?['environments'], json('[]')))",
+                            0
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@length(coalesce(triggerBody()?['transactionTypes'], json('[]')))",
+                            0
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@length(coalesce(triggerBody()?['messageTypes'], json('[]')))",
+                            0
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@length(coalesce(triggerBody()?['sourceDestinations'], json('[]')))",
+                            0
+                          ]
+                        },
+                        {
+                          "equals": [
+                            "@length(coalesce(triggerBody()?['uomMappings'], json('[]')))",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Build_MuleSoft_Adaptive_Card": {
+                        "type": "Compose",
+                        "inputs": {
+                          "type": "AdaptiveCard",
+                          "version": "1.4",
+                          "body": [
+                            {
+                              "type": "Container",
+                              "style": "emphasis",
+                              "bleed": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "@{coalesce(triggerBody()?['title'], 'MuleSoft onboarding — missing information')}",
+                                  "size": "Large",
+                                  "weight": "Bolder"
+                                },
+                                {
+                                  "type": "TextBlock",
+                                  "text": "@{coalesce(triggerBody()?['subtitle'], 'A few fields are not yet in SQL. Please fill them in below.')}",
+                                  "size": "Small",
+                                  "isSubtle": true
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "items": [
+                                {
+                                  "type": "FactSet",
+                                  "facts": [
+                                    {
+                                      "title": "Country key",
+                                      "value": "@{variables('muleSoftFinalFields')?['countryKey']}"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "NAV connection",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "countryCode",
+                                  "label": "Country code",
+                                  "value": "@{variables('muleSoftFinalFields')?['countryCode']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Country code is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "partnerComment",
+                                  "label": "Partner comment",
+                                  "value": "@{variables('muleSoftFinalFields')?['partnerComment']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Partner comment is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "createdBy",
+                                  "label": "Created by",
+                                  "value": "@{variables('muleSoftFinalFields')?['createdBy']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Created by is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "navProtocol",
+                                  "label": "NAV protocol",
+                                  "value": "@{variables('muleSoftFinalFields')?['navProtocol']}",
+                                  "isRequired": true,
+                                  "errorMessage": "NAV protocol is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "navPort",
+                                  "label": "NAV port",
+                                  "value": "@{variables('muleSoftFinalFields')?['navPort']}",
+                                  "isRequired": true,
+                                  "errorMessage": "NAV port is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "navUsername",
+                                  "label": "NAV username",
+                                  "value": "@{variables('muleSoftFinalFields')?['navUsername']}",
+                                  "isRequired": true,
+                                  "errorMessage": "NAV username is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "navDomain",
+                                  "label": "NAV domain",
+                                  "value": "@{variables('muleSoftFinalFields')?['navDomain']}",
+                                  "isRequired": true,
+                                  "errorMessage": "NAV domain is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "navService",
+                                  "label": "NAV service",
+                                  "value": "@{variables('muleSoftFinalFields')?['navService']}",
+                                  "isRequired": true,
+                                  "errorMessage": "NAV service is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "navSoapPort",
+                                  "label": "NAV SOAP port",
+                                  "value": "@{variables('muleSoftFinalFields')?['navSoapPort']}",
+                                  "isRequired": true,
+                                  "errorMessage": "NAV SOAP port is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "translationReceiverName",
+                                  "label": "Translation receiver name",
+                                  "value": "@{variables('muleSoftFinalFields')?['translationReceiverName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Translation receiver name is required."
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "navUseCommonCert",
+                                  "label": "Use common cert",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('muleSoftFinalFields')?['navUseCommonCert'], true), 'Yes', if(equals(variables('muleSoftFinalFields')?['navUseCommonCert'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Pipeline / Git",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "repoOwner",
+                                  "label": "Repo owner",
+                                  "value": "@{variables('muleSoftFinalFields')?['repoOwner']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Repo owner is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "repoName",
+                                  "label": "Repo name",
+                                  "value": "@{variables('muleSoftFinalFields')?['repoName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Repo name is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "filePathPrefix",
+                                  "label": "Config path prefix",
+                                  "value": "@{variables('muleSoftFinalFields')?['filePathPrefix']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Config path prefix is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "branch",
+                                  "label": "Branch",
+                                  "value": "@{variables('muleSoftFinalFields')?['branch']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Branch is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "baseBranch",
+                                  "label": "Base branch",
+                                  "value": "@{variables('muleSoftFinalFields')?['baseBranch']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Base branch is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "featureBranchName",
+                                  "label": "Feature branch name",
+                                  "value": "@{variables('muleSoftFinalFields')?['featureBranchName']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Feature branch name is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "requesterEmail",
+                                  "label": "Requester email",
+                                  "value": "@{variables('muleSoftFinalFields')?['requesterEmail']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Requester email is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "recipientEmail",
+                                  "label": "Recipient email",
+                                  "value": "@{variables('muleSoftFinalFields')?['recipientEmail']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Recipient email is required."
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "commitMessage",
+                                  "label": "Commit message",
+                                  "value": "@{variables('muleSoftFinalFields')?['commitMessage']}",
+                                  "isRequired": true,
+                                  "errorMessage": "Commit message is required."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "Service status",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "serviceExists",
+                                  "label": "Does this MuleSoft app already exist?",
+                                  "style": "expanded",
+                                  "value": "@if(equals(variables('muleSoftFinalFields')?['serviceExists'], true), 'Yes', if(equals(variables('muleSoftFinalFields')?['serviceExists'], false), 'No', ''))",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ],
+                                  "isRequired": true,
+                                  "errorMessage": "Please choose Yes or No."
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "environments (optional seed — only needed if none were supplied)",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_environment",
+                                  "label": "Environment",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_navHost",
+                                  "label": "NAV host",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_navCompany",
+                                  "label": "NAV company",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_navSoapPath",
+                                  "label": "NAV SOAP path",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_navRoutingCode",
+                                  "label": "NAV routing code",
+                                  "value": ""
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "transactionTypes (optional seed — only needed if none were supplied)",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_transactionTypeCode",
+                                  "label": "Transaction type code",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.ChoiceSet",
+                                  "id": "seed_transactionTypeEnabled",
+                                  "label": "Transaction type enabled",
+                                  "style": "expanded",
+                                  "value": "",
+                                  "choices": [
+                                    {
+                                      "title": "Yes",
+                                      "value": "Yes"
+                                    },
+                                    {
+                                      "title": "No",
+                                      "value": "No"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_transactionTypeLabel",
+                                  "label": "Transaction type label",
+                                  "value": ""
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "messageTypes (optional seed — only needed if none were supplied)",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_messageType",
+                                  "label": "Message type",
+                                  "value": ""
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "sourceDestinations (optional seed — only needed if none were supplied)",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_sourceDestinationFrom",
+                                  "label": "Source/destination from",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_sourceDestinationTo",
+                                  "label": "Source/destination to",
+                                  "value": ""
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Container",
+                              "spacing": "Medium",
+                              "separator": true,
+                              "items": [
+                                {
+                                  "type": "TextBlock",
+                                  "text": "uomMappings (optional seed — only needed if none were supplied)",
+                                  "weight": "Bolder",
+                                  "size": "Small"
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_uomFrom",
+                                  "label": "UOM from",
+                                  "value": ""
+                                },
+                                {
+                                  "type": "Input.Text",
+                                  "id": "seed_uomTo",
+                                  "label": "UOM to",
+                                  "value": ""
+                                }
+                              ]
+                            }
+                          ],
+                          "actions": [
+                            {
+                              "type": "Action.Submit",
+                              "title": "Save & Continue",
+                              "style": "positive",
+                              "data": {
+                                "action": "submit"
+                              }
+                            }
+                          ]
+                        },
+                        "runAfter": {}
+                      },
+                      "Post_MuleSoft_Adaptive_Card_And_Wait": {
+                        "type": "ApiConnectionWebhook",
+                        "inputs": {
+                          "host": {
+                            "connection": {
+                              "referenceName": "teams"
+                            }
+                          },
+                          "body": {
+                            "notificationUrl": "@listCallbackUrl()",
+                            "body": {
+                              "messageBody": "@string(outputs('Build_MuleSoft_Adaptive_Card'))",
+                              "updateMessage": "Thanks — saving to SQL now.",
+                              "recipient": {
+                                "to": "@coalesce(triggerBody()?['recipientEmail'], appsetting('MuleSoftDevOpsOwnerEmail'))"
+                              }
+                            }
+                          },
+                          "path": "/v1.0/teams/conversation/gatherinput/poster/Flow bot/location/@{encodeURIComponent('Chat with Flow bot')}/$subscriptions"
+                        },
+                        "runAfter": {
+                          "Build_MuleSoft_Adaptive_Card": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoft_Final_Fields_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftFinalFields",
+                          "value": {
+                            "countryKey": "@outputs('Compose_Known_MuleSoft_Fields')?['countryKey']",
+                            "countryCode": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['countryCode'], outputs('Compose_Known_MuleSoft_Fields')?['countryCode'])",
+                            "partnerComment": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['partnerComment'], outputs('Compose_Known_MuleSoft_Fields')?['partnerComment'])",
+                            "createdBy": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['createdBy'], outputs('Compose_Known_MuleSoft_Fields')?['createdBy'])",
+                            "navProtocol": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navProtocol'], outputs('Compose_Known_MuleSoft_Fields')?['navProtocol'])",
+                            "navPort": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navPort'], outputs('Compose_Known_MuleSoft_Fields')?['navPort'])",
+                            "navUsername": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navUsername'], outputs('Compose_Known_MuleSoft_Fields')?['navUsername'])",
+                            "navDomain": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navDomain'], outputs('Compose_Known_MuleSoft_Fields')?['navDomain'])",
+                            "navService": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navService'], outputs('Compose_Known_MuleSoft_Fields')?['navService'])",
+                            "navSoapPort": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navSoapPort'], outputs('Compose_Known_MuleSoft_Fields')?['navSoapPort'])",
+                            "translationReceiverName": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['translationReceiverName'], outputs('Compose_Known_MuleSoft_Fields')?['translationReceiverName'])",
+                            "repoOwner": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['repoOwner'], outputs('Compose_Known_MuleSoft_Fields')?['repoOwner'])",
+                            "repoName": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['repoName'], outputs('Compose_Known_MuleSoft_Fields')?['repoName'])",
+                            "filePathPrefix": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['filePathPrefix'], outputs('Compose_Known_MuleSoft_Fields')?['filePathPrefix'])",
+                            "branch": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['branch'], outputs('Compose_Known_MuleSoft_Fields')?['branch'])",
+                            "baseBranch": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['baseBranch'], outputs('Compose_Known_MuleSoft_Fields')?['baseBranch'])",
+                            "featureBranchName": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['featureBranchName'], outputs('Compose_Known_MuleSoft_Fields')?['featureBranchName'])",
+                            "requesterEmail": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['requesterEmail'], outputs('Compose_Known_MuleSoft_Fields')?['requesterEmail'])",
+                            "recipientEmail": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['recipientEmail'], outputs('Compose_Known_MuleSoft_Fields')?['recipientEmail'])",
+                            "commitMessage": "@coalesce(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['commitMessage'], outputs('Compose_Known_MuleSoft_Fields')?['commitMessage'])",
+                            "navUseCommonCert": "@if(equals(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navUseCommonCert'], 'Yes'), true, if(equals(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['navUseCommonCert'], 'No'), false, outputs('Compose_Known_MuleSoft_Fields')?['navUseCommonCert']))",
+                            "serviceExists": "@if(equals(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['serviceExists'], 'Yes'), true, if(equals(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['serviceExists'], 'No'), false, outputs('Compose_Known_MuleSoft_Fields')?['serviceExists']))"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_MuleSoft_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoftEnvironmentSeed_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftEnvironmentSeed",
+                          "value": {
+                            "environment": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_environment']",
+                            "navHost": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_navHost']",
+                            "navCompany": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_navCompany']",
+                            "navSoapPath": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_navSoapPath']",
+                            "navRoutingCode": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_navRoutingCode']"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_MuleSoft_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoftTransactionTypeSeed_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftTransactionTypeSeed",
+                          "value": {
+                            "transactionTypeCode": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_transactionTypeCode']",
+                            "transactionTypeEnabled": "@if(equals(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_transactionTypeEnabled'], 'Yes'), true, if(equals(body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_transactionTypeEnabled'], 'No'), false, null))",
+                            "transactionTypeLabel": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_transactionTypeLabel']"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_MuleSoft_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoftMessageTypeSeed_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftMessageTypeSeed",
+                          "value": {
+                            "messageType": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_messageType']"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_MuleSoft_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoftSourceDestinationSeed_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftSourceDestinationSeed",
+                          "value": {
+                            "sourceDestinationFrom": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_sourceDestinationFrom']",
+                            "sourceDestinationTo": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_sourceDestinationTo']"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_MuleSoft_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoftUomMappingSeed_From_Card": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftUomMappingSeed",
+                          "value": {
+                            "uomFrom": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_uomFrom']",
+                            "uomTo": "@body('Post_MuleSoft_Adaptive_Card_And_Wait')?['data']?['seed_uomTo']"
+                          }
+                        },
+                        "runAfter": {
+                          "Post_MuleSoft_Adaptive_Card_And_Wait": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {}
+                    },
+                    "runAfter": {
+                      "Set_MuleSoft_Final_Fields_Initial": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "If_MuleSoft_Partner_Row_Exists": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "greater": [
+                            "@length(body('Get_MuleSoft_Partner_Row')?[0])",
+                            0
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Update_MuleSoft_Partner_Row": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[MuleSoftPartner]",
+                            "setColumns": {
+                              "CountryCode": "@variables('muleSoftFinalFields')?['countryCode']",
+                              "PartnerComment": "@variables('muleSoftFinalFields')?['partnerComment']",
+                              "CreatedBy": "@variables('muleSoftFinalFields')?['createdBy']",
+                              "NavProtocol": "@variables('muleSoftFinalFields')?['navProtocol']",
+                              "NavPort": "@variables('muleSoftFinalFields')?['navPort']",
+                              "NavUsername": "@variables('muleSoftFinalFields')?['navUsername']",
+                              "NavDomain": "@variables('muleSoftFinalFields')?['navDomain']",
+                              "NavService": "@variables('muleSoftFinalFields')?['navService']",
+                              "NavSoapPort": "@variables('muleSoftFinalFields')?['navSoapPort']",
+                              "TranslationReceiverName": "@variables('muleSoftFinalFields')?['translationReceiverName']",
+                              "RepoOwner": "@variables('muleSoftFinalFields')?['repoOwner']",
+                              "RepoName": "@variables('muleSoftFinalFields')?['repoName']",
+                              "FilePathPrefix": "@variables('muleSoftFinalFields')?['filePathPrefix']",
+                              "Branch": "@variables('muleSoftFinalFields')?['branch']",
+                              "BaseBranch": "@variables('muleSoftFinalFields')?['baseBranch']",
+                              "FeatureBranchName": "@variables('muleSoftFinalFields')?['featureBranchName']",
+                              "RequesterEmail": "@variables('muleSoftFinalFields')?['requesterEmail']",
+                              "RecipientEmail": "@variables('muleSoftFinalFields')?['recipientEmail']",
+                              "CommitMessage": "@variables('muleSoftFinalFields')?['commitMessage']",
+                              "NavUseCommonCert": "@variables('muleSoftFinalFields')?['navUseCommonCert']",
+                              "ServiceExists": "@variables('muleSoftFinalFields')?['serviceExists']",
+                              "CorrelationId": "@variables('correlationId')",
+                              "UpdatedAt": "@utcNow()"
+                            },
+                            "columnValuesForWhereCondition": {
+                              "CountryKey": "@variables('muleSoftFinalFields')?['countryKey']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "updateRows",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      },
+                      "Set_MuleSoft_Partner_Id": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftPartnerId",
+                          "value": "@body('Get_MuleSoft_Partner_Row')?[0]?[0]?['Id']"
+                        },
+                        "runAfter": {
+                          "Update_MuleSoft_Partner_Row": [
+                            "Succeeded"
+                          ]
+                        }
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Insert_MuleSoft_Partner_Row": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[MuleSoftPartner]",
+                              "setColumns": {
+                                "CountryCode": "@variables('muleSoftFinalFields')?['countryCode']",
+                                "PartnerComment": "@variables('muleSoftFinalFields')?['partnerComment']",
+                                "CreatedBy": "@variables('muleSoftFinalFields')?['createdBy']",
+                                "NavProtocol": "@variables('muleSoftFinalFields')?['navProtocol']",
+                                "NavPort": "@variables('muleSoftFinalFields')?['navPort']",
+                                "NavUsername": "@variables('muleSoftFinalFields')?['navUsername']",
+                                "NavDomain": "@variables('muleSoftFinalFields')?['navDomain']",
+                                "NavService": "@variables('muleSoftFinalFields')?['navService']",
+                                "NavSoapPort": "@variables('muleSoftFinalFields')?['navSoapPort']",
+                                "TranslationReceiverName": "@variables('muleSoftFinalFields')?['translationReceiverName']",
+                                "RepoOwner": "@variables('muleSoftFinalFields')?['repoOwner']",
+                                "RepoName": "@variables('muleSoftFinalFields')?['repoName']",
+                                "FilePathPrefix": "@variables('muleSoftFinalFields')?['filePathPrefix']",
+                                "Branch": "@variables('muleSoftFinalFields')?['branch']",
+                                "BaseBranch": "@variables('muleSoftFinalFields')?['baseBranch']",
+                                "FeatureBranchName": "@variables('muleSoftFinalFields')?['featureBranchName']",
+                                "RequesterEmail": "@variables('muleSoftFinalFields')?['requesterEmail']",
+                                "RecipientEmail": "@variables('muleSoftFinalFields')?['recipientEmail']",
+                                "CommitMessage": "@variables('muleSoftFinalFields')?['commitMessage']",
+                                "NavUseCommonCert": "@variables('muleSoftFinalFields')?['navUseCommonCert']",
+                                "ServiceExists": "@variables('muleSoftFinalFields')?['serviceExists']",
+                                "CorrelationId": "@variables('correlationId')",
+                                "UpdatedAt": "@utcNow()",
+                                "CountryKey": "@variables('muleSoftFinalFields')?['countryKey']",
+                                "DeploymentStatus": "Pending",
+                                "CreatedAt": "@utcNow()"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "insertRow",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            }
+                          },
+                          "runAfter": {}
+                        },
+                        "Get_MuleSoft_Partner_Row_After_Insert": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "query": "@concat('SELECT TOP 1 * FROM dbo.MuleSoftPartner WHERE CountryKey = ''', replace(variables('muleSoftFinalFields')?['countryKey'], '''', ''''''), '''')"
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "executeQuery",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            }
+                          },
+                          "runAfter": {
+                            "Insert_MuleSoft_Partner_Row": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Set_MuleSoft_Partner_Id_After_Insert": {
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "muleSoftPartnerId",
+                            "value": "@body('Get_MuleSoft_Partner_Row_After_Insert')?[0]?[0]?['Id']"
+                          },
+                          "runAfter": {
+                            "Get_MuleSoft_Partner_Row_After_Insert": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "If_MuleSoft_Fields_Missing": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Final_MuleSoft_Environments": {
+                    "type": "Compose",
+                    "inputs": "@if(equals(length(coalesce(triggerBody()?['environments'], json('[]'))), 0), if(empty(variables('muleSoftEnvironmentSeed')?['environment']), json('[]'), array(variables('muleSoftEnvironmentSeed'))), triggerBody()?['environments'])",
+                    "runAfter": {
+                      "If_MuleSoft_Partner_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Delete_MuleSoft_Environments": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[MuleSoftEnvironment]",
+                        "columnValuesForWhereCondition": {
+                          "PartnerId": "@variables('muleSoftPartnerId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "deleteRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Final_MuleSoft_Environments": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "For_each_MuleSoft_Environments": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Compose_Final_MuleSoft_Environments')",
+                    "actions": {
+                      "Insert_MuleSoft_Environments": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[MuleSoftEnvironment]",
+                            "setColumns": {
+                              "PartnerId": "@variables('muleSoftPartnerId')",
+                              "Environment": "@item()?['environment']",
+                              "NavHost": "@item()?['navHost']",
+                              "NavCompany": "@item()?['navCompany']",
+                              "NavSoapPath": "@item()?['navSoapPath']",
+                              "NavRoutingCode": "@item()?['navRoutingCode']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "insertRow",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "runAfter": {
+                      "Delete_MuleSoft_Environments": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Final_MuleSoft_TransactionTypes": {
+                    "type": "Compose",
+                    "inputs": "@if(equals(length(coalesce(triggerBody()?['transactionTypes'], json('[]'))), 0), if(empty(variables('muleSoftTransactionTypeSeed')?['transactionTypeCode']), json('[]'), array(variables('muleSoftTransactionTypeSeed'))), triggerBody()?['transactionTypes'])",
+                    "runAfter": {
+                      "If_MuleSoft_Partner_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Delete_MuleSoft_TransactionTypes": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[MuleSoftTransactionType]",
+                        "columnValuesForWhereCondition": {
+                          "PartnerId": "@variables('muleSoftPartnerId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "deleteRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Final_MuleSoft_TransactionTypes": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "For_each_MuleSoft_TransactionTypes": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Compose_Final_MuleSoft_TransactionTypes')",
+                    "actions": {
+                      "Insert_MuleSoft_TransactionTypes": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[MuleSoftTransactionType]",
+                            "setColumns": {
+                              "PartnerId": "@variables('muleSoftPartnerId')",
+                              "TransactionTypeCode": "@item()?['transactionTypeCode']",
+                              "TransactionTypeEnabled": "@item()?['transactionTypeEnabled']",
+                              "TransactionTypeLabel": "@item()?['transactionTypeLabel']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "insertRow",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "runAfter": {
+                      "Delete_MuleSoft_TransactionTypes": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Final_MuleSoft_MessageTypes": {
+                    "type": "Compose",
+                    "inputs": "@if(equals(length(coalesce(triggerBody()?['messageTypes'], json('[]'))), 0), if(empty(variables('muleSoftMessageTypeSeed')?['messageType']), json('[]'), array(variables('muleSoftMessageTypeSeed'))), triggerBody()?['messageTypes'])",
+                    "runAfter": {
+                      "If_MuleSoft_Partner_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Delete_MuleSoft_MessageTypes": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[MuleSoftMessageType]",
+                        "columnValuesForWhereCondition": {
+                          "PartnerId": "@variables('muleSoftPartnerId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "deleteRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Final_MuleSoft_MessageTypes": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "For_each_MuleSoft_MessageTypes": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Compose_Final_MuleSoft_MessageTypes')",
+                    "actions": {
+                      "Insert_MuleSoft_MessageTypes": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[MuleSoftMessageType]",
+                            "setColumns": {
+                              "PartnerId": "@variables('muleSoftPartnerId')",
+                              "MessageType": "@item()?['messageType']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "insertRow",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "runAfter": {
+                      "Delete_MuleSoft_MessageTypes": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Final_MuleSoft_SourceDestinations": {
+                    "type": "Compose",
+                    "inputs": "@if(equals(length(coalesce(triggerBody()?['sourceDestinations'], json('[]'))), 0), if(empty(variables('muleSoftSourceDestinationSeed')?['sourceDestinationFrom']), json('[]'), array(variables('muleSoftSourceDestinationSeed'))), triggerBody()?['sourceDestinations'])",
+                    "runAfter": {
+                      "If_MuleSoft_Partner_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Delete_MuleSoft_SourceDestinations": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[MuleSoftSourceDestination]",
+                        "columnValuesForWhereCondition": {
+                          "PartnerId": "@variables('muleSoftPartnerId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "deleteRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Final_MuleSoft_SourceDestinations": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "For_each_MuleSoft_SourceDestinations": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Compose_Final_MuleSoft_SourceDestinations')",
+                    "actions": {
+                      "Insert_MuleSoft_SourceDestinations": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[MuleSoftSourceDestination]",
+                            "setColumns": {
+                              "PartnerId": "@variables('muleSoftPartnerId')",
+                              "SourceDestinationFrom": "@item()?['sourceDestinationFrom']",
+                              "SourceDestinationTo": "@item()?['sourceDestinationTo']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "insertRow",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "runAfter": {
+                      "Delete_MuleSoft_SourceDestinations": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Final_MuleSoft_UomMappings": {
+                    "type": "Compose",
+                    "inputs": "@if(equals(length(coalesce(triggerBody()?['uomMappings'], json('[]'))), 0), if(empty(variables('muleSoftUomMappingSeed')?['uomFrom']), json('[]'), array(variables('muleSoftUomMappingSeed'))), triggerBody()?['uomMappings'])",
+                    "runAfter": {
+                      "If_MuleSoft_Partner_Row_Exists": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Delete_MuleSoft_UomMappings": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[MuleSoftUomMapping]",
+                        "columnValuesForWhereCondition": {
+                          "PartnerId": "@variables('muleSoftPartnerId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "deleteRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Final_MuleSoft_UomMappings": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "For_each_MuleSoft_UomMappings": {
+                    "type": "Foreach",
+                    "foreach": "@outputs('Compose_Final_MuleSoft_UomMappings')",
+                    "actions": {
+                      "Insert_MuleSoft_UomMappings": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "tableName": "[dbo].[MuleSoftUomMapping]",
+                            "setColumns": {
+                              "PartnerId": "@variables('muleSoftPartnerId')",
+                              "UomFrom": "@item()?['uomFrom']",
+                              "UomTo": "@item()?['uomTo']"
+                            }
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "insertRow",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "runAfter": {
+                      "Delete_MuleSoft_UomMappings": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Response-MuleSoft-Success": {
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200,
+                      "body": {
+                        "domain": "MuleSoft",
+                        "correlationId": "@variables('correlationId')",
+                        "partnerId": "@variables('muleSoftPartnerId')",
+                        "record": "@variables('muleSoftFinalFields')"
+                      }
+                    },
+                    "runAfter": {
+                      "For_each_MuleSoft_Environments": [
+                        "Succeeded"
+                      ],
+                      "For_each_MuleSoft_TransactionTypes": [
+                        "Succeeded"
+                      ],
+                      "For_each_MuleSoft_MessageTypes": [
+                        "Succeeded"
+                      ],
+                      "For_each_MuleSoft_SourceDestinations": [
+                        "Succeeded"
+                      ],
+                      "For_each_MuleSoft_UomMappings": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "actions": {
+                "Response-Unknown-Domain": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 400,
+                    "body": {
+                      "status": "Unknown domain. Expected 'Btp', 'Solace', or 'MuleSoft'.",
+                      "correlationId": "@variables('correlationId')"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": {
+          "Initialize_MuleSoftRow": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Response-Error": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "data-enrichment failed.",
+                "correlationId": "@variables('correlationId')",
+                "details": "@result('Scope-Try')"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
+    },
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
+}

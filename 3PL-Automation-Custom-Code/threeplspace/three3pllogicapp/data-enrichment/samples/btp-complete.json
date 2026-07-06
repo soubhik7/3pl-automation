@@ -1,0 +1,17 @@
+{
+  "domain": "Btp",
+  "correlationId": "test-btp-001",
+  "subAccount": "royal-canin-france-uat",
+  "productName": "royal-canin-france-integration",
+  "environment": "UAT",
+  "mode": "create",
+  "developerId": "dev123",
+  "title": "Royal Canin France BTP onboarding",
+  "shortText": "RC France UAT app",
+  "repoOwner": "your-org",
+  "repoName": "3pl-config-repo",
+  "workflowFileName": "btp-Api-management-deploy.yml",
+  "branchRef": "main",
+  "serviceExists": false,
+  "recipientEmail": "devops-owner@example.com"
+}

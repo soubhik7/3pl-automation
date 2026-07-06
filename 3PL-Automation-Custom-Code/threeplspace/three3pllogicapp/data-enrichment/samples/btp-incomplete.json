@@ -1,0 +1,8 @@
+{
+  "domain": "Btp",
+  "correlationId": "test-btp-002-incomplete",
+  "subAccount": "royal-canin-belgium-uat",
+  "productName": "royal-canin-belgium-integration",
+  "environment": "UAT",
+  "recipientEmail": "devops-owner@example.com"
+}

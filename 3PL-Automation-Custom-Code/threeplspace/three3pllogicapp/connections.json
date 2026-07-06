@@ -1,0 +1,14 @@
+{
+  "serviceProviderConnections": {
+    "sql": {
+      "parameterValues": {
+        "connectionString": "@appsetting('SqlConnectionString')"
+      },
+      "serviceProvider": {
+        "id": "/serviceProviders/sql"
+      },
+      "displayName": "sql"
+    }
+  },
+  "managedApiConnections": {}
+}

@@ -1,0 +1,42 @@
+{
+  "domain": "MuleSoft",
+  "correlationId": "test-mulesoft-001",
+  "countryKey": "royal-canin-france",
+  "countryCode": "fr",
+  "partnerComment": "Royal Canin France NAV onboarding",
+  "createdBy": "integration-pulse-mulesoft-publisher",
+  "navProtocol": "https",
+  "navPort": "7124",
+  "navUsername": "SVC_UAT_MULESOFT",
+  "navDomain": "mars-ad.net",
+  "navService": "InterfaceWebServices",
+  "navSoapPort": "7124",
+  "navUseCommonCert": true,
+  "translationReceiverName": "petc-rc-navision-3plspl-sys",
+  "repoOwner": "your-org",
+  "repoName": "3pl-config-repo",
+  "filePathPrefix": "mulesoft/royal-canin-france",
+  "branch": "main",
+  "baseBranch": "main",
+  "featureBranchName": "feature/royal-canin-france-onboarding",
+  "requesterEmail": "requester@example.com",
+  "recipientEmail": "devops-owner@example.com",
+  "commitMessage": "Onboard Royal Canin France MuleSoft partner",
+  "serviceExists": false,
+  "environments": [
+    { "environment": "app", "navHost": "azr-xxx1234.mars-ad.net", "navCompany": "Company(UAT - Royal Canin France)", "navSoapPath": "/sop_fra_uat_01/WS/UAT - Royal Canin France/Codeunit/InterfaceWebServices?wsdl", "navRoutingCode": "NAV_FM_IN_UAT_FRA" },
+    { "environment": "dev", "navHost": "azr-xxx1234-dev.mars-ad.net", "navCompany": "Company(DEV - Royal Canin France)", "navSoapPath": "/sop_fra_dev_01/WS/DEV - Royal Canin France/Codeunit/InterfaceWebServices?wsdl", "navRoutingCode": "NAV_FM_IN_DEV_FRA" }
+  ],
+  "transactionTypes": [
+    { "transactionTypeCode": "sal_008", "transactionTypeEnabled": true, "transactionTypeLabel": "SHIPMENT" }
+  ],
+  "messageTypes": [
+    { "messageType": "despatchStock" }
+  ],
+  "sourceDestinations": [
+    { "sourceDestinationFrom": "PLANT-FR1-PLANT-FR2", "sourceDestinationTo": "spl_001" }
+  ],
+  "uomMappings": [
+    { "uomFrom": "EA", "uomTo": "UNIT" }
+  ]
+}
