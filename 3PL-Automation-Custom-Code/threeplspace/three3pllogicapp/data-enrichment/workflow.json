@@ -973,7 +973,7 @@
                         "type": "Compose",
                         "inputs": "@coalesce(triggerBody()?['messageTypes'], json('[]'))",
                         "runAfter": {
-                          "If_Solace_Client_Row_Exists": [
+                          "Set_Solace_ClientId_After_Upsert": [
                             "Succeeded"
                           ]
                         }
@@ -1114,6 +1114,36 @@
                         },
                         "runAfter": {
                           "Insert_Solace_Audit_Upserted": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Get_Solace_Client_Id_After_Upsert": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "query": "@concat('SELECT TOP 1 Id FROM dbo.SolaceClient WHERE Brand = ''', replace(variables('solaceFinalFields')?['brand'], '''', ''''''), ''' AND Env = ''', replace(variables('solaceFinalFields')?['env'], '''', ''''''), ''' AND SystemName = ''', replace(variables('solaceFinalFields')?['systemName'], '''', ''''''), ''' AND ThreePLCode = ''', replace(variables('solaceFinalFields')?['threePLCode'], '''', ''''''), '''')"
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "executeQuery",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {
+                          "If_Solace_Client_Row_Exists": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_Solace_ClientId_After_Upsert": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "solaceClientId",
+                          "value": "@first(coalesce(body('Get_Solace_Client_Id_After_Upsert')?[0], body('Get_Solace_Client_Id_After_Upsert'), json('[]')))?['Id']"
+                        },
+                        "runAfter": {
+                          "Get_Solace_Client_Id_After_Upsert": [
                             "Succeeded"
                           ]
                         }
@@ -1529,7 +1559,7 @@
                         "type": "Compose",
                         "inputs": "@coalesce(triggerBody()?['environments'], json('[]'))",
                         "runAfter": {
-                          "If_MuleSoft_Partner_Row_Exists": [
+                          "Set_MuleSoft_Partner_Id_After_Upsert": [
                             "Succeeded"
                           ]
                         }
@@ -1969,6 +1999,36 @@
                         },
                         "runAfter": {
                           "Insert_MuleSoft_Audit_Upserted": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Get_MuleSoft_Partner_Id_After_Upsert": {
+                        "type": "ServiceProvider",
+                        "inputs": {
+                          "parameters": {
+                            "query": "@concat('SELECT TOP 1 Id FROM dbo.MuleSoftPartner WHERE CountryKey = ''', replace(variables('muleSoftFinalFields')?['countryKey'], '''', ''''''), '''')"
+                          },
+                          "serviceProviderConfiguration": {
+                            "connectionName": "sql",
+                            "operationId": "executeQuery",
+                            "serviceProviderId": "/serviceProviders/sql"
+                          }
+                        },
+                        "runAfter": {
+                          "If_MuleSoft_Partner_Row_Exists": [
+                            "Succeeded"
+                          ]
+                        }
+                      },
+                      "Set_MuleSoft_Partner_Id_After_Upsert": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "muleSoftPartnerId",
+                          "value": "@first(coalesce(body('Get_MuleSoft_Partner_Id_After_Upsert')?[0], body('Get_MuleSoft_Partner_Id_After_Upsert'), json('[]')))?['Id']"
+                        },
+                        "runAfter": {
+                          "Get_MuleSoft_Partner_Id_After_Upsert": [
                             "Succeeded"
                           ]
                         }

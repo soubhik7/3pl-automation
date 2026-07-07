@@ -1,0 +1,428 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Initialize_CorrelationId": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], '')"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
+      "Scope-Try": {
+        "type": "Scope",
+        "actions": {
+          "Validate_CorrelationId": {
+            "type": "If",
+            "expression": {
+              "and": [
+                {
+                  "equals": [
+                    "@empty(variables('correlationId'))",
+                    true
+                  ]
+                }
+              ]
+            },
+            "actions": {
+              "Response-400": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 400,
+                  "body": {
+                    "error": "correlationId is required and must not be empty."
+                  }
+                }
+              }
+            },
+            "runAfter": {}
+          },
+          "Get_Btp_Row": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "query": "@concat('SELECT TOP 1 * FROM dbo.BtpConfig WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "executeQuery",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {
+              "Validate_CorrelationId": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Get_Solace_Row": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "query": "@concat('SELECT TOP 1 * FROM dbo.SolaceClient WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "executeQuery",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {
+              "Validate_CorrelationId": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Get_MuleSoft_Row": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "query": "@concat('SELECT TOP 1 * FROM dbo.MuleSoftPartner WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "executeQuery",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {
+              "Validate_CorrelationId": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Get_Child_Counts": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "query": "@concat('SELECT (SELECT COUNT(*) FROM dbo.SolaceMessageType mt JOIN dbo.SolaceClient c ON mt.ClientId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''') AS SolaceMsgTypesCount, (SELECT COUNT(*) FROM dbo.MuleSoftEnvironment mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''') AS MuleSoftEnvironmentsCount, (SELECT COUNT(*) FROM dbo.MuleSoftTransactionType mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''') AS MuleSoftTransactionTypesCount, (SELECT COUNT(*) FROM dbo.MuleSoftMessageType mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''') AS MuleSoftMessageTypesCount, (SELECT COUNT(*) FROM dbo.MuleSoftSourceDestination mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''') AS MuleSoftSourceDestinationsCount, (SELECT COUNT(*) FROM dbo.MuleSoftUomMapping mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''') AS MuleSoftUomMappingsCount')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "executeQuery",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {
+              "Validate_CorrelationId": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Get_Audit_Log": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "query": "@concat('SELECT TOP 100 Id, Domain, CorrelationId, EntityKey, Channel, CASE WHEN ActorEmail IS NULL OR ActorEmail = '''' THEN '''' WHEN CHARINDEX(''@'', ActorEmail) > 0 THEN CONCAT(LEFT(ActorEmail, 2), ''***'', SUBSTRING(ActorEmail, CHARINDEX(''@'', ActorEmail), 320)) ELSE ActorEmail END AS ActorEmail, EventType, EventDetail, CreatedAt FROM dbo.EnrichmentAuditLog WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), ''' ORDER BY CreatedAt ASC')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "executeQuery",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {
+              "Validate_CorrelationId": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Compose_Btp_Missing_Fields_Raw": {
+            "type": "Compose",
+            "inputs": [
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['Mode']), 'mode', null)",
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['DeveloperId']), 'developerId', null)",
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['Title']), 'title', null)",
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['RepoOwner']), 'repoOwner', null)",
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['RepoName']), 'repoName', null)",
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['WorkflowFileName']), 'workflowFileName', null)",
+              "@if(empty(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['BranchRef']), 'branchRef', null)",
+              "@if(equals(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['ServiceExists'], null), 'serviceExists', null)"
+            ],
+            "runAfter": {
+              "Get_Btp_Row": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Filter_Btp_Missing_Fields": {
+            "type": "Query",
+            "inputs": {
+              "from": "@outputs('Compose_Btp_Missing_Fields_Raw')",
+              "where": "@not(equals(item(), null))"
+            },
+            "runAfter": {
+              "Compose_Btp_Missing_Fields_Raw": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Compose_Solace_Missing_Fields_Raw": {
+            "type": "Compose",
+            "inputs": [
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Brand']), 'brand', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Env']), 'env', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['SystemName']), 'systemName', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ThreePLCode']), 'threePLCode', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Action']), 'action', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclClientConnectDefaultAction']), 'aclClientConnectDefaultAction', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclPublishTopicDefaultAction']), 'aclPublishTopicDefaultAction', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclSubscribeShareNameDefaultAction']), 'aclSubscribeShareNameDefaultAction', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclSubscribeTopicDefaultAction']), 'aclSubscribeTopicDefaultAction', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedMsgSendEnabled'], null), 'clientProfileAllowGuaranteedMsgSendEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedMsgReceiveEnabled'], null), 'clientProfileAllowGuaranteedMsgReceiveEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileCompressionEnabled'], null), 'clientProfileCompressionEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled'], null), 'clientProfileReplicationAllowClientConnectWhenStandbyEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowTransactedSessionsEnabled'], null), 'clientProfileAllowTransactedSessionsEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowBridgeConnectionsEnabled'], null), 'clientProfileAllowBridgeConnectionsEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedEndpointCreateEnabled'], null), 'clientProfileAllowGuaranteedEndpointCreateEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowSharedSubscriptionsEnabled'], null), 'clientProfileAllowSharedSubscriptionsEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserEnabled'], null), 'clientUserEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserGuaranteedEndpointPermissionOverrideEnabled'], null), 'clientUserGuaranteedEndpointPermissionOverrideEnabled', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserSubscriptionManagerEnabled'], null), 'clientUserSubscriptionManagerEnabled', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['RepoOwner']), 'repoOwner', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['RepoName']), 'repoName', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['FilePath']), 'filePath', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Branch']), 'branch', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['BaseBranch']), 'baseBranch', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['FeatureBranchName']), 'featureBranchName', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['RequesterEmail']), 'requesterEmail', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['RecipientEmail']), 'recipientEmail', null)",
+              "@if(empty(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['CommitMessage']), 'commitMessage', null)",
+              "@if(equals(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ServiceExists'], null), 'serviceExists', null)",
+              "@if(equals(first(coalesce(body('Get_Child_Counts')?[0], body('Get_Child_Counts'), json('[]')))?['SolaceMsgTypesCount'], 0), 'messageTypes', null)"
+            ],
+            "runAfter": {
+              "Get_Solace_Row": [
+                "Succeeded"
+              ],
+              "Get_Child_Counts": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Filter_Solace_Missing_Fields": {
+            "type": "Query",
+            "inputs": {
+              "from": "@outputs('Compose_Solace_Missing_Fields_Raw')",
+              "where": "@not(equals(item(), null))"
+            },
+            "runAfter": {
+              "Compose_Solace_Missing_Fields_Raw": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Compose_MuleSoft_Missing_Fields_Raw": {
+            "type": "Compose",
+            "inputs": [
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CountryCode']), 'countryCode', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['PartnerComment']), 'partnerComment', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CreatedBy']), 'createdBy', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavProtocol']), 'navProtocol', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavPort']), 'navPort', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavUsername']), 'navUsername', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavDomain']), 'navDomain', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavService']), 'navService', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavSoapPort']), 'navSoapPort', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['TranslationReceiverName']), 'translationReceiverName', null)",
+              "@if(equals(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavUseCommonCert'], null), 'navUseCommonCert', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['RepoOwner']), 'repoOwner', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['RepoName']), 'repoName', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['FilePathPrefix']), 'filePathPrefix', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['Branch']), 'branch', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['BaseBranch']), 'baseBranch', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['FeatureBranchName']), 'featureBranchName', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['RequesterEmail']), 'requesterEmail', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['RecipientEmail']), 'recipientEmail', null)",
+              "@if(empty(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CommitMessage']), 'commitMessage', null)",
+              "@if(equals(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['ServiceExists'], null), 'serviceExists', null)",
+              "@if(equals(first(coalesce(body('Get_Child_Counts')?[0], body('Get_Child_Counts'), json('[]')))?['MuleSoftEnvironmentsCount'], 0), 'environments', null)",
+              "@if(equals(first(coalesce(body('Get_Child_Counts')?[0], body('Get_Child_Counts'), json('[]')))?['MuleSoftTransactionTypesCount'], 0), 'transactionTypes', null)",
+              "@if(equals(first(coalesce(body('Get_Child_Counts')?[0], body('Get_Child_Counts'), json('[]')))?['MuleSoftMessageTypesCount'], 0), 'messageTypes', null)",
+              "@if(equals(first(coalesce(body('Get_Child_Counts')?[0], body('Get_Child_Counts'), json('[]')))?['MuleSoftSourceDestinationsCount'], 0), 'sourceDestinations', null)",
+              "@if(equals(first(coalesce(body('Get_Child_Counts')?[0], body('Get_Child_Counts'), json('[]')))?['MuleSoftUomMappingsCount'], 0), 'uomMappings', null)"
+            ],
+            "runAfter": {
+              "Get_MuleSoft_Row": [
+                "Succeeded"
+              ],
+              "Get_Child_Counts": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Filter_MuleSoft_Missing_Fields": {
+            "type": "Query",
+            "inputs": {
+              "from": "@outputs('Compose_MuleSoft_Missing_Fields_Raw')",
+              "where": "@not(equals(item(), null))"
+            },
+            "runAfter": {
+              "Compose_MuleSoft_Missing_Fields_Raw": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Response-200": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 200,
+              "body": {
+                "correlationId": "@variables('correlationId')",
+                "readyToLaunch": "@and(and(greater(length(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))), 0), greater(length(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))), 0)), and(greater(length(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))), 0), and(and(equals(coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput'), 'Complete'), equals(coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput'), 'Complete')), equals(coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput'), 'Complete'))))",
+                "btp": {
+                  "found": "@greater(length(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))), 0)",
+                  "enrichmentStatus": "@coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput')",
+                  "deploymentStatus": "@coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['DeploymentStatus'], 'Pending')",
+                  "cardSentAt": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['CardSentAt']",
+                  "cardRespondedAt": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['CardRespondedAt']",
+                  "missingFields": "@body('Filter_Btp_Missing_Fields')"
+                },
+                "solace": {
+                  "found": "@greater(length(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))), 0)",
+                  "enrichmentStatus": "@coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput')",
+                  "deploymentStatus": "@coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['DeploymentStatus'], 'Pending')",
+                  "cardSentAt": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['CardSentAt']",
+                  "cardRespondedAt": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['CardRespondedAt']",
+                  "missingFields": "@body('Filter_Solace_Missing_Fields')"
+                },
+                "mulesoft": {
+                  "found": "@greater(length(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))), 0)",
+                  "enrichmentStatus": "@coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput')",
+                  "deploymentStatus": "@coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['DeploymentStatus'], 'Pending')",
+                  "cardSentAt": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CardSentAt']",
+                  "cardRespondedAt": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CardRespondedAt']",
+                  "missingFields": "@body('Filter_MuleSoft_Missing_Fields')"
+                },
+                "auditTrail": "@coalesce(body('Get_Audit_Log')?[0], body('Get_Audit_Log'), json('[]'))"
+              }
+            },
+            "runAfter": {
+              "Filter_Btp_Missing_Fields": [
+                "Succeeded"
+              ],
+              "Filter_Solace_Missing_Fields": [
+                "Succeeded"
+              ],
+              "Filter_MuleSoft_Missing_Fields": [
+                "Succeeded"
+              ],
+              "Get_Audit_Log": [
+                "Succeeded"
+              ]
+            }
+          }
+        },
+        "runAfter": {
+          "Initialize_CorrelationId": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Insert_Audit_Error": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "tableName": "[dbo].[EnrichmentAuditLog]",
+                "setColumns": {
+                  "Domain": "Orchestrator",
+                  "CorrelationId": "@variables('correlationId')",
+                  "EntityKey": "@null",
+                  "Channel": "System",
+                  "ActorEmail": "@null",
+                  "EventType": "Error",
+                  "EventDetail": "@string(result('Scope-Try'))"
+                }
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "insertRow",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {}
+          },
+          "Response-500": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "enrichment-status failed.",
+                "correlationId": "@variables('correlationId')",
+                "details": "@result('Scope-Try')"
+              }
+            },
+            "runAfter": {
+              "Insert_Audit_Error": [
+                "Succeeded"
+              ]
+            }
+          }
+        },
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
+    },
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
+}

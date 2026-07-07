@@ -359,3 +359,37 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MuleSoftSourceDestination  TO [three
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.MuleSoftUomMapping         TO [threepl-logicapp-svc];
 GRANT SELECT, INSERT                 ON dbo.EnrichmentAuditLog          TO [threepl-logicapp-svc];
 GO
+
+-- ============================================================================
+-- 2026 Integration Updates: Orchestration event types and tracking indexes
+-- ============================================================================
+
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_EnrichmentAuditLog_EventType' AND parent_object_id = OBJECT_ID('dbo.EnrichmentAuditLog'))
+BEGIN
+    ALTER TABLE dbo.EnrichmentAuditLog DROP CONSTRAINT CK_EnrichmentAuditLog_EventType;
+END
+GO
+ALTER TABLE dbo.EnrichmentAuditLog ADD CONSTRAINT CK_EnrichmentAuditLog_EventType CHECK (EventType IN (
+    'Received', 'ValidationFailed', 'Upserted', 'CardSent', 'CardResponded',
+    'CardTimedOut', 'MailRejected', 'Error', 'OrchestrationStarted', 'OrchestrationSucceeded', 'OrchestrationFailed'
+));
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_BtpConfig_CorrelationId' AND object_id = OBJECT_ID('dbo.BtpConfig'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_BtpConfig_CorrelationId ON dbo.BtpConfig(CorrelationId);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_SolaceClient_CorrelationId' AND object_id = OBJECT_ID('dbo.SolaceClient'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_SolaceClient_CorrelationId ON dbo.SolaceClient(CorrelationId);
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_MuleSoftPartner_CorrelationId' AND object_id = OBJECT_ID('dbo.MuleSoftPartner'))
+BEGIN
+    CREATE NONCLUSTERED INDEX IX_MuleSoftPartner_CorrelationId ON dbo.MuleSoftPartner(CorrelationId);
+END
+GO
+
