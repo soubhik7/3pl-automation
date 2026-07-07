@@ -1,0 +1,25 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "<storage account connection string>",
+    "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING": "<same storage account connection string as AzureWebJobsStorage>",
+    "WEBSITE_CONTENTSHARE": "<Azure Files share name backing this app's content>",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "FUNCTIONS_EXTENSION_VERSION": "~4",
+    "FUNCTIONS_INPROC_NET8_ENABLED": "1",
+    "APP_KIND": "workflowApp",
+    "WEBSITE_NODE_DEFAULT_VERSION": "~20",
+    "LOGIC_APPS_POWERSHELL_VERSION": "7.4",
+    "AzureFunctionsJobHost__extensionBundle__id": "Microsoft.Azure.Functions.ExtensionBundle.Workflows",
+    "AzureFunctionsJobHost__extensionBundle__version": "[1.*, 2.0.0)",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": "<Application Insights connection string for this Function App's own resource>",
+
+    "sql_connectionString": "<Azure SQL connection string for the threepl-logicapp-svc login — see schema.sql>",
+    "githubToken": "<GitHub PAT used by *-config-publish workflows to push config files>",
+
+    "ArchitectureApprovalOwnerEmail": "soubhikmukhopadhyay4@gmail.com",
+    "SolaceDevOpsOwnerEmail": "soubhikmukhopadhyay4@gmail.com",
+    "MuleSoftDevOpsOwnerEmail": "soubhikmukhopadhyay4@gmail.com",
+    "DefaultNotifierRecipientEmail": "soubhikmukhopadhyay4@gmail.com"
+  }
+}

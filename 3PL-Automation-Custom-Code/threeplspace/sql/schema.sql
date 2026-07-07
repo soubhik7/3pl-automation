@@ -506,3 +506,16 @@ ALTER TABLE dbo.EnrichmentAuditLog ADD CONSTRAINT CK_EnrichmentAuditLog_EventTyp
 ));
 GO
 
+-- DeploymentStatus was widened by the CHECK constraint above to allow
+-- 'AwaitingBranchApproval' (22 chars), but the column itself was left at
+-- NVARCHAR(20) -- every attempt to set that status failed with a truncation
+-- error. sys.columns.max_length is in bytes (NVARCHAR = 2 bytes/char), so
+-- NVARCHAR(20) reads as 40 here.
+IF (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'DeploymentStatus') < 60
+    ALTER TABLE dbo.SolaceClient ALTER COLUMN DeploymentStatus NVARCHAR(30) NOT NULL;
+GO
+
+IF (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'DeploymentStatus') < 60
+    ALTER TABLE dbo.MuleSoftPartner ALTER COLUMN DeploymentStatus NVARCHAR(30) NOT NULL;
+GO
+

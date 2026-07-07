@@ -160,7 +160,7 @@
                       },
                       "method": "post",
                       "body": {
-                        "To": "@item()?['RecipientEmail']",
+                        "To": "@coalesce(item()?['RecipientEmail'], appsetting('DefaultNotifierRecipientEmail'))",
                         "Subject": "@concat('[Tracking: ', item()?['CorrelationId'], '] BTP onboarding — information needed')",
                         "Body": "@outputs('Compose_Btp_Email_Body')",
                         "Importance": "Normal"
@@ -468,7 +468,7 @@
                       },
                       "method": "post",
                       "body": {
-                        "To": "@item()?['RecipientEmail']",
+                        "To": "@coalesce(item()?['RecipientEmail'], appsetting('DefaultNotifierRecipientEmail'))",
                         "Subject": "@concat('[Tracking: ', item()?['CorrelationId'], '] Solace onboarding — information needed')",
                         "Body": "@outputs('Compose_Solace_Email_Body')",
                         "Importance": "Normal"
@@ -771,7 +771,7 @@
                       },
                       "method": "post",
                       "body": {
-                        "To": "@item()?['RecipientEmail']",
+                        "To": "@coalesce(item()?['RecipientEmail'], appsetting('DefaultNotifierRecipientEmail'))",
                         "Subject": "@concat('[Tracking: ', item()?['CorrelationId'], '] MuleSoft onboarding — information needed')",
                         "Body": "@outputs('Compose_MuleSoft_Email_Body')",
                         "Importance": "Normal"
