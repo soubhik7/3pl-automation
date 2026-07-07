@@ -10,6 +10,35 @@
               "name": "correlationId",
               "type": "string",
               "value": "@coalesce(triggerBody()?['correlationId'], trigger().clientTrackingId)"
+            },
+            {
+              "name": "domains",
+              "type": "array",
+              "value": "@coalesce(triggerBody()?['domains'], createArray('btp', 'mulesoft', 'solace'))"
+            },
+            {
+              "name": "btpResult",
+              "type": "object",
+              "value": {
+                "skipped": true,
+                "reason": "domain not requested"
+              }
+            },
+            {
+              "name": "mulesoftResult",
+              "type": "object",
+              "value": {
+                "skipped": true,
+                "reason": "domain not requested"
+              }
+            },
+            {
+              "name": "solaceResult",
+              "type": "object",
+              "value": {
+                "skipped": true,
+                "reason": "domain not requested"
+              }
             }
           ]
         },
@@ -21,28 +50,55 @@
           "Scope-BTP": {
             "type": "Scope",
             "actions": {
-              "Invoke_BTP_Config_Publish": {
-                "type": "Workflow",
-                "inputs": {
-                  "host": {
-                    "workflow": {
-                      "id": "btp-config-publish"
-                    }
+              "If_Launch_Btp": {
+                "type": "If",
+                "expression": {
+                  "equals": [
+                    "@contains(variables('domains'), 'btp')",
+                    true
+                  ]
+                },
+                "actions": {
+                  "Invoke_BTP_Config_Publish": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "btp-config-publish"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@variables('correlationId')",
+                        "repoOwner": "@triggerBody()?['btp']?['repoOwner']",
+                        "repoName": "@triggerBody()?['btp']?['repoName']",
+                        "workflowFileName": "@triggerBody()?['btp']?['workflowFileName']",
+                        "branchRef": "@triggerBody()?['btp']?['branchRef']",
+                        "subAccount": "@triggerBody()?['btp']?['subAccount']",
+                        "mode": "@triggerBody()?['btp']?['mode']",
+                        "environment": "@triggerBody()?['btp']?['environment']",
+                        "developerId": "@triggerBody()?['btp']?['developerId']",
+                        "title": "@triggerBody()?['btp']?['title']",
+                        "shortText": "@triggerBody()?['btp']?['shortText']",
+                        "productName": "@triggerBody()?['btp']?['productName']"
+                      }
+                    },
+                    "runAfter": {}
                   },
-                  "body": {
-                    "correlationId": "@variables('correlationId')",
-                    "repoOwner": "@triggerBody()?['btp']?['repoOwner']",
-                    "repoName": "@triggerBody()?['btp']?['repoName']",
-                    "workflowFileName": "@triggerBody()?['btp']?['workflowFileName']",
-                    "branchRef": "@triggerBody()?['btp']?['branchRef']",
-                    "subAccount": "@triggerBody()?['btp']?['subAccount']",
-                    "mode": "@triggerBody()?['btp']?['mode']",
-                    "environment": "@triggerBody()?['btp']?['environment']",
-                    "developerId": "@triggerBody()?['btp']?['developerId']",
-                    "title": "@triggerBody()?['btp']?['title']",
-                    "shortText": "@triggerBody()?['btp']?['shortText']",
-                    "productName": "@triggerBody()?['btp']?['productName']"
+                  "Set_Btp_Result": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "btpResult",
+                      "value": "@coalesce(body('Invoke_BTP_Config_Publish'), json('null'))"
+                    },
+                    "runAfter": {
+                      "Invoke_BTP_Config_Publish": [
+                        "Succeeded"
+                      ]
+                    }
                   }
+                },
+                "else": {
+                  "actions": {}
                 },
                 "runAfter": {}
               }
@@ -52,61 +108,91 @@
           "Scope-MuleSoft": {
             "type": "Scope",
             "actions": {
-              "Invoke_MuleSoft_Config_Generation": {
-                "type": "Workflow",
-                "inputs": {
-                  "host": {
-                    "workflow": {
-                      "id": "mulesoft-config-generation"
+              "If_Launch_MuleSoft": {
+                "type": "If",
+                "expression": {
+                  "equals": [
+                    "@contains(variables('domains'), 'mulesoft')",
+                    true
+                  ]
+                },
+                "actions": {
+                  "Invoke_MuleSoft_Config_Generation": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "mulesoft-config-generation"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@variables('correlationId')",
+                        "csvContent": "@triggerBody()?['mulesoft']?['generate']?['csvContent']",
+                        "updateExisting": "@triggerBody()?['mulesoft']?['generate']?['updateExisting']",
+                        "existingAppYaml": "@triggerBody()?['mulesoft']?['generate']?['existingAppYaml']",
+                        "existingDevYaml": "@triggerBody()?['mulesoft']?['generate']?['existingDevYaml']",
+                        "existingTstYaml": "@triggerBody()?['mulesoft']?['generate']?['existingTstYaml']",
+                        "existingProdYaml": "@triggerBody()?['mulesoft']?['generate']?['existingProdYaml']",
+                        "repoOwner": "@triggerBody()?['mulesoft']?['generate']?['repoOwner']",
+                        "repoName": "@triggerBody()?['mulesoft']?['generate']?['repoName']",
+                        "branch": "@triggerBody()?['mulesoft']?['generate']?['branch']",
+                        "filePathPrefix": "@triggerBody()?['mulesoft']?['generate']?['filePathPrefix']",
+                        "featureBranchName": "@triggerBody()?['mulesoft']?['generate']?['featureBranchName']",
+                        "baseBranch": "@triggerBody()?['mulesoft']?['generate']?['baseBranch']",
+                        "requesterEmail": "@triggerBody()?['mulesoft']?['generate']?['requesterEmail']",
+                        "recipientEmail": "@triggerBody()?['mulesoft']?['generate']?['recipientEmail']"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "Invoke_MuleSoft_Config_Publish": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "mulesoft-config-publish"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@variables('correlationId')",
+                        "repoOwner": "@triggerBody()?['mulesoft']?['publish']?['repoOwner']",
+                        "repoName": "@triggerBody()?['mulesoft']?['publish']?['repoName']",
+                        "baseBranch": "@triggerBody()?['mulesoft']?['publish']?['baseBranch']",
+                        "featureBranchName": "@triggerBody()?['mulesoft']?['publish']?['featureBranchName']",
+                        "filePathPrefix": "@triggerBody()?['mulesoft']?['publish']?['filePathPrefix']",
+                        "appYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['app.yaml'], '')",
+                        "devYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['dev.yaml'], '')",
+                        "tstYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['tst.yaml'], '')",
+                        "prodYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['prod.yaml'], '')",
+                        "commitMessage": "@triggerBody()?['mulesoft']?['publish']?['commitMessage']"
+                      }
+                    },
+                    "runAfter": {
+                      "Invoke_MuleSoft_Config_Generation": [
+                        "Succeeded"
+                      ]
                     }
                   },
-                  "body": {
-                    "correlationId": "@variables('correlationId')",
-                    "csvContent": "@triggerBody()?['mulesoft']?['generate']?['csvContent']",
-                    "updateExisting": "@triggerBody()?['mulesoft']?['generate']?['updateExisting']",
-                    "existingAppYaml": "@triggerBody()?['mulesoft']?['generate']?['existingAppYaml']",
-                    "existingDevYaml": "@triggerBody()?['mulesoft']?['generate']?['existingDevYaml']",
-                    "existingTstYaml": "@triggerBody()?['mulesoft']?['generate']?['existingTstYaml']",
-                    "existingProdYaml": "@triggerBody()?['mulesoft']?['generate']?['existingProdYaml']",
-                    "repoOwner": "@triggerBody()?['mulesoft']?['generate']?['repoOwner']",
-                    "repoName": "@triggerBody()?['mulesoft']?['generate']?['repoName']",
-                    "branch": "@triggerBody()?['mulesoft']?['generate']?['branch']",
-                    "filePathPrefix": "@triggerBody()?['mulesoft']?['generate']?['filePathPrefix']",
-                    "featureBranchName": "@triggerBody()?['mulesoft']?['generate']?['featureBranchName']",
-                    "baseBranch": "@triggerBody()?['mulesoft']?['generate']?['baseBranch']",
-                    "requesterEmail": "@triggerBody()?['mulesoft']?['generate']?['requesterEmail']",
-                    "recipientEmail": "@triggerBody()?['mulesoft']?['generate']?['recipientEmail']"
+                  "Set_MuleSoft_Result": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "mulesoftResult",
+                      "value": {
+                        "generate": "@coalesce(body('Invoke_MuleSoft_Config_Generation'), json('null'))",
+                        "publish": "@coalesce(body('Invoke_MuleSoft_Config_Publish'), json('null'))"
+                      }
+                    },
+                    "runAfter": {
+                      "Invoke_MuleSoft_Config_Publish": [
+                        "Succeeded"
+                      ]
+                    }
                   }
+                },
+                "else": {
+                  "actions": {}
                 },
                 "runAfter": {}
-              },
-              "Invoke_MuleSoft_Config_Publish": {
-                "type": "Workflow",
-                "inputs": {
-                  "host": {
-                    "workflow": {
-                      "id": "mulesoft-config-publish"
-                    }
-                  },
-                  "body": {
-                    "correlationId": "@variables('correlationId')",
-                    "repoOwner": "@triggerBody()?['mulesoft']?['publish']?['repoOwner']",
-                    "repoName": "@triggerBody()?['mulesoft']?['publish']?['repoName']",
-                    "baseBranch": "@triggerBody()?['mulesoft']?['publish']?['baseBranch']",
-                    "featureBranchName": "@triggerBody()?['mulesoft']?['publish']?['featureBranchName']",
-                    "filePathPrefix": "@triggerBody()?['mulesoft']?['publish']?['filePathPrefix']",
-                    "appYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['app.yaml'], '')",
-                    "devYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['dev.yaml'], '')",
-                    "tstYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['tst.yaml'], '')",
-                    "prodYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['prod.yaml'], '')",
-                    "commitMessage": "@triggerBody()?['mulesoft']?['publish']?['commitMessage']"
-                  }
-                },
-                "runAfter": {
-                  "Invoke_MuleSoft_Config_Generation": [
-                    "Succeeded"
-                  ]
-                }
               }
             },
             "runAfter": {}
@@ -114,53 +200,83 @@
           "Scope-Solace": {
             "type": "Scope",
             "actions": {
-              "Invoke_Solace_Config_Generation": {
-                "type": "Workflow",
-                "inputs": {
-                  "host": {
-                    "workflow": {
-                      "id": "solace-config-generation"
+              "If_Launch_Solace": {
+                "type": "If",
+                "expression": {
+                  "equals": [
+                    "@contains(variables('domains'), 'solace')",
+                    true
+                  ]
+                },
+                "actions": {
+                  "Invoke_Solace_Config_Generation": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "solace-config-generation"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@variables('correlationId')",
+                        "csvContent": "@triggerBody()?['solace']?['generate']?['csvContent']",
+                        "repoOwner": "@triggerBody()?['solace']?['generate']?['repoOwner']",
+                        "repoName": "@triggerBody()?['solace']?['generate']?['repoName']",
+                        "branch": "@triggerBody()?['solace']?['generate']?['branch']",
+                        "filePath": "@triggerBody()?['solace']?['generate']?['filePath']",
+                        "featureBranchName": "@triggerBody()?['solace']?['generate']?['featureBranchName']",
+                        "baseBranch": "@triggerBody()?['solace']?['generate']?['baseBranch']",
+                        "requesterEmail": "@triggerBody()?['solace']?['generate']?['requesterEmail']",
+                        "recipientEmail": "@triggerBody()?['solace']?['generate']?['recipientEmail']"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "Invoke_Solace_Config_Publish": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "solace-config-publish"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@variables('correlationId')",
+                        "repoOwner": "@triggerBody()?['solace']?['publish']?['repoOwner']",
+                        "repoName": "@triggerBody()?['solace']?['publish']?['repoName']",
+                        "baseBranch": "@triggerBody()?['solace']?['publish']?['baseBranch']",
+                        "featureBranchName": "@triggerBody()?['solace']?['publish']?['featureBranchName']",
+                        "filePath": "@triggerBody()?['solace']?['publish']?['filePath']",
+                        "solaceConfigJson": "@body('Invoke_Solace_Config_Generation')?['mergedConfigJson']",
+                        "commitMessage": "@triggerBody()?['solace']?['publish']?['commitMessage']"
+                      }
+                    },
+                    "runAfter": {
+                      "Invoke_Solace_Config_Generation": [
+                        "Succeeded"
+                      ]
                     }
                   },
-                  "body": {
-                    "correlationId": "@variables('correlationId')",
-                    "csvContent": "@triggerBody()?['solace']?['generate']?['csvContent']",
-                    "repoOwner": "@triggerBody()?['solace']?['generate']?['repoOwner']",
-                    "repoName": "@triggerBody()?['solace']?['generate']?['repoName']",
-                    "branch": "@triggerBody()?['solace']?['generate']?['branch']",
-                    "filePath": "@triggerBody()?['solace']?['generate']?['filePath']",
-                    "featureBranchName": "@triggerBody()?['solace']?['generate']?['featureBranchName']",
-                    "baseBranch": "@triggerBody()?['solace']?['generate']?['baseBranch']",
-                    "requesterEmail": "@triggerBody()?['solace']?['generate']?['requesterEmail']",
-                    "recipientEmail": "@triggerBody()?['solace']?['generate']?['recipientEmail']"
+                  "Set_Solace_Result": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "solaceResult",
+                      "value": {
+                        "generate": "@coalesce(body('Invoke_Solace_Config_Generation'), json('null'))",
+                        "publish": "@coalesce(body('Invoke_Solace_Config_Publish'), json('null'))"
+                      }
+                    },
+                    "runAfter": {
+                      "Invoke_Solace_Config_Publish": [
+                        "Succeeded"
+                      ]
+                    }
                   }
+                },
+                "else": {
+                  "actions": {}
                 },
                 "runAfter": {}
-              },
-              "Invoke_Solace_Config_Publish": {
-                "type": "Workflow",
-                "inputs": {
-                  "host": {
-                    "workflow": {
-                      "id": "solace-config-publish"
-                    }
-                  },
-                  "body": {
-                    "correlationId": "@variables('correlationId')",
-                    "repoOwner": "@triggerBody()?['solace']?['publish']?['repoOwner']",
-                    "repoName": "@triggerBody()?['solace']?['publish']?['repoName']",
-                    "baseBranch": "@triggerBody()?['solace']?['publish']?['baseBranch']",
-                    "featureBranchName": "@triggerBody()?['solace']?['publish']?['featureBranchName']",
-                    "filePath": "@triggerBody()?['solace']?['publish']?['filePath']",
-                    "solaceConfigJson": "@body('Invoke_Solace_Config_Generation')?['mergedConfigJson']",
-                    "commitMessage": "@triggerBody()?['solace']?['publish']?['commitMessage']"
-                  }
-                },
-                "runAfter": {
-                  "Invoke_Solace_Config_Generation": [
-                    "Succeeded"
-                  ]
-                }
               }
             },
             "runAfter": {}
@@ -171,17 +287,12 @@
             "inputs": {
               "statusCode": 200,
               "body": {
-                "status": "All child workflows completed successfully.",
+                "status": "Requested domain(s) completed successfully.",
                 "correlationId": "@variables('correlationId')",
-                "btp": "@body('Invoke_BTP_Config_Publish')",
-                "mulesoft": {
-                  "generate": "@body('Invoke_MuleSoft_Config_Generation')",
-                  "publish": "@body('Invoke_MuleSoft_Config_Publish')"
-                },
-                "solace": {
-                  "generate": "@body('Invoke_Solace_Config_Generation')",
-                  "publish": "@body('Invoke_Solace_Config_Publish')"
-                }
+                "domains": "@variables('domains')",
+                "btp": "@variables('btpResult')",
+                "mulesoft": "@variables('mulesoftResult')",
+                "solace": "@variables('solaceResult')"
               }
             },
             "runAfter": {

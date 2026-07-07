@@ -159,7 +159,15 @@
     .launch-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(29, 158, 117, 0.5); }
     .launch-btn:active:not(:disabled) { transform: translateY(0); }
     .launch-btn:disabled { background: var(--color-border-secondary); color: var(--color-text-tertiary); box-shadow: none; cursor: not-allowed; }
-    
+
+    .launch-divider { display: flex; align-items: center; gap: 12px; width: 100%; color: var(--color-text-tertiary); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+    .launch-divider::before, .launch-divider::after { content: ''; flex: 1; height: 1px; background: var(--color-border-secondary); }
+
+    .individual-launch-row { display: flex; gap: 12px; width: 100%; }
+    .launch-btn-sm { flex: 1; font-size: 13px; padding: 12px 10px; border-radius: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--teal); background: #fff; color: var(--teal-m); display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s ease-in-out; }
+    .launch-btn-sm:hover:not(:disabled) { background: var(--teal-l); }
+    .launch-btn-sm:disabled { border-color: var(--color-border-secondary); color: var(--color-text-tertiary); background: #fff; cursor: not-allowed; }
+
     .status-bar-wrapper { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
     .status-bar-label { display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; }
     .status-bar { height: 8px; width: 100%; background: #edf2f7; border-radius: 4px; overflow: hidden; }
@@ -547,9 +555,23 @@
               <input type="checkbox" id="chk-force" /><label for="chk-force" style="cursor:pointer; font-weight: 600;">Force Redeploy (ignore previous deployment checks)</label>
             </div>
 
-            <button class="launch-btn" id="launch-trigger-btn" onclick="triggerLaunch()" disabled>
+            <button class="launch-btn" id="launch-trigger-btn" onclick="triggerLaunch(['btp','solace','mulesoft'], 'launch-trigger-btn')" disabled>
               <i class="ti ti-player-play"></i> Launch Orchestrator
             </button>
+
+            <div class="launch-divider">or deploy a single domain</div>
+
+            <div class="individual-launch-row">
+              <button class="launch-btn-sm" id="launch-btp-btn" onclick="triggerLaunch(['btp'], 'launch-btp-btn')" disabled>
+                <i class="ti ti-cloud-upload"></i> Deploy BTP
+              </button>
+              <button class="launch-btn-sm" id="launch-solace-btn" onclick="triggerLaunch(['solace'], 'launch-solace-btn')" disabled>
+                <i class="ti ti-cloud-upload"></i> Deploy Solace
+              </button>
+              <button class="launch-btn-sm" id="launch-mulesoft-btn" onclick="triggerLaunch(['mulesoft'], 'launch-mulesoft-btn')" disabled>
+                <i class="ti ti-cloud-upload"></i> Deploy MuleSoft
+              </button>
+            </div>
 
             <div class="status-bar-wrapper" id="launch-progress-bar" style="display: none;">
               <div class="status-bar-label">
@@ -584,6 +606,10 @@
   let activeCorrelationId = null;
   let recentSessions = [];
   let pollInterval = null;
+  // Tracks which launch buttons are mid-request, so the 10s status poll
+  // doesn't stomp on a button's "Triggering..." spinner before the server
+  // has had a chance to flip that domain's DeploymentStatus to InProgress.
+  let launchInFlight = {};
 
   // Local state for dynamic tables during intake
   let solaceMessageTypes = [];
@@ -660,12 +686,17 @@
     startPolling();
   }
 
+  function generateUniqueSuffix() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
+    return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+  }
+
   function startNewOnboarding() {
     stopPolling();
     const ts = Date.now();
     const slug = 'onboarding';
-    const newId = `ui-${slug}-${ts}`;
-    
+    const newId = `ui-${slug}-${ts}-${generateUniqueSuffix()}`;
+
     activeCorrelationId = newId;
     addRecentSession(newId);
     selectSession(newId);
@@ -1000,18 +1031,37 @@
       
       // Update launch panel triggers
       const launchBtn = document.getElementById('launch-trigger-btn');
-      if (data.readyToLaunch) {
-        launchBtn.disabled = false;
-        launchBtn.innerHTML = `<i class="ti ti-player-play"></i> Launch Orchestrator`;
-      } else {
-        launchBtn.disabled = true;
-        launchBtn.innerHTML = `<i class="ti ti-lock"></i> Gated (Complete All Domains)`;
+      if (!launchInFlight['launch-trigger-btn']) {
+        if (data.readyToLaunch) {
+          launchBtn.disabled = false;
+          launchBtn.innerHTML = `<i class="ti ti-player-play"></i> Launch Orchestrator`;
+        } else {
+          launchBtn.disabled = true;
+          launchBtn.innerHTML = `<i class="ti ti-lock"></i> Gated (Complete All Domains)`;
+        }
       }
 
-      // Check if launch is in progress and update status fill
-      let inProgress = (data.btp?.deploymentStatus === 'InProgress' || data.solace?.deploymentStatus === 'InProgress' || data.mulesoft?.deploymentStatus === 'InProgress');
-      let isDeployed = (data.btp?.deploymentStatus === 'Deployed' && data.solace?.deploymentStatus === 'Deployed' && data.mulesoft?.deploymentStatus === 'Deployed');
-      let isFailed = (data.btp?.deploymentStatus === 'Failed' || data.solace?.deploymentStatus === 'Failed' || data.mulesoft?.deploymentStatus === 'Failed');
+      // Independent per-domain deploy buttons — each gated only on its own
+      // domain's EnrichmentStatus, not on the other two.
+      const domainBtns = { btp: 'launch-btp-btn', solace: 'launch-solace-btn', mulesoft: 'launch-mulesoft-btn' };
+      const domainLabels = { btp: 'Deploy BTP', solace: 'Deploy Solace', mulesoft: 'Deploy MuleSoft' };
+      Object.keys(domainBtns).forEach(d => {
+        const btnId = domainBtns[d];
+        if (launchInFlight[btnId]) return;
+        const btn = document.getElementById(btnId);
+        const card = data[d] || {};
+        const ready = card.found && card.enrichmentStatus === 'Complete' && card.deploymentStatus !== 'InProgress';
+        btn.disabled = !ready;
+        btn.innerHTML = `<i class="ti ti-cloud-upload"></i> ${domainLabels[d]}`;
+      });
+
+      // Check if launch is in progress and update status fill.
+      // Only domains that actually exist ("found") count toward completion,
+      // since a single-domain deploy will never touch the other two.
+      const presentDomains = ['btp', 'solace', 'mulesoft'].filter(d => data[d]?.found);
+      let inProgress = presentDomains.some(d => data[d].deploymentStatus === 'InProgress');
+      let isDeployed = presentDomains.length > 0 && presentDomains.every(d => data[d].deploymentStatus === 'Deployed');
+      let isFailed = presentDomains.some(d => data[d].deploymentStatus === 'Failed');
       
       const progressWrapper = document.getElementById('launch-progress-bar');
       const progressFill = document.getElementById('launch-progress-fill');
@@ -1132,11 +1182,17 @@
   /* ─────────────────────────────────────────────────────────────
      LAUNCH TRIGGER (POST to onboarding-launcher)
   ───────────────────────────────────────────────────────────── */
-  function triggerLaunch() {
+  function triggerLaunch(domains, btnId) {
     if (!activeCorrelationId || !API.onboardingLauncher) return;
 
+    const isAll = domains.length === 3;
+    const defaultLabel = isAll
+      ? `<i class="ti ti-player-play"></i> Launch Orchestrator`
+      : `<i class="ti ti-cloud-upload"></i> Deploy ${domains[0].charAt(0).toUpperCase()}${domains[0].slice(1)}`;
+
     const force = document.getElementById('chk-force').checked;
-    const launchBtn = document.getElementById('launch-trigger-btn');
+    const launchBtn = document.getElementById(btnId);
+    launchInFlight[btnId] = true;
     launchBtn.disabled = true;
     launchBtn.innerHTML = `<i class="ti ti-loader animate-spin"></i> Triggering...`;
 
@@ -1150,13 +1206,15 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         correlationId: activeCorrelationId,
+        domains: domains,
         launchedBy: '3pl-portal-ui@example.com',
         forceRedeploy: force
       })
     })
     .then(r => {
       if (r.status === 202) {
-        showToast('success', 'Orchestration launch accepted successfully!');
+        showToast('success', `Deployment accepted for: ${domains.join(', ')}`);
+        launchInFlight[btnId] = false;
         startPolling();
         return;
       }
@@ -1164,8 +1222,9 @@
     })
     .catch(err => {
       showToast('error', `Launch failed: ${err.message}`);
+      launchInFlight[btnId] = false;
       launchBtn.disabled = false;
-      launchBtn.innerHTML = `<i class="ti ti-player-play"></i> Launch Orchestrator`;
+      launchBtn.innerHTML = defaultLabel;
       document.getElementById('launch-progress-bar').style.display = 'none';
     });
   }

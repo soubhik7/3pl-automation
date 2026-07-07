@@ -38,16 +38,45 @@
               }
             }
           },
-          "Response-Success": {
-            "type": "Response",
-            "kind": "Http",
-            "inputs": {
-              "statusCode": 200,
-              "body": "@body('Call_a_local_function-Trigger_BTP_GitHub_Action')"
+          "If_Github_Call_Succeeded": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@coalesce(body('Call_a_local_function-Trigger_BTP_GitHub_Action')?['success'], false)",
+                true
+              ]
+            },
+            "actions": {
+              "Response-Success": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 200,
+                  "body": "@body('Call_a_local_function-Trigger_BTP_GitHub_Action')"
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {
+                "Response-GitHub-Call-Failed": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 502,
+                    "body": {
+                      "status": "btp-config-publish: the GitHub API call did not succeed.",
+                      "correlationId": "@variables('correlationId')",
+                      "details": "@body('Call_a_local_function-Trigger_BTP_GitHub_Action')"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              }
             },
             "runAfter": {
               "Call_a_local_function-Trigger_BTP_GitHub_Action": [
-                "SUCCEEDED"
+                "Succeeded"
               ]
             }
           }

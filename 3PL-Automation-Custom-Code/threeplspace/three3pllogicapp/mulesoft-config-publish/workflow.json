@@ -37,16 +37,45 @@
               }
             }
           },
-          "Response-Success": {
-            "type": "Response",
-            "kind": "Http",
-            "inputs": {
-              "statusCode": 200,
-              "body": "@body('Call_a_local_function-Publish_MuleSoft_Config_-_GitHub')"
+          "If_Github_Call_Succeeded": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@coalesce(body('Call_a_local_function-Publish_MuleSoft_Config_-_GitHub')?['success'], false)",
+                true
+              ]
+            },
+            "actions": {
+              "Response-Success": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 200,
+                  "body": "@body('Call_a_local_function-Publish_MuleSoft_Config_-_GitHub')"
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {
+                "Response-GitHub-Call-Failed": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 502,
+                    "body": {
+                      "status": "mulesoft-config-publish: the GitHub API call did not succeed.",
+                      "correlationId": "@variables('correlationId')",
+                      "details": "@body('Call_a_local_function-Publish_MuleSoft_Config_-_GitHub')"
+                    }
+                  },
+                  "runAfter": {}
+                }
+              }
             },
             "runAfter": {
               "Call_a_local_function-Publish_MuleSoft_Config_-_GitHub": [
-                "SUCCEEDED"
+                "Succeeded"
               ]
             }
           }

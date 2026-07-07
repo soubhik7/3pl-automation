@@ -20,6 +20,21 @@
               "name": "forceRedeploy",
               "type": "boolean",
               "value": "@coalesce(triggerBody()?['forceRedeploy'], false)"
+            },
+            {
+              "name": "domains",
+              "type": "array",
+              "value": "@coalesce(triggerBody()?['domains'], createArray('btp', 'solace', 'mulesoft'))"
+            },
+            {
+              "name": "solaceCsvContent",
+              "type": "string",
+              "value": ""
+            },
+            {
+              "name": "muleSoftCsvContent",
+              "type": "string",
+              "value": ""
             }
           ]
         },
@@ -117,97 +132,149 @@
               "and": [
                 {
                   "greater": [
-                    "@length(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))",
+                    "@length(variables('domains'))",
                     0
                   ]
-                },
-                {
-                  "greater": [
-                    "@length(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))",
-                    0
-                  ]
-                },
-                {
-                  "greater": [
-                    "@length(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))",
-                    0
-                  ]
-                },
-                {
-                  "equals": [
-                    "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['EnrichmentStatus']",
-                    "Complete"
-                  ]
-                },
-                {
-                  "equals": [
-                    "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['EnrichmentStatus']",
-                    "Complete"
-                  ]
-                },
-                {
-                  "equals": [
-                    "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['EnrichmentStatus']",
-                    "Complete"
-                  ]
-                },
-                {
-                  "not": {
-                    "equals": [
-                      "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['DeploymentStatus']",
-                      "InProgress"
-                    ]
-                  }
-                },
-                {
-                  "not": {
-                    "equals": [
-                      "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['DeploymentStatus']",
-                      "InProgress"
-                    ]
-                  }
-                },
-                {
-                  "not": {
-                    "equals": [
-                      "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['DeploymentStatus']",
-                      "InProgress"
-                    ]
-                  }
                 },
                 {
                   "or": [
                     {
-                      "equals": [
-                        "@variables('forceRedeploy')",
-                        true
-                      ]
+                      "not": {
+                        "equals": [
+                          "@contains(variables('domains'), 'btp')",
+                          true
+                        ]
+                      }
                     },
                     {
                       "and": [
                         {
-                          "not": {
-                            "equals": [
-                              "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['DeploymentStatus']",
-                              "Deployed"
-                            ]
-                          }
+                          "equals": [
+                            "@coalesce(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['EnrichmentStatus'], '')",
+                            "Complete"
+                          ]
                         },
                         {
                           "not": {
                             "equals": [
-                              "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['DeploymentStatus']",
-                              "Deployed"
+                              "@coalesce(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['DeploymentStatus'], '')",
+                              "InProgress"
                             ]
                           }
                         },
                         {
+                          "or": [
+                            {
+                              "equals": [
+                                "@variables('forceRedeploy')",
+                                true
+                              ]
+                            },
+                            {
+                              "not": {
+                                "equals": [
+                                  "@coalesce(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['DeploymentStatus'], '')",
+                                  "Deployed"
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "or": [
+                    {
+                      "not": {
+                        "equals": [
+                          "@contains(variables('domains'), 'solace')",
+                          true
+                        ]
+                      }
+                    },
+                    {
+                      "and": [
+                        {
+                          "equals": [
+                            "@coalesce(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['EnrichmentStatus'], '')",
+                            "Complete"
+                          ]
+                        },
+                        {
                           "not": {
                             "equals": [
-                              "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['DeploymentStatus']",
-                              "Deployed"
+                              "@coalesce(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['DeploymentStatus'], '')",
+                              "InProgress"
                             ]
                           }
+                        },
+                        {
+                          "or": [
+                            {
+                              "equals": [
+                                "@variables('forceRedeploy')",
+                                true
+                              ]
+                            },
+                            {
+                              "not": {
+                                "equals": [
+                                  "@coalesce(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['DeploymentStatus'], '')",
+                                  "Deployed"
+                                ]
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "or": [
+                    {
+                      "not": {
+                        "equals": [
+                          "@contains(variables('domains'), 'mulesoft')",
+                          true
+                        ]
+                      }
+                    },
+                    {
+                      "and": [
+                        {
+                          "equals": [
+                            "@coalesce(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['EnrichmentStatus'], '')",
+                            "Complete"
+                          ]
+                        },
+                        {
+                          "not": {
+                            "equals": [
+                              "@coalesce(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['DeploymentStatus'], '')",
+                              "InProgress"
+                            ]
+                          }
+                        },
+                        {
+                          "or": [
+                            {
+                              "equals": [
+                                "@variables('forceRedeploy')",
+                                true
+                              ]
+                            },
+                            {
+                              "not": {
+                                "equals": [
+                                  "@coalesce(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['DeploymentStatus'], '')",
+                                  "Deployed"
+                                ]
+                              }
+                            }
+                          ]
                         }
                       ]
                     }
@@ -246,8 +313,9 @@
                   "inputs": {
                     "statusCode": 409,
                     "body": {
-                      "error": "Cannot launch onboarding orchestration. Verify that all domains exist and are Complete, no deployment is in progress, and forceRedeploy is true if already deployed.",
-                      "correlationId": "@variables('correlationId')"
+                      "error": "Cannot launch onboarding orchestration for the requested domain(s). Verify each requested domain exists and is Complete, is not already InProgress, and set forceRedeploy=true if it is already Deployed.",
+                      "correlationId": "@variables('correlationId')",
+                      "domains": "@variables('domains')"
                     }
                   },
                   "runAfter": {
@@ -270,10 +338,16 @@
               ]
             }
           },
-          "Update_Statuses_InProgress": {
-            "type": "Scope",
+          "If_Mark_Btp_InProgress": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'btp')",
+                true
+              ]
+            },
             "actions": {
-              "Update_Btp_InProgress": {
+              "Update_BtpConfig_InProgress": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -284,9 +358,29 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
-              },
-              "Update_Solace_InProgress": {
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Validate_Gate_Conditions": [
+                "Succeeded"
+              ]
+            }
+          },
+          "If_Mark_Solace_InProgress": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'solace')",
+                true
+              ]
+            },
+            "actions": {
+              "Update_SolaceClient_InProgress": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -297,9 +391,29 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
-              },
-              "Update_MuleSoft_InProgress": {
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Validate_Gate_Conditions": [
+                "Succeeded"
+              ]
+            }
+          },
+          "If_Mark_MuleSoft_InProgress": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'mulesoft')",
+                true
+              ]
+            },
+            "actions": {
+              "Update_MuleSoftPartner_InProgress": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -310,8 +424,12 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
+                },
+                "runAfter": {}
               }
+            },
+            "else": {
+              "actions": {}
             },
             "runAfter": {
               "Validate_Gate_Conditions": [
@@ -331,7 +449,7 @@
                   "Channel": "Api",
                   "ActorEmail": "@variables('launchedBy')",
                   "EventType": "OrchestrationStarted",
-                  "EventDetail": "Onboarding orchestrator deployment execution started."
+                  "EventDetail": "@concat('Onboarding orchestrator deployment execution started for domain(s): ', join(variables('domains'), ', '))"
                 }
               },
               "serviceProviderConfiguration": {
@@ -341,7 +459,13 @@
               }
             },
             "runAfter": {
-              "Update_Statuses_InProgress": [
+              "If_Mark_Btp_InProgress": [
+                "Succeeded"
+              ],
+              "If_Mark_Solace_InProgress": [
+                "Succeeded"
+              ],
+              "If_Mark_MuleSoft_InProgress": [
                 "Succeeded"
               ]
             }
@@ -353,7 +477,8 @@
               "statusCode": 202,
               "body": {
                 "correlationId": "@variables('correlationId')",
-                "status": "OrchestrationStarted"
+                "status": "OrchestrationStarted",
+                "domains": "@variables('domains')"
               }
             },
             "runAfter": {
@@ -362,191 +487,229 @@
               ]
             }
           },
-          "Get_SolaceMessageTypes": {
-            "type": "ServiceProvider",
-            "inputs": {
-              "parameters": {
-                "query": "@concat('SELECT mt.* FROM dbo.SolaceMessageType mt JOIN dbo.SolaceClient c ON mt.ClientId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
-              },
-              "serviceProviderConfiguration": {
-                "connectionName": "sql",
-                "operationId": "executeQuery",
-                "serviceProviderId": "/serviceProviders/sql"
-              }
-            },
-            "runAfter": {
-              "Response-202": [
-                "Succeeded"
+          "If_Prepare_Solace_Csv": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'solace')",
+                true
               ]
-            }
-          },
-          "Get_MuleSoftEnvironments": {
-            "type": "ServiceProvider",
-            "inputs": {
-              "parameters": {
-                "query": "@concat('SELECT mt.* FROM dbo.MuleSoftEnvironment mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
-              },
-              "serviceProviderConfiguration": {
-                "connectionName": "sql",
-                "operationId": "executeQuery",
-                "serviceProviderId": "/serviceProviders/sql"
-              }
             },
-            "runAfter": {
-              "Response-202": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Get_MuleSoftTransactionTypes": {
-            "type": "ServiceProvider",
-            "inputs": {
-              "parameters": {
-                "query": "@concat('SELECT mt.* FROM dbo.MuleSoftTransactionType mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
-              },
-              "serviceProviderConfiguration": {
-                "connectionName": "sql",
-                "operationId": "executeQuery",
-                "serviceProviderId": "/serviceProviders/sql"
-              }
-            },
-            "runAfter": {
-              "Response-202": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Get_MuleSoftMessageTypes": {
-            "type": "ServiceProvider",
-            "inputs": {
-              "parameters": {
-                "query": "@concat('SELECT mt.* FROM dbo.MuleSoftMessageType mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
-              },
-              "serviceProviderConfiguration": {
-                "connectionName": "sql",
-                "operationId": "executeQuery",
-                "serviceProviderId": "/serviceProviders/sql"
-              }
-            },
-            "runAfter": {
-              "Response-202": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Get_MuleSoftSourceDestinations": {
-            "type": "ServiceProvider",
-            "inputs": {
-              "parameters": {
-                "query": "@concat('SELECT mt.* FROM dbo.MuleSoftSourceDestination mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
-              },
-              "serviceProviderConfiguration": {
-                "connectionName": "sql",
-                "operationId": "executeQuery",
-                "serviceProviderId": "/serviceProviders/sql"
-              }
-            },
-            "runAfter": {
-              "Response-202": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Get_MuleSoftUomMappings": {
-            "type": "ServiceProvider",
-            "inputs": {
-              "parameters": {
-                "query": "@concat('SELECT mt.* FROM dbo.MuleSoftUomMapping mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
-              },
-              "serviceProviderConfiguration": {
-                "connectionName": "sql",
-                "operationId": "executeQuery",
-                "serviceProviderId": "/serviceProviders/sql"
-              }
-            },
-            "runAfter": {
-              "Response-202": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Build_Solace_Csv": {
-            "type": "InvokeFunction",
-            "inputs": {
-              "functionName": "BuildSolaceCsv",
-              "parameters": {
-                "parentRow": {
-                  "brand": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Brand']",
-                  "env": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Env']",
-                  "systemName": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['SystemName']",
-                  "threePLCode": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ThreePLCode']",
-                  "encryptedPassword": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['EncryptedPassword']",
-                  "action": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Action']",
-                  "clientProfileAllowGuaranteedMsgSendEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedMsgSendEnabled']",
-                  "clientProfileAllowGuaranteedMsgReceiveEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedMsgReceiveEnabled']",
-                  "clientProfileCompressionEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileCompressionEnabled']",
-                  "clientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled']",
-                  "clientProfileAllowTransactedSessionsEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowTransactedSessionsEnabled']",
-                  "clientProfileAllowBridgeConnectionsEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowBridgeConnectionsEnabled']",
-                  "clientProfileAllowGuaranteedEndpointCreateEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedEndpointCreateEnabled']",
-                  "clientProfileAllowSharedSubscriptionsEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowSharedSubscriptionsEnabled']",
-                  "aclClientConnectDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclClientConnectDefaultAction']",
-                  "aclPublishTopicDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclPublishTopicDefaultAction']",
-                  "aclSubscribeShareNameDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclSubscribeShareNameDefaultAction']",
-                  "aclSubscribeTopicDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclSubscribeTopicDefaultAction']",
-                  "clientUserEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserEnabled']",
-                  "clientUserGuaranteedEndpointPermissionOverrideEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserGuaranteedEndpointPermissionOverrideEnabled']",
-                  "clientUserSubscriptionManagerEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserSubscriptionManagerEnabled']"
+            "actions": {
+              "Get_SolaceMessageTypes": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT mt.* FROM dbo.SolaceMessageType mt JOIN dbo.SolaceClient c ON mt.ClientId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  }
                 },
-                "messageTypes": "@coalesce(body('Get_SolaceMessageTypes')?[0], body('Get_SolaceMessageTypes'), json('[]'))"
+                "runAfter": {}
+              },
+              "Build_Solace_Csv": {
+                "type": "InvokeFunction",
+                "inputs": {
+                  "functionName": "BuildSolaceCsv",
+                  "parameters": {
+                    "parentRow": {
+                      "brand": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Brand']",
+                      "env": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Env']",
+                      "systemName": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['SystemName']",
+                      "threePLCode": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ThreePLCode']",
+                      "encryptedPassword": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['EncryptedPassword']",
+                      "action": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Action']",
+                      "clientProfileAllowGuaranteedMsgSendEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedMsgSendEnabled']",
+                      "clientProfileAllowGuaranteedMsgReceiveEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedMsgReceiveEnabled']",
+                      "clientProfileCompressionEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileCompressionEnabled']",
+                      "clientProfileReplicationAllowClientConnectWhenStandbyEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileReplicationAllowClientConnectWhenStandbyEnabled']",
+                      "clientProfileAllowTransactedSessionsEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowTransactedSessionsEnabled']",
+                      "clientProfileAllowBridgeConnectionsEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowBridgeConnectionsEnabled']",
+                      "clientProfileAllowGuaranteedEndpointCreateEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowGuaranteedEndpointCreateEnabled']",
+                      "clientProfileAllowSharedSubscriptionsEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientProfileAllowSharedSubscriptionsEnabled']",
+                      "aclClientConnectDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclClientConnectDefaultAction']",
+                      "aclPublishTopicDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclPublishTopicDefaultAction']",
+                      "aclSubscribeShareNameDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclSubscribeShareNameDefaultAction']",
+                      "aclSubscribeTopicDefaultAction": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['AclSubscribeTopicDefaultAction']",
+                      "clientUserEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserEnabled']",
+                      "clientUserGuaranteedEndpointPermissionOverrideEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserGuaranteedEndpointPermissionOverrideEnabled']",
+                      "clientUserSubscriptionManagerEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserSubscriptionManagerEnabled']"
+                    },
+                    "messageTypes": "@coalesce(body('Get_SolaceMessageTypes')?[0], body('Get_SolaceMessageTypes'), json('[]'))"
+                  }
+                },
+                "runAfter": {
+                  "Get_SolaceMessageTypes": [
+                    "Succeeded"
+                  ]
+                }
+              },
+              "Set_Solace_Csv_Content": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "solaceCsvContent",
+                  "value": "@coalesce(body('Build_Solace_Csv')?['csvContent'], '')"
+                },
+                "runAfter": {
+                  "Build_Solace_Csv": [
+                    "Succeeded"
+                  ]
+                }
               }
             },
+            "else": {
+              "actions": {}
+            },
             "runAfter": {
-              "Get_SolaceMessageTypes": [
+              "Response-202": [
                 "Succeeded"
               ]
             }
           },
-          "Build_MuleSoft_Csv": {
-            "type": "InvokeFunction",
-            "inputs": {
-              "functionName": "BuildMuleSoftCsv",
-              "parameters": {
-                "parentRow": {
-                  "countryKey": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CountryKey']",
-                  "countryCode": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CountryCode']",
-                  "partnerComment": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['PartnerComment']",
-                  "createdBy": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CreatedBy']",
-                  "navProtocol": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavProtocol']",
-                  "navPort": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavPort']",
-                  "navUsername": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavUsername']",
-                  "navDomain": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavDomain']",
-                  "navService": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavService']",
-                  "navSoapPort": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavSoapPort']",
-                  "navUseCommonCert": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavUseCommonCert']",
-                  "translationReceiverName": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['TranslationReceiverName']"
+          "If_Prepare_MuleSoft_Csv": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'mulesoft')",
+                true
+              ]
+            },
+            "actions": {
+              "Get_MuleSoftEnvironments": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT mt.* FROM dbo.MuleSoftEnvironment mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  }
                 },
-                "environments": "@coalesce(body('Get_MuleSoftEnvironments')?[0], body('Get_MuleSoftEnvironments'), json('[]'))",
-                "transactionTypes": "@coalesce(body('Get_MuleSoftTransactionTypes')?[0], body('Get_MuleSoftTransactionTypes'), json('[]'))",
-                "messageTypes": "@coalesce(body('Get_MuleSoftMessageTypes')?[0], body('Get_MuleSoftMessageTypes'), json('[]'))",
-                "sourceDestinations": "@coalesce(body('Get_MuleSoftSourceDestinations')?[0], body('Get_MuleSoftSourceDestinations'), json('[]'))",
-                "uomMappings": "@coalesce(body('Get_MuleSoftUomMappings')?[0], body('Get_MuleSoftUomMappings'), json('[]'))"
+                "runAfter": {}
+              },
+              "Get_MuleSoftTransactionTypes": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT mt.* FROM dbo.MuleSoftTransactionType mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Get_MuleSoftMessageTypes": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT mt.* FROM dbo.MuleSoftMessageType mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Get_MuleSoftSourceDestinations": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT mt.* FROM dbo.MuleSoftSourceDestination mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Get_MuleSoftUomMappings": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT mt.* FROM dbo.MuleSoftUomMapping mt JOIN dbo.MuleSoftPartner c ON mt.PartnerId = c.Id WHERE c.CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Build_MuleSoft_Csv": {
+                "type": "InvokeFunction",
+                "inputs": {
+                  "functionName": "BuildMuleSoftCsv",
+                  "parameters": {
+                    "parentRow": {
+                      "countryKey": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CountryKey']",
+                      "countryCode": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CountryCode']",
+                      "partnerComment": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['PartnerComment']",
+                      "createdBy": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CreatedBy']",
+                      "navProtocol": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavProtocol']",
+                      "navPort": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavPort']",
+                      "navUsername": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavUsername']",
+                      "navDomain": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavDomain']",
+                      "navService": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavService']",
+                      "navSoapPort": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavSoapPort']",
+                      "navUseCommonCert": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['NavUseCommonCert']",
+                      "translationReceiverName": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['TranslationReceiverName']"
+                    },
+                    "environments": "@coalesce(body('Get_MuleSoftEnvironments')?[0], body('Get_MuleSoftEnvironments'), json('[]'))",
+                    "transactionTypes": "@coalesce(body('Get_MuleSoftTransactionTypes')?[0], body('Get_MuleSoftTransactionTypes'), json('[]'))",
+                    "messageTypes": "@coalesce(body('Get_MuleSoftMessageTypes')?[0], body('Get_MuleSoftMessageTypes'), json('[]'))",
+                    "sourceDestinations": "@coalesce(body('Get_MuleSoftSourceDestinations')?[0], body('Get_MuleSoftSourceDestinations'), json('[]'))",
+                    "uomMappings": "@coalesce(body('Get_MuleSoftUomMappings')?[0], body('Get_MuleSoftUomMappings'), json('[]'))"
+                  }
+                },
+                "runAfter": {
+                  "Get_MuleSoftEnvironments": [
+                    "Succeeded"
+                  ],
+                  "Get_MuleSoftTransactionTypes": [
+                    "Succeeded"
+                  ],
+                  "Get_MuleSoftMessageTypes": [
+                    "Succeeded"
+                  ],
+                  "Get_MuleSoftSourceDestinations": [
+                    "Succeeded"
+                  ],
+                  "Get_MuleSoftUomMappings": [
+                    "Succeeded"
+                  ]
+                }
+              },
+              "Set_MuleSoft_Csv_Content": {
+                "type": "SetVariable",
+                "inputs": {
+                  "name": "muleSoftCsvContent",
+                  "value": "@coalesce(body('Build_MuleSoft_Csv')?['csvContent'], '')"
+                },
+                "runAfter": {
+                  "Build_MuleSoft_Csv": [
+                    "Succeeded"
+                  ]
+                }
               }
             },
+            "else": {
+              "actions": {}
+            },
             "runAfter": {
-              "Get_MuleSoftEnvironments": [
-                "Succeeded"
-              ],
-              "Get_MuleSoftTransactionTypes": [
-                "Succeeded"
-              ],
-              "Get_MuleSoftMessageTypes": [
-                "Succeeded"
-              ],
-              "Get_MuleSoftSourceDestinations": [
-                "Succeeded"
-              ],
-              "Get_MuleSoftUomMappings": [
+              "Response-202": [
                 "Succeeded"
               ]
             }
@@ -561,21 +724,21 @@
               },
               "body": {
                 "btp": {
-                  "repoOwner": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['RepoOwner']",
-                  "repoName": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['RepoName']",
-                  "workflowFileName": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['WorkflowFileName']",
-                  "branchRef": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['BranchRef']",
-                  "subAccount": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['SubAccount']",
-                  "mode": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['Mode']",
-                  "environment": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['Environment']",
-                  "developerId": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['DeveloperId']",
-                  "title": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['Title']",
-                  "shortText": "@coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['ShortText'], '')",
-                  "productName": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['ProductName']"
+                  "repoOwner": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['RepoOwner']",
+                  "repoName": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['RepoName']",
+                  "workflowFileName": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['WorkflowFileName']",
+                  "branchRef": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['BranchRef']",
+                  "subAccount": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['SubAccount']",
+                  "mode": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['Mode']",
+                  "environment": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['Environment']",
+                  "developerId": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['DeveloperId']",
+                  "title": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['Title']",
+                  "shortText": "@coalesce(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['ShortText'], '')",
+                  "productName": "@coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))?[0]?['ProductName']"
                 },
                 "mulesoft": {
                   "generate": {
-                    "csvContent": "@body('Build_MuleSoft_Csv')?['csvContent']",
+                    "csvContent": "@variables('muleSoftCsvContent')",
                     "updateExisting": false,
                     "existingAppYaml": "",
                     "existingDevYaml": "",
@@ -583,42 +746,49 @@
                     "existingProdYaml": ""
                   },
                   "publish": {
-                    "repoOwner": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['RepoOwner']",
-                    "repoName": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['RepoName']",
-                    "baseBranch": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['BaseBranch']",
-                    "featureBranchName": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['FeatureBranchName']",
-                    "filePathPrefix": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['FilePathPrefix']",
-                    "commitMessage": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CommitMessage']"
+                    "repoOwner": "@coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['RepoOwner']",
+                    "repoName": "@coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['RepoName']",
+                    "baseBranch": "@coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['BaseBranch']",
+                    "featureBranchName": "@coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['FeatureBranchName']",
+                    "filePathPrefix": "@coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['FilePathPrefix']",
+                    "commitMessage": "@coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))?[0]?['CommitMessage']"
                   }
                 },
                 "solace": {
                   "generate": {
-                    "csvContent": "@body('Build_Solace_Csv')?['csvContent']"
+                    "csvContent": "@variables('solaceCsvContent')"
                   },
                   "publish": {
-                    "repoOwner": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['RepoOwner']",
-                    "repoName": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['RepoName']",
-                    "baseBranch": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['BaseBranch']",
-                    "featureBranchName": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['FeatureBranchName']",
-                    "filePath": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['FilePath']",
-                    "commitMessage": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['CommitMessage']"
+                    "repoOwner": "@coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['RepoOwner']",
+                    "repoName": "@coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['RepoName']",
+                    "baseBranch": "@coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['BaseBranch']",
+                    "featureBranchName": "@coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['FeatureBranchName']",
+                    "filePath": "@coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['FilePath']",
+                    "commitMessage": "@coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))?[0]?['CommitMessage']"
                   }
-                }
+                },
+                "domains": "@variables('domains')"
               }
             },
             "runAfter": {
-              "Build_Solace_Csv": [
+              "If_Prepare_Solace_Csv": [
                 "Succeeded"
               ],
-              "Build_MuleSoft_Csv": [
+              "If_Prepare_MuleSoft_Csv": [
                 "Succeeded"
               ]
             }
           },
-          "Update_Statuses_Deployed": {
-            "type": "Scope",
+          "If_Mark_Btp_Deployed": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'btp')",
+                true
+              ]
+            },
             "actions": {
-              "Update_Btp_Deployed": {
+              "Update_BtpConfig_Deployed": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -629,9 +799,29 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
-              },
-              "Update_Solace_Deployed": {
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Invoke_Orchestrator": [
+                "Succeeded"
+              ]
+            }
+          },
+          "If_Mark_Solace_Deployed": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'solace')",
+                true
+              ]
+            },
+            "actions": {
+              "Update_SolaceClient_Deployed": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -642,9 +832,29 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
-              },
-              "Update_MuleSoft_Deployed": {
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {
+              "Invoke_Orchestrator": [
+                "Succeeded"
+              ]
+            }
+          },
+          "If_Mark_MuleSoft_Deployed": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'mulesoft')",
+                true
+              ]
+            },
+            "actions": {
+              "Update_MuleSoftPartner_Deployed": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -655,8 +865,12 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
+                },
+                "runAfter": {}
               }
+            },
+            "else": {
+              "actions": {}
             },
             "runAfter": {
               "Invoke_Orchestrator": [
@@ -676,7 +890,7 @@
                   "Channel": "System",
                   "ActorEmail": "@null",
                   "EventType": "OrchestrationSucceeded",
-                  "EventDetail": "@substring(string(outputs('Invoke_Orchestrator')?['body']), 0, min(length(string(outputs('Invoke_Orchestrator')?['body'])), 4000))"
+                  "EventDetail": "@concat('Domain(s) ', join(variables('domains'), ', '), ' deployed. Orchestrator response: ', substring(string(outputs('Invoke_Orchestrator')?['body']), 0, min(length(string(outputs('Invoke_Orchestrator')?['body'])), 3900)))"
                 }
               },
               "serviceProviderConfiguration": {
@@ -686,7 +900,13 @@
               }
             },
             "runAfter": {
-              "Update_Statuses_Deployed": [
+              "If_Mark_Btp_Deployed": [
+                "Succeeded"
+              ],
+              "If_Mark_Solace_Deployed": [
+                "Succeeded"
+              ],
+              "If_Mark_MuleSoft_Deployed": [
                 "Succeeded"
               ]
             }
@@ -701,10 +921,16 @@
       "Scope-Catch": {
         "type": "Scope",
         "actions": {
-          "Update_Statuses_Failed": {
-            "type": "Scope",
+          "If_Mark_Btp_Failed": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'btp')",
+                true
+              ]
+            },
             "actions": {
-              "Update_Btp_Failed": {
+              "Update_BtpConfig_Failed": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -715,9 +941,25 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
-              },
-              "Update_Solace_Failed": {
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {}
+          },
+          "If_Mark_Solace_Failed": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'solace')",
+                true
+              ]
+            },
+            "actions": {
+              "Update_SolaceClient_Failed": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -728,9 +970,25 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
-              },
-              "Update_MuleSoft_Failed": {
+                },
+                "runAfter": {}
+              }
+            },
+            "else": {
+              "actions": {}
+            },
+            "runAfter": {}
+          },
+          "If_Mark_MuleSoft_Failed": {
+            "type": "If",
+            "expression": {
+              "equals": [
+                "@contains(variables('domains'), 'mulesoft')",
+                true
+              ]
+            },
+            "actions": {
+              "Update_MuleSoftPartner_Failed": {
                 "type": "ServiceProvider",
                 "inputs": {
                   "parameters": {
@@ -741,8 +999,12 @@
                     "operationId": "executeQuery",
                     "serviceProviderId": "/serviceProviders/sql"
                   }
-                }
+                },
+                "runAfter": {}
               }
+            },
+            "else": {
+              "actions": {}
             },
             "runAfter": {}
           },
@@ -768,7 +1030,13 @@
               }
             },
             "runAfter": {
-              "Update_Statuses_Failed": [
+              "If_Mark_Btp_Failed": [
+                "Succeeded"
+              ],
+              "If_Mark_Solace_Failed": [
+                "Succeeded"
+              ],
+              "If_Mark_MuleSoft_Failed": [
                 "Succeeded"
               ]
             }
