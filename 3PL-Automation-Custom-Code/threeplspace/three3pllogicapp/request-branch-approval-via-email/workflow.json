@@ -1,0 +1,444 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Initialize_Correlation_Id": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "correlationId",
+              "type": "string",
+              "value": "@coalesce(triggerBody()?['correlationId'], '')"
+            }
+          ]
+        },
+        "runAfter": {}
+      },
+      "Scope-Try": {
+        "type": "Scope",
+        "actions": {
+          "Switch_On_Domain": {
+            "type": "Switch",
+            "expression": "@coalesce(triggerBody()?['domain'], '')",
+            "cases": {
+              "Case_Solace": {
+                "case": "Solace",
+                "actions": {
+                  "Get_Solace_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "query": "@concat('SELECT TOP 1 BranchApprovalStatus FROM dbo.SolaceClient WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "executeQuery",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 3,
+                        "interval": "PT5S",
+                        "maximumInterval": "PT1M"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "If_Solace_Already_Pending": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['BranchApprovalStatus'], '')",
+                            "Pending"
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Response-Solace-Already-Pending": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": 200,
+                          "body": {
+                            "status": "AwaitingBranchApproval",
+                            "correlationId": "@variables('correlationId')",
+                            "branchName": "@coalesce(triggerBody()?['suggestedBranchName'], '')",
+                            "note": "Approval already requested; not sending a duplicate email."
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Compose_Solace_Approval_Email_Body": {
+                          "type": "Compose",
+                          "inputs": "@concat('<p>A feature branch approval is needed for Solace onboarding (Tracking: ', variables('correlationId'), ').</p>', '<p><b>Requester:</b> ', coalesce(triggerBody()?['requesterEmail'], 'n/a'), '</p>', '<p><b>Repository:</b> ', coalesce(triggerBody()?['repoOwner'], ''), '/', coalesce(triggerBody()?['repoName'], ''), '</p>', '<p><b>Suggested branch:</b> ', coalesce(triggerBody()?['suggestedBranchName'], ''), ' (from ', coalesce(triggerBody()?['baseBranch'], 'main'), ')</p>', '<p><b>Config path:</b> ', coalesce(triggerBody()?['configPath'], ''), '</p>', '<p><b>Summary:</b> ', coalesce(triggerBody()?['summary'], ''), '</p>', '<p>Reply to this email with <b>APPROVE</b> to create the branch and continue, or <b>REJECT</b> to stop here.</p>')",
+                          "runAfter": {}
+                        },
+                        "Send_Solace_Approval_Email": {
+                          "type": "ApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connection": {
+                                "referenceName": "outlook"
+                              }
+                            },
+                            "method": "post",
+                            "body": {
+                              "To": "@coalesce(triggerBody()?['recipientEmail'], appsetting('SolaceDevOpsOwnerEmail'))",
+                              "Subject": "@concat('[Approval: ', variables('correlationId'), '|Branch-Solace] Feature branch approval needed')",
+                              "Body": "@outputs('Compose_Solace_Approval_Email_Body')",
+                              "Importance": "Normal"
+                            },
+                            "path": "/v2/Mail",
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT5S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {
+                            "Compose_Solace_Approval_Email_Body": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Update_Solace_Awaiting_Branch_Approval": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[SolaceClient]",
+                              "setColumns": {
+                                "BranchApprovalStatus": "Pending",
+                                "PendingBranchName": "@coalesce(triggerBody()?['suggestedBranchName'], '')",
+                                "DeploymentStatus": "AwaitingBranchApproval",
+                                "UpdatedAt": "@utcNow()"
+                              },
+                              "columnValuesForWhereCondition": {
+                                "CorrelationId": "@variables('correlationId')"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "updateRows",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT5S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {
+                            "Send_Solace_Approval_Email": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Insert_Audit_Solace_BranchApprovalRequested": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[EnrichmentAuditLog]",
+                              "setColumns": {
+                                "Domain": "Solace",
+                                "CorrelationId": "@variables('correlationId')",
+                                "EntityKey": "@null",
+                                "Channel": "System",
+                                "ActorEmail": "@null",
+                                "EventType": "BranchApprovalRequested",
+                                "EventDetail": "@concat('Suggested branch: ', coalesce(triggerBody()?['suggestedBranchName'], ''))"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "insertRow",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT5S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {
+                            "Update_Solace_Awaiting_Branch_Approval": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Response-Solace-Requested": {
+                          "type": "Response",
+                          "kind": "Http",
+                          "inputs": {
+                            "statusCode": 200,
+                            "body": {
+                              "status": "AwaitingBranchApproval",
+                              "correlationId": "@variables('correlationId')",
+                              "branchName": "@coalesce(triggerBody()?['suggestedBranchName'], '')"
+                            }
+                          },
+                          "runAfter": {
+                            "Insert_Audit_Solace_BranchApprovalRequested": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Get_Solace_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
+              "Case_MuleSoft": {
+                "case": "MuleSoft",
+                "actions": {
+                  "Get_MuleSoft_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "query": "@concat('SELECT TOP 1 BranchApprovalStatus FROM dbo.MuleSoftPartner WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "executeQuery",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 3,
+                        "interval": "PT5S",
+                        "maximumInterval": "PT1M"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "If_MuleSoft_Already_Pending": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['BranchApprovalStatus'], '')",
+                            "Pending"
+                          ]
+                        }
+                      ]
+                    },
+                    "actions": {
+                      "Response-MuleSoft-Already-Pending": {
+                        "type": "Response",
+                        "kind": "Http",
+                        "inputs": {
+                          "statusCode": 200,
+                          "body": {
+                            "status": "AwaitingBranchApproval",
+                            "correlationId": "@variables('correlationId')",
+                            "branchName": "@coalesce(triggerBody()?['suggestedBranchName'], '')",
+                            "note": "Approval already requested; not sending a duplicate email."
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Compose_MuleSoft_Approval_Email_Body": {
+                          "type": "Compose",
+                          "inputs": "@concat('<p>A feature branch approval is needed for MuleSoft onboarding (Tracking: ', variables('correlationId'), ').</p>', '<p><b>Requester:</b> ', coalesce(triggerBody()?['requesterEmail'], 'n/a'), '</p>', '<p><b>Repository:</b> ', coalesce(triggerBody()?['repoOwner'], ''), '/', coalesce(triggerBody()?['repoName'], ''), '</p>', '<p><b>Suggested branch:</b> ', coalesce(triggerBody()?['suggestedBranchName'], ''), ' (from ', coalesce(triggerBody()?['baseBranch'], 'main'), ')</p>', '<p><b>Config path:</b> ', coalesce(triggerBody()?['configPath'], ''), '</p>', '<p><b>Summary:</b> ', coalesce(triggerBody()?['summary'], ''), '</p>', '<p>Reply to this email with <b>APPROVE</b> to create the branch and continue, or <b>REJECT</b> to stop here.</p>')",
+                          "runAfter": {}
+                        },
+                        "Send_MuleSoft_Approval_Email": {
+                          "type": "ApiConnection",
+                          "inputs": {
+                            "host": {
+                              "connection": {
+                                "referenceName": "outlook"
+                              }
+                            },
+                            "method": "post",
+                            "body": {
+                              "To": "@coalesce(triggerBody()?['recipientEmail'], appsetting('MuleSoftDevOpsOwnerEmail'))",
+                              "Subject": "@concat('[Approval: ', variables('correlationId'), '|Branch-MuleSoft] Feature branch approval needed')",
+                              "Body": "@outputs('Compose_MuleSoft_Approval_Email_Body')",
+                              "Importance": "Normal"
+                            },
+                            "path": "/v2/Mail",
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT5S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {
+                            "Compose_MuleSoft_Approval_Email_Body": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Update_MuleSoft_Awaiting_Branch_Approval": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[MuleSoftPartner]",
+                              "setColumns": {
+                                "BranchApprovalStatus": "Pending",
+                                "PendingBranchName": "@coalesce(triggerBody()?['suggestedBranchName'], '')",
+                                "DeploymentStatus": "AwaitingBranchApproval",
+                                "UpdatedAt": "@utcNow()"
+                              },
+                              "columnValuesForWhereCondition": {
+                                "CorrelationId": "@variables('correlationId')"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "updateRows",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT5S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {
+                            "Send_MuleSoft_Approval_Email": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Insert_Audit_MuleSoft_BranchApprovalRequested": {
+                          "type": "ServiceProvider",
+                          "inputs": {
+                            "parameters": {
+                              "tableName": "[dbo].[EnrichmentAuditLog]",
+                              "setColumns": {
+                                "Domain": "MuleSoft",
+                                "CorrelationId": "@variables('correlationId')",
+                                "EntityKey": "@null",
+                                "Channel": "System",
+                                "ActorEmail": "@null",
+                                "EventType": "BranchApprovalRequested",
+                                "EventDetail": "@concat('Suggested branch: ', coalesce(triggerBody()?['suggestedBranchName'], ''))"
+                              }
+                            },
+                            "serviceProviderConfiguration": {
+                              "connectionName": "sql",
+                              "operationId": "insertRow",
+                              "serviceProviderId": "/serviceProviders/sql"
+                            },
+                            "retryPolicy": {
+                              "type": "exponential",
+                              "count": 3,
+                              "interval": "PT5S",
+                              "maximumInterval": "PT1M"
+                            }
+                          },
+                          "runAfter": {
+                            "Update_MuleSoft_Awaiting_Branch_Approval": [
+                              "Succeeded"
+                            ]
+                          }
+                        },
+                        "Response-MuleSoft-Requested": {
+                          "type": "Response",
+                          "kind": "Http",
+                          "inputs": {
+                            "statusCode": 200,
+                            "body": {
+                              "status": "AwaitingBranchApproval",
+                              "correlationId": "@variables('correlationId')",
+                              "branchName": "@coalesce(triggerBody()?['suggestedBranchName'], '')"
+                            }
+                          },
+                          "runAfter": {
+                            "Insert_Audit_MuleSoft_BranchApprovalRequested": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
+                      }
+                    },
+                    "runAfter": {
+                      "Get_MuleSoft_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "default": {
+              "actions": {
+                "Response-Unknown-Domain": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 400,
+                    "body": {
+                      "error": "domain must be 'Solace' or 'MuleSoft'.",
+                      "correlationId": "@variables('correlationId')"
+                    }
+                  }
+                }
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": {
+          "Initialize_Correlation_Id": [
+            "Succeeded"
+          ]
+        }
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Response-Error": {
+            "type": "Response",
+            "kind": "Http",
+            "inputs": {
+              "statusCode": 500,
+              "body": {
+                "status": "request-branch-approval-via-email failed.",
+                "correlationId": "@variables('correlationId')",
+                "details": "@result('Scope-Try')"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
+    },
+    "triggers": {
+      "When_a_HTTP_request_is_received": {
+        "type": "Request",
+        "kind": "Http"
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
+}

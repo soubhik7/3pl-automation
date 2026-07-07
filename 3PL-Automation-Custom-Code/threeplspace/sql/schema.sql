@@ -393,3 +393,116 @@ BEGIN
 END
 GO
 
+-- ============================================================================
+-- Email-only enrichment/approval flow: Direction (Inbound/Outbound), the new
+-- whole-onboarding architecture-approval gate, and per-domain branch-approval
+-- state -- replacing the removed Teams adaptive cards everywhere.
+-- ============================================================================
+
+-- Direction: Inbound rows skip the SME enrichment chase entirely (see
+-- data-enrichment's Compose_<Domain>_Enrichment_Status). Default 'Outbound'
+-- preserves today's chase-loop behavior for every existing/future row unless
+-- explicitly marked Inbound.
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.BtpConfig') AND name = 'Direction')
+    ALTER TABLE dbo.BtpConfig ADD Direction NVARCHAR(20) NOT NULL CONSTRAINT DF_BtpConfig_Direction DEFAULT ('Outbound');
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_BtpConfig_Direction')
+    ALTER TABLE dbo.BtpConfig ADD CONSTRAINT CK_BtpConfig_Direction CHECK (Direction IN ('Inbound', 'Outbound'));
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'Direction')
+    ALTER TABLE dbo.SolaceClient ADD Direction NVARCHAR(20) NOT NULL CONSTRAINT DF_SolaceClient_Direction DEFAULT ('Outbound');
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_SolaceClient_Direction')
+    ALTER TABLE dbo.SolaceClient ADD CONSTRAINT CK_SolaceClient_Direction CHECK (Direction IN ('Inbound', 'Outbound'));
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'Direction')
+    ALTER TABLE dbo.MuleSoftPartner ADD Direction NVARCHAR(20) NOT NULL CONSTRAINT DF_MuleSoftPartner_Direction DEFAULT ('Outbound');
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_MuleSoftPartner_Direction')
+    ALTER TABLE dbo.MuleSoftPartner ADD CONSTRAINT CK_MuleSoftPartner_Direction CHECK (Direction IN ('Inbound', 'Outbound'));
+GO
+
+-- dbo.OnboardingApproval -- one row per CorrelationId (the architecture
+-- approval gate is a whole-onboarding concept, not per-domain like
+-- enrichment). Read/written by onboarding-launcher, data-enrichment-mail-intake,
+-- and the new approval-resume poller.
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'OnboardingApproval' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.OnboardingApproval
+    (
+        Id                          INT IDENTITY(1,1)  NOT NULL,
+        CorrelationId               NVARCHAR(100)       NOT NULL,
+        ArchitectureApprovalStatus  NVARCHAR(20)        NOT NULL CONSTRAINT DF_OnboardingApproval_Status DEFAULT ('Pending'),
+        RequestedAt                 DATETIME2           NULL,
+        RespondedAt                 DATETIME2           NULL,
+        ApproverEmail               NVARCHAR(320)       NULL,
+        CreatedAt                   DATETIME2           NOT NULL CONSTRAINT DF_OnboardingApproval_CreatedAt DEFAULT (SYSUTCDATETIME()),
+        UpdatedAt                   DATETIME2           NOT NULL CONSTRAINT DF_OnboardingApproval_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT PK_OnboardingApproval PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT UQ_OnboardingApproval_CorrelationId UNIQUE (CorrelationId),
+        CONSTRAINT CK_OnboardingApproval_Status CHECK (ArchitectureApprovalStatus IN ('Pending', 'Approved', 'Rejected'))
+    );
+    CREATE NONCLUSTERED INDEX IX_OnboardingApproval_Status ON dbo.OnboardingApproval (ArchitectureApprovalStatus);
+END
+GO
+
+GRANT SELECT, INSERT, UPDATE ON dbo.OnboardingApproval TO [threepl-logicapp-svc];
+GO
+
+-- Branch-approval-via-email columns (Solace/MuleSoft only -- BTP never runs a
+-- branch-existence check today).
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'BranchApprovalStatus')
+    ALTER TABLE dbo.SolaceClient ADD BranchApprovalStatus NVARCHAR(20) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_SolaceClient_BranchApprovalStatus')
+    ALTER TABLE dbo.SolaceClient ADD CONSTRAINT CK_SolaceClient_BranchApprovalStatus CHECK (BranchApprovalStatus IS NULL OR BranchApprovalStatus IN ('Pending', 'Approved', 'Rejected'));
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.SolaceClient') AND name = 'PendingBranchName')
+    ALTER TABLE dbo.SolaceClient ADD PendingBranchName NVARCHAR(200) NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'BranchApprovalStatus')
+    ALTER TABLE dbo.MuleSoftPartner ADD BranchApprovalStatus NVARCHAR(20) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_MuleSoftPartner_BranchApprovalStatus')
+    ALTER TABLE dbo.MuleSoftPartner ADD CONSTRAINT CK_MuleSoftPartner_BranchApprovalStatus CHECK (BranchApprovalStatus IS NULL OR BranchApprovalStatus IN ('Pending', 'Approved', 'Rejected'));
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoftPartner') AND name = 'PendingBranchName')
+    ALTER TABLE dbo.MuleSoftPartner ADD PendingBranchName NVARCHAR(200) NULL;
+GO
+
+-- Extend DeploymentStatus CHECK with 'AwaitingBranchApproval' (Solace/MuleSoft
+-- only) -- SQL Server has no ALTER CONSTRAINT-modify, so drop+recreate,
+-- matching the pattern already used for CK_EnrichmentAuditLog_EventType.
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_SolaceClient_DeploymentStatus' AND parent_object_id = OBJECT_ID('dbo.SolaceClient'))
+    ALTER TABLE dbo.SolaceClient DROP CONSTRAINT CK_SolaceClient_DeploymentStatus;
+GO
+ALTER TABLE dbo.SolaceClient ADD CONSTRAINT CK_SolaceClient_DeploymentStatus
+    CHECK (DeploymentStatus IN ('Pending', 'InProgress', 'Deployed', 'Failed', 'AwaitingBranchApproval'));
+GO
+
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_MuleSoftPartner_DeploymentStatus' AND parent_object_id = OBJECT_ID('dbo.MuleSoftPartner'))
+    ALTER TABLE dbo.MuleSoftPartner DROP CONSTRAINT CK_MuleSoftPartner_DeploymentStatus;
+GO
+ALTER TABLE dbo.MuleSoftPartner ADD CONSTRAINT CK_MuleSoftPartner_DeploymentStatus
+    CHECK (DeploymentStatus IN ('Pending', 'InProgress', 'Deployed', 'Failed', 'AwaitingBranchApproval'));
+GO
+
+-- New EventType values for the email-based approval events. No Channel CHECK
+-- change needed -- 'System' (email sent by a workflow) and 'Mail' (reply
+-- received) already cover both directions. 'CardSent'/'CardResponded'/
+-- 'CardTimedOut' literals are kept as-is (no rename) to avoid a historical
+-- data migration -- only the mechanism producing them changes, not the enum.
+IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_EnrichmentAuditLog_EventType' AND parent_object_id = OBJECT_ID('dbo.EnrichmentAuditLog'))
+    ALTER TABLE dbo.EnrichmentAuditLog DROP CONSTRAINT CK_EnrichmentAuditLog_EventType;
+GO
+ALTER TABLE dbo.EnrichmentAuditLog ADD CONSTRAINT CK_EnrichmentAuditLog_EventType CHECK (EventType IN (
+    'Received', 'ValidationFailed', 'Upserted', 'CardSent', 'CardResponded',
+    'CardTimedOut', 'MailRejected', 'Error', 'OrchestrationStarted', 'OrchestrationSucceeded', 'OrchestrationFailed',
+    'ArchitectureApprovalRequested', 'ArchitectureApprovalApproved', 'ArchitectureApprovalRejected',
+    'BranchApprovalRequested', 'BranchApprovalApproved', 'BranchApprovalRejected'
+));
+GO
+

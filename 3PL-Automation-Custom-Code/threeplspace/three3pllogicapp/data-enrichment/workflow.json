@@ -277,7 +277,8 @@
                           "repoName": "@coalesce(triggerBody()?['repoName'], variables('btpRow')?['RepoName'], '')",
                           "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], variables('btpRow')?['WorkflowFileName'], '')",
                           "branchRef": "@coalesce(triggerBody()?['branchRef'], variables('btpRow')?['BranchRef'], '')",
-                          "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('btpRow')?['ServiceExists'])"
+                          "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('btpRow')?['ServiceExists'])",
+                          "direction": "@coalesce(triggerBody()?['direction'], variables('btpRow')?['Direction'], 'Outbound')"
                         },
                         "runAfter": {
                           "If_Btp_Row_Found": [
@@ -329,7 +330,8 @@
                                   "UpdatedAt": "@utcNow()",
                                   "EnrichmentStatus": "@outputs('Compose_Btp_Enrichment_Status')",
                                   "CardSentAt": "@outputs('Compose_Btp_Card_Tracking')?['cardSentAt']",
-                                  "CardRespondedAt": "@outputs('Compose_Btp_Card_Tracking')?['cardRespondedAt']"
+                                  "CardRespondedAt": "@outputs('Compose_Btp_Card_Tracking')?['cardRespondedAt']",
+                                  "Direction": "@variables('btpFinalFields')?['direction']"
                                 },
                                 "columnValuesForWhereCondition": {
                                   "SubAccount": "@variables('btpFinalFields')?['subAccount']",
@@ -381,7 +383,8 @@
                                         "UpdatedAt": "@utcNow()",
                                         "EnrichmentStatus": "@outputs('Compose_Btp_Enrichment_Status')",
                                         "CardSentAt": "@outputs('Compose_Btp_Card_Tracking')?['cardSentAt']",
-                                        "CardRespondedAt": "@outputs('Compose_Btp_Card_Tracking')?['cardRespondedAt']"
+                                        "CardRespondedAt": "@outputs('Compose_Btp_Card_Tracking')?['cardRespondedAt']",
+                                        "Direction": "@variables('btpFinalFields')?['direction']"
                                       }
                                     },
                                     "serviceProviderConfiguration": {
@@ -420,7 +423,8 @@
                                     "UpdatedAt": "@utcNow()",
                                     "EnrichmentStatus": "@outputs('Compose_Btp_Enrichment_Status')",
                                     "CardSentAt": "@outputs('Compose_Btp_Card_Tracking')?['cardSentAt']",
-                                    "CardRespondedAt": "@outputs('Compose_Btp_Card_Tracking')?['cardRespondedAt']"
+                                    "CardRespondedAt": "@outputs('Compose_Btp_Card_Tracking')?['cardRespondedAt']",
+                                    "Direction": "@variables('btpFinalFields')?['direction']"
                                   },
                                   "columnValuesForWhereCondition": {
                                     "SubAccount": "@variables('btpFinalFields')?['subAccount']",
@@ -456,7 +460,7 @@
                       },
                       "Compose_Btp_Enrichment_Status": {
                         "type": "Compose",
-                        "inputs": "@if(or(empty(variables('btpFinalFields')?['mode']), empty(variables('btpFinalFields')?['developerId']), empty(variables('btpFinalFields')?['title']), empty(variables('btpFinalFields')?['repoOwner']), empty(variables('btpFinalFields')?['repoName']), empty(variables('btpFinalFields')?['workflowFileName']), empty(variables('btpFinalFields')?['branchRef']), equals(variables('btpFinalFields')?['serviceExists'], null)), 'AwaitingInput', 'Complete')",
+                        "inputs": "@if(equals(variables('btpFinalFields')?['direction'], 'Inbound'), 'Complete', if(or(empty(variables('btpFinalFields')?['mode']), empty(variables('btpFinalFields')?['developerId']), empty(variables('btpFinalFields')?['title']), empty(variables('btpFinalFields')?['repoOwner']), empty(variables('btpFinalFields')?['repoName']), empty(variables('btpFinalFields')?['workflowFileName']), empty(variables('btpFinalFields')?['branchRef']), equals(variables('btpFinalFields')?['serviceExists'], null)), 'AwaitingInput', 'Complete'))",
                         "runAfter": {
                           "Set_Btp_Final_Fields_Initial": [
                             "Succeeded"
@@ -723,7 +727,8 @@
                           "requesterEmail": "@coalesce(triggerBody()?['requesterEmail'], variables('solaceRow')?['RequesterEmail'], '')",
                           "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], variables('solaceRow')?['RecipientEmail'], '')",
                           "commitMessage": "@coalesce(triggerBody()?['commitMessage'], variables('solaceRow')?['CommitMessage'], '')",
-                          "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('solaceRow')?['ServiceExists'])"
+                          "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('solaceRow')?['ServiceExists'])",
+                          "direction": "@coalesce(triggerBody()?['direction'], variables('solaceRow')?['Direction'], 'Outbound')"
                         },
                         "runAfter": {
                           "If_Solace_Row_Found": [
@@ -793,7 +798,8 @@
                                   "UpdatedAt": "@utcNow()",
                                   "EnrichmentStatus": "@outputs('Compose_Solace_Enrichment_Status')",
                                   "CardSentAt": "@outputs('Compose_Solace_Card_Tracking')?['cardSentAt']",
-                                  "CardRespondedAt": "@outputs('Compose_Solace_Card_Tracking')?['cardRespondedAt']"
+                                  "CardRespondedAt": "@outputs('Compose_Solace_Card_Tracking')?['cardRespondedAt']",
+                                  "Direction": "@variables('solaceFinalFields')?['direction']"
                                 },
                                 "columnValuesForWhereCondition": {
                                   "Brand": "@variables('solaceFinalFields')?['brand']",
@@ -877,7 +883,8 @@
                                         "CreatedAt": "@utcNow()",
                                         "EnrichmentStatus": "@outputs('Compose_Solace_Enrichment_Status')",
                                         "CardSentAt": "@outputs('Compose_Solace_Card_Tracking')?['cardSentAt']",
-                                        "CardRespondedAt": "@outputs('Compose_Solace_Card_Tracking')?['cardRespondedAt']"
+                                        "CardRespondedAt": "@outputs('Compose_Solace_Card_Tracking')?['cardRespondedAt']",
+                                        "Direction": "@variables('solaceFinalFields')?['direction']"
                                       }
                                     },
                                     "serviceProviderConfiguration": {
@@ -934,7 +941,8 @@
                                     "UpdatedAt": "@utcNow()",
                                     "EnrichmentStatus": "@outputs('Compose_Solace_Enrichment_Status')",
                                     "CardSentAt": "@outputs('Compose_Solace_Card_Tracking')?['cardSentAt']",
-                                    "CardRespondedAt": "@outputs('Compose_Solace_Card_Tracking')?['cardRespondedAt']"
+                                    "CardRespondedAt": "@outputs('Compose_Solace_Card_Tracking')?['cardRespondedAt']",
+                                    "Direction": "@variables('solaceFinalFields')?['direction']"
                                   },
                                   "columnValuesForWhereCondition": {
                                     "Brand": "@variables('solaceFinalFields')?['brand']",
@@ -1046,7 +1054,7 @@
                       },
                       "Compose_Solace_Enrichment_Status": {
                         "type": "Compose",
-                        "inputs": "@if(or(empty(variables('solaceFinalFields')?['action']), empty(variables('solaceFinalFields')?['aclClientConnectDefaultAction']), empty(variables('solaceFinalFields')?['aclPublishTopicDefaultAction']), empty(variables('solaceFinalFields')?['aclSubscribeShareNameDefaultAction']), empty(variables('solaceFinalFields')?['aclSubscribeTopicDefaultAction']), equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileCompressionEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled'], null), equals(variables('solaceFinalFields')?['clientUserEnabled'], null), equals(variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], null), equals(variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled'], null), empty(variables('solaceFinalFields')?['repoOwner']), empty(variables('solaceFinalFields')?['repoName']), empty(variables('solaceFinalFields')?['filePath']), empty(variables('solaceFinalFields')?['branch']), empty(variables('solaceFinalFields')?['baseBranch']), empty(variables('solaceFinalFields')?['featureBranchName']), empty(variables('solaceFinalFields')?['requesterEmail']), empty(variables('solaceFinalFields')?['recipientEmail']), empty(variables('solaceFinalFields')?['commitMessage']), equals(variables('solaceFinalFields')?['serviceExists'], null), equals(length(coalesce(triggerBody()?['messageTypes'], json('[]'))), 0)), 'AwaitingInput', 'Complete')",
+                        "inputs": "@if(equals(variables('solaceFinalFields')?['direction'], 'Inbound'), 'Complete', if(or(empty(variables('solaceFinalFields')?['action']), empty(variables('solaceFinalFields')?['aclClientConnectDefaultAction']), empty(variables('solaceFinalFields')?['aclPublishTopicDefaultAction']), empty(variables('solaceFinalFields')?['aclSubscribeShareNameDefaultAction']), empty(variables('solaceFinalFields')?['aclSubscribeTopicDefaultAction']), equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgSendEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedMsgReceiveEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileCompressionEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileReplicationAllowClientConnectWhenStandbyEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowTransactedSessionsEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowBridgeConnectionsEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowGuaranteedEndpointCreateEnabled'], null), equals(variables('solaceFinalFields')?['clientProfileAllowSharedSubscriptionsEnabled'], null), equals(variables('solaceFinalFields')?['clientUserEnabled'], null), equals(variables('solaceFinalFields')?['clientUserGuaranteedEndpointPermissionOverrideEnabled'], null), equals(variables('solaceFinalFields')?['clientUserSubscriptionManagerEnabled'], null), empty(variables('solaceFinalFields')?['repoOwner']), empty(variables('solaceFinalFields')?['repoName']), empty(variables('solaceFinalFields')?['filePath']), empty(variables('solaceFinalFields')?['branch']), empty(variables('solaceFinalFields')?['baseBranch']), empty(variables('solaceFinalFields')?['featureBranchName']), empty(variables('solaceFinalFields')?['requesterEmail']), empty(variables('solaceFinalFields')?['recipientEmail']), empty(variables('solaceFinalFields')?['commitMessage']), equals(variables('solaceFinalFields')?['serviceExists'], null), equals(length(coalesce(triggerBody()?['messageTypes'], json('[]'))), 0)), 'AwaitingInput', 'Complete'))",
                         "runAfter": {
                           "Set_Solace_Final_Fields_Initial": [
                             "Succeeded"
@@ -1336,7 +1344,8 @@
                           "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], variables('muleSoftRow')?['RecipientEmail'], '')",
                           "commitMessage": "@coalesce(triggerBody()?['commitMessage'], variables('muleSoftRow')?['CommitMessage'], '')",
                           "navUseCommonCert": "@coalesce(triggerBody()?['navUseCommonCert'], variables('muleSoftRow')?['NavUseCommonCert'])",
-                          "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('muleSoftRow')?['ServiceExists'])"
+                          "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('muleSoftRow')?['ServiceExists'])",
+                          "direction": "@coalesce(triggerBody()?['direction'], variables('muleSoftRow')?['Direction'], 'Outbound')"
                         },
                         "runAfter": {
                           "If_MuleSoft_Row_Found": [
@@ -1400,7 +1409,8 @@
                                   "UpdatedAt": "@utcNow()",
                                   "EnrichmentStatus": "@outputs('Compose_MuleSoft_Enrichment_Status')",
                                   "CardSentAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardSentAt']",
-                                  "CardRespondedAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardRespondedAt']"
+                                  "CardRespondedAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardRespondedAt']",
+                                  "Direction": "@variables('muleSoftFinalFields')?['direction']"
                                 },
                                 "columnValuesForWhereCondition": {
                                   "CountryKey": "@variables('muleSoftFinalFields')?['countryKey']"
@@ -1472,7 +1482,8 @@
                                         "CreatedAt": "@utcNow()",
                                         "EnrichmentStatus": "@outputs('Compose_MuleSoft_Enrichment_Status')",
                                         "CardSentAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardSentAt']",
-                                        "CardRespondedAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardRespondedAt']"
+                                        "CardRespondedAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardRespondedAt']",
+                                        "Direction": "@variables('muleSoftFinalFields')?['direction']"
                                       }
                                     },
                                     "serviceProviderConfiguration": {
@@ -1523,7 +1534,8 @@
                                     "UpdatedAt": "@utcNow()",
                                     "EnrichmentStatus": "@outputs('Compose_MuleSoft_Enrichment_Status')",
                                     "CardSentAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardSentAt']",
-                                    "CardRespondedAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardRespondedAt']"
+                                    "CardRespondedAt": "@outputs('Compose_MuleSoft_Card_Tracking')?['cardRespondedAt']",
+                                    "Direction": "@variables('muleSoftFinalFields')?['direction']"
                                   },
                                   "columnValuesForWhereCondition": {
                                     "CountryKey": "@variables('muleSoftFinalFields')?['countryKey']"
@@ -1920,7 +1932,7 @@
                       },
                       "Compose_MuleSoft_Enrichment_Status": {
                         "type": "Compose",
-                        "inputs": "@if(or(empty(variables('muleSoftFinalFields')?['countryCode']), empty(variables('muleSoftFinalFields')?['partnerComment']), empty(variables('muleSoftFinalFields')?['createdBy']), empty(variables('muleSoftFinalFields')?['navProtocol']), empty(variables('muleSoftFinalFields')?['navPort']), empty(variables('muleSoftFinalFields')?['navUsername']), empty(variables('muleSoftFinalFields')?['navDomain']), empty(variables('muleSoftFinalFields')?['navService']), empty(variables('muleSoftFinalFields')?['navSoapPort']), empty(variables('muleSoftFinalFields')?['translationReceiverName']), equals(variables('muleSoftFinalFields')?['navUseCommonCert'], null), empty(variables('muleSoftFinalFields')?['repoOwner']), empty(variables('muleSoftFinalFields')?['repoName']), empty(variables('muleSoftFinalFields')?['filePathPrefix']), empty(variables('muleSoftFinalFields')?['branch']), empty(variables('muleSoftFinalFields')?['baseBranch']), empty(variables('muleSoftFinalFields')?['featureBranchName']), empty(variables('muleSoftFinalFields')?['requesterEmail']), empty(variables('muleSoftFinalFields')?['recipientEmail']), empty(variables('muleSoftFinalFields')?['commitMessage']), equals(variables('muleSoftFinalFields')?['serviceExists'], null), equals(length(coalesce(triggerBody()?['environments'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['transactionTypes'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['messageTypes'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['sourceDestinations'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['uomMappings'], json('[]'))), 0)), 'AwaitingInput', 'Complete')",
+                        "inputs": "@if(equals(variables('muleSoftFinalFields')?['direction'], 'Inbound'), 'Complete', if(or(empty(variables('muleSoftFinalFields')?['countryCode']), empty(variables('muleSoftFinalFields')?['partnerComment']), empty(variables('muleSoftFinalFields')?['createdBy']), empty(variables('muleSoftFinalFields')?['navProtocol']), empty(variables('muleSoftFinalFields')?['navPort']), empty(variables('muleSoftFinalFields')?['navUsername']), empty(variables('muleSoftFinalFields')?['navDomain']), empty(variables('muleSoftFinalFields')?['navService']), empty(variables('muleSoftFinalFields')?['navSoapPort']), empty(variables('muleSoftFinalFields')?['translationReceiverName']), equals(variables('muleSoftFinalFields')?['navUseCommonCert'], null), empty(variables('muleSoftFinalFields')?['repoOwner']), empty(variables('muleSoftFinalFields')?['repoName']), empty(variables('muleSoftFinalFields')?['filePathPrefix']), empty(variables('muleSoftFinalFields')?['branch']), empty(variables('muleSoftFinalFields')?['baseBranch']), empty(variables('muleSoftFinalFields')?['featureBranchName']), empty(variables('muleSoftFinalFields')?['requesterEmail']), empty(variables('muleSoftFinalFields')?['recipientEmail']), empty(variables('muleSoftFinalFields')?['commitMessage']), equals(variables('muleSoftFinalFields')?['serviceExists'], null), equals(length(coalesce(triggerBody()?['environments'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['transactionTypes'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['messageTypes'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['sourceDestinations'], json('[]'))), 0), equals(length(coalesce(triggerBody()?['uomMappings'], json('[]'))), 0)), 'AwaitingInput', 'Complete'))",
                         "runAfter": {
                           "Set_MuleSoft_Final_Fields_Initial": [
                             "Succeeded"

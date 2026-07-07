@@ -309,13 +309,19 @@
               "body": {
                 "correlationId": "@variables('correlationId')",
                 "readyToLaunch": "@and(and(greater(length(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))), 0), greater(length(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))), 0)), and(greater(length(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))), 0), and(and(equals(coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput'), 'Complete'), equals(coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput'), 'Complete')), equals(coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput'), 'Complete'))))",
+                "architectureApproval": {
+                  "status": "@coalesce(first(coalesce(body('Get_Onboarding_Approval_Row')?[0], body('Get_Onboarding_Approval_Row'), json('[]')))?['ArchitectureApprovalStatus'], 'NotRequested')",
+                  "approverEmail": "@first(coalesce(body('Get_Onboarding_Approval_Row')?[0], body('Get_Onboarding_Approval_Row'), json('[]')))?['ApproverEmail']",
+                  "respondedAt": "@first(coalesce(body('Get_Onboarding_Approval_Row')?[0], body('Get_Onboarding_Approval_Row'), json('[]')))?['RespondedAt']"
+                },
                 "btp": {
                   "found": "@greater(length(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]'))), 0)",
                   "enrichmentStatus": "@coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['EnrichmentStatus'], 'AwaitingInput')",
                   "deploymentStatus": "@coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['DeploymentStatus'], 'Pending')",
                   "cardSentAt": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['CardSentAt']",
                   "cardRespondedAt": "@first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['CardRespondedAt']",
-                  "missingFields": "@body('Filter_Btp_Missing_Fields')"
+                  "missingFields": "@body('Filter_Btp_Missing_Fields')",
+                  "direction": "@coalesce(first(coalesce(body('Get_Btp_Row')?[0], body('Get_Btp_Row'), json('[]')))?['Direction'], 'Outbound')"
                 },
                 "solace": {
                   "found": "@greater(length(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]'))), 0)",
@@ -323,7 +329,10 @@
                   "deploymentStatus": "@coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['DeploymentStatus'], 'Pending')",
                   "cardSentAt": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['CardSentAt']",
                   "cardRespondedAt": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['CardRespondedAt']",
-                  "missingFields": "@body('Filter_Solace_Missing_Fields')"
+                  "missingFields": "@body('Filter_Solace_Missing_Fields')",
+                  "direction": "@coalesce(first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['Direction'], 'Outbound')",
+                  "branchApprovalStatus": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['BranchApprovalStatus']",
+                  "pendingBranchName": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['PendingBranchName']"
                 },
                 "mulesoft": {
                   "found": "@greater(length(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]'))), 0)",
@@ -331,7 +340,10 @@
                   "deploymentStatus": "@coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['DeploymentStatus'], 'Pending')",
                   "cardSentAt": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CardSentAt']",
                   "cardRespondedAt": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['CardRespondedAt']",
-                  "missingFields": "@body('Filter_MuleSoft_Missing_Fields')"
+                  "missingFields": "@body('Filter_MuleSoft_Missing_Fields')",
+                  "direction": "@coalesce(first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['Direction'], 'Outbound')",
+                  "branchApprovalStatus": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['BranchApprovalStatus']",
+                  "pendingBranchName": "@first(coalesce(body('Get_MuleSoft_Row')?[0], body('Get_MuleSoft_Row'), json('[]')))?['PendingBranchName']"
                 },
                 "auditTrail": "@coalesce(body('Get_Audit_Log')?[0], body('Get_Audit_Log'), json('[]'))"
               }
@@ -347,6 +359,33 @@
                 "Succeeded"
               ],
               "Get_Audit_Log": [
+                "Succeeded"
+              ],
+              "Get_Onboarding_Approval_Row": [
+                "Succeeded"
+              ]
+            }
+          },
+          "Get_Onboarding_Approval_Row": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "query": "@concat('SELECT TOP 1 * FROM dbo.OnboardingApproval WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "executeQuery",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {
+              "Validate_CorrelationId": [
                 "Succeeded"
               ]
             }

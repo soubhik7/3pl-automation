@@ -38,28 +38,22 @@
           "If_Feature_Branch_Missing": {
             "type": "If",
             "expression": {
-              "or": [
+              "and": [
                 {
                   "equals": [
                     "@body('Check_Branch_Exists')?['exists']",
-                    false
-                  ]
-                },
-                {
-                  "equals": [
-                    "@empty(triggerBody()?['featureBranchName'])",
                     false
                   ]
                 }
               ]
             },
             "actions": {
-              "Request_Feature_Branch_Via_Teams": {
+              "Request_Branch_Approval_Via_Email": {
                 "type": "Workflow",
                 "inputs": {
                   "host": {
                     "workflow": {
-                      "id": "request-feature-branch-via-teams"
+                      "id": "request-branch-approval-via-email"
                     }
                   },
                   "body": {
@@ -73,137 +67,99 @@
                     "suggestedBranchName": "@variables('targetBranch')",
                     "configPath": "@coalesce(triggerBody()?['filePath'], '')",
                     "summary": "@concat('Solace onboarding config for ', coalesce(triggerBody()?['repoOwner'], ''), '/', coalesce(triggerBody()?['repoName'], ''))",
-                    "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], appsetting('SolaceDevOpsOwnerEmail'))"
+                    "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], appsetting('SolaceDevOpsOwnerEmail'))",
+                    "domain": "Solace"
                   }
-                }
+                },
+                "runAfter": {}
               },
-              "If_Branch_Request_Rejected": {
-                "type": "If",
-                "expression": {
-                  "equals": [
-                    "@coalesce(body('Request_Feature_Branch_Via_Teams')?['decision'], '')",
-                    "reject"
-                  ]
-                },
-                "actions": {
-                  "Response-Branch-Request-Rejected": {
-                    "type": "Response",
-                    "kind": "Http",
-                    "inputs": {
-                      "statusCode": 409,
-                      "body": {
-                        "status": "Feature branch request was rejected by the DevOps owner.",
-                        "correlationId": "@variables('correlationId')",
-                        "branch": "@variables('targetBranch')"
-                      }
-                    }
-                  }
-                },
-                "else": {
-                  "actions": {
-                    "Update_Target_Branch_From_Response": {
-                      "type": "SetVariable",
-                      "inputs": {
-                        "name": "targetBranch",
-                        "value": "@body('Request_Feature_Branch_Via_Teams')?['branchName']"
-                      }
-                    },
-                    "Ensure_Branch_Now_Exists": {
-                      "type": "InvokeFunction",
-                      "inputs": {
-                        "functionName": "EnsureGitHubBranchExists",
-                        "parameters": {
-                          "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                          "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                          "branch": "@variables('targetBranch')",
-                          "correlationId": "@variables('correlationId')"
-                        }
-                      },
-                      "runAfter": {
-                        "Update_Target_Branch_From_Response": [
-                          "Succeeded"
-                        ]
-                      }
-                    }
+              "Response-Awaiting-Branch-Approval": {
+                "type": "Response",
+                "kind": "Http",
+                "inputs": {
+                  "statusCode": 200,
+                  "body": {
+                    "status": "AwaitingBranchApproval",
+                    "correlationId": "@variables('correlationId')",
+                    "branch": "@variables('targetBranch')"
                   }
                 },
                 "runAfter": {
-                  "Request_Feature_Branch_Via_Teams": [
+                  "Request_Branch_Approval_Via_Email": [
                     "Succeeded"
                   ]
                 }
               }
             },
             "else": {
-              "actions": {}
+              "actions": {
+                "Fetch_Existing_Solace_Config": {
+                  "type": "InvokeFunction",
+                  "inputs": {
+                    "functionName": "FetchExistingConfigFile",
+                    "parameters": {
+                      "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
+                      "repoName": "@coalesce(triggerBody()?['repoName'], '')",
+                      "branch": "@variables('targetBranch')",
+                      "filePath": "@coalesce(triggerBody()?['filePath'], '')",
+                      "correlationId": "@variables('correlationId')"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Call_a_local_function-_Generate_Solace_Config": {
+                  "type": "InvokeFunction",
+                  "inputs": {
+                    "functionName": "GenerateSolaceConfig",
+                    "parameters": {
+                      "csvContent": "@triggerBody()?['csvContent']",
+                      "correlationId": "@variables('correlationId')"
+                    }
+                  },
+                  "runAfter": {}
+                },
+                "Merge_Solace_Config": {
+                  "type": "InvokeFunction",
+                  "inputs": {
+                    "functionName": "MergeSolaceConfig",
+                    "parameters": {
+                      "newConfigJson": "@string(coalesce(body('Call_a_local_function-_Generate_Solace_Config')?['Results']?[0]?['SolaceConfig'], body('Call_a_local_function-_Generate_Solace_Config')?['results']?[0]?['solaceConfig']))",
+                      "existingConfigJson": "@coalesce(body('Fetch_Existing_Solace_Config')?['content'], '')",
+                      "correlationId": "@variables('correlationId')"
+                    }
+                  },
+                  "runAfter": {
+                    "Fetch_Existing_Solace_Config": [
+                      "Succeeded"
+                    ],
+                    "Call_a_local_function-_Generate_Solace_Config": [
+                      "Succeeded"
+                    ]
+                  }
+                },
+                "Response-Success": {
+                  "type": "Response",
+                  "kind": "Http",
+                  "inputs": {
+                    "statusCode": 200,
+                    "body": {
+                      "generated": "@body('Call_a_local_function-_Generate_Solace_Config')",
+                      "mergedConfigJson": "@body('Merge_Solace_Config')?['mergedConfigJson']",
+                      "correlationId": "@variables('correlationId')",
+                      "status": "Complete"
+                    }
+                  },
+                  "runAfter": {
+                    "Merge_Solace_Config": [
+                      "SUCCEEDED"
+                    ]
+                  }
+                }
+              }
             },
             "runAfter": {
               "Check_Branch_Exists": [
                 "Succeeded"
-              ]
-            }
-          },
-          "Fetch_Existing_Solace_Config": {
-            "type": "InvokeFunction",
-            "inputs": {
-              "functionName": "FetchExistingConfigFile",
-              "parameters": {
-                "repoOwner": "@coalesce(triggerBody()?['repoOwner'], '')",
-                "repoName": "@coalesce(triggerBody()?['repoName'], '')",
-                "branch": "@variables('targetBranch')",
-                "filePath": "@coalesce(triggerBody()?['filePath'], '')",
-                "correlationId": "@variables('correlationId')"
-              }
-            },
-            "runAfter": {
-              "If_Feature_Branch_Missing": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Call_a_local_function-_Generate_Solace_Config": {
-            "type": "InvokeFunction",
-            "inputs": {
-              "functionName": "GenerateSolaceConfig",
-              "parameters": {
-                "csvContent": "@triggerBody()?['csvContent']",
-                "correlationId": "@variables('correlationId')"
-              }
-            }
-          },
-          "Merge_Solace_Config": {
-            "type": "InvokeFunction",
-            "inputs": {
-              "functionName": "MergeSolaceConfig",
-              "parameters": {
-                "newConfigJson": "@string(coalesce(body('Call_a_local_function-_Generate_Solace_Config')?['Results']?[0]?['SolaceConfig'], body('Call_a_local_function-_Generate_Solace_Config')?['results']?[0]?['solaceConfig']))",
-                "existingConfigJson": "@coalesce(body('Fetch_Existing_Solace_Config')?['content'], '')",
-                "correlationId": "@variables('correlationId')"
-              }
-            },
-            "runAfter": {
-              "Fetch_Existing_Solace_Config": [
-                "Succeeded"
-              ],
-              "Call_a_local_function-_Generate_Solace_Config": [
-                "Succeeded"
-              ]
-            }
-          },
-          "Response-Success": {
-            "type": "Response",
-            "kind": "Http",
-            "inputs": {
-              "statusCode": 200,
-              "body": {
-                "generated": "@body('Call_a_local_function-_Generate_Solace_Config')",
-                "mergedConfigJson": "@body('Merge_Solace_Config')?['mergedConfigJson']",
-                "correlationId": "@variables('correlationId')"
-              }
-            },
-            "runAfter": {
-              "Merge_Solace_Config": [
-                "SUCCEEDED"
               ]
             }
           }

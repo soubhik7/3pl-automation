@@ -1,0 +1,256 @@
+{
+  "definition": {
+    "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+    "actions": {
+      "Scope-Try": {
+        "type": "Scope",
+        "actions": {
+          "Scope-Architecture-Approval-Resume": {
+            "type": "Scope",
+            "actions": {
+              "Get_Approved_Onboardings_With_Pending_Domains": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "SELECT CorrelationId, STRING_AGG(Domain, ',') AS DomainsCsv FROM (SELECT CorrelationId, 'btp' AS Domain FROM dbo.BtpConfig WHERE DeploymentStatus NOT IN ('Deployed','InProgress','AwaitingBranchApproval') UNION ALL SELECT CorrelationId, 'solace' FROM dbo.SolaceClient WHERE DeploymentStatus NOT IN ('Deployed','InProgress','AwaitingBranchApproval') UNION ALL SELECT CorrelationId, 'mulesoft' FROM dbo.MuleSoftPartner WHERE DeploymentStatus NOT IN ('Deployed','InProgress','AwaitingBranchApproval')) x WHERE x.CorrelationId IN (SELECT CorrelationId FROM dbo.OnboardingApproval WHERE ArchitectureApprovalStatus = 'Approved') GROUP BY x.CorrelationId"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  },
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 3,
+                    "interval": "PT5S",
+                    "maximumInterval": "PT1M"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Compose_Approved_Onboardings": {
+                "type": "Compose",
+                "inputs": "@coalesce(body('Get_Approved_Onboardings_With_Pending_Domains')?[0], body('Get_Approved_Onboardings_With_Pending_Domains'), json('[]'))",
+                "runAfter": {
+                  "Get_Approved_Onboardings_With_Pending_Domains": [
+                    "Succeeded"
+                  ]
+                }
+              },
+              "For_each_Approved_Onboarding": {
+                "type": "Foreach",
+                "foreach": "@outputs('Compose_Approved_Onboardings')",
+                "actions": {
+                  "Compose_Domains_Array": {
+                    "type": "Compose",
+                    "inputs": "@split(item()?['DomainsCsv'], ',')",
+                    "runAfter": {}
+                  },
+                  "Invoke_Onboarding_Launcher_Architecture": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "onboarding-launcher"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@item()?['CorrelationId']",
+                        "domains": "@outputs('Compose_Domains_Array')",
+                        "launchedBy": "approval-resume-poller@system",
+                        "forceRedeploy": false
+                      }
+                    },
+                    "runAfter": {
+                      "Compose_Domains_Array": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                },
+                "runAfter": {
+                  "Compose_Approved_Onboardings": [
+                    "Succeeded"
+                  ]
+                }
+              }
+            },
+            "runAfter": {}
+          },
+          "Scope-Branch-Approval-Resume": {
+            "type": "Scope",
+            "actions": {
+              "Get_Solace_Awaiting_Branch_Approval": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "SELECT TOP 20 * FROM dbo.SolaceClient WHERE DeploymentStatus = 'AwaitingBranchApproval' AND BranchApprovalStatus = 'Approved'"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  },
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 3,
+                    "interval": "PT5S",
+                    "maximumInterval": "PT1M"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Compose_Solace_Awaiting_Branch_Approval": {
+                "type": "Compose",
+                "inputs": "@coalesce(body('Get_Solace_Awaiting_Branch_Approval')?[0], body('Get_Solace_Awaiting_Branch_Approval'), json('[]'))",
+                "runAfter": {
+                  "Get_Solace_Awaiting_Branch_Approval": [
+                    "Succeeded"
+                  ]
+                }
+              },
+              "For_each_Solace_Awaiting_Branch_Approval": {
+                "type": "Foreach",
+                "foreach": "@outputs('Compose_Solace_Awaiting_Branch_Approval')",
+                "actions": {
+                  "Invoke_Onboarding_Launcher_Solace": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "onboarding-launcher"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@item()?['CorrelationId']",
+                        "domains": "@createArray('solace')",
+                        "launchedBy": "approval-resume-poller@system",
+                        "forceRedeploy": false
+                      }
+                    },
+                    "runAfter": {}
+                  }
+                },
+                "runAfter": {
+                  "Compose_Solace_Awaiting_Branch_Approval": [
+                    "Succeeded"
+                  ]
+                }
+              },
+              "Get_MuleSoft_Awaiting_Branch_Approval": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "SELECT TOP 20 * FROM dbo.MuleSoftPartner WHERE DeploymentStatus = 'AwaitingBranchApproval' AND BranchApprovalStatus = 'Approved'"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  },
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 3,
+                    "interval": "PT5S",
+                    "maximumInterval": "PT1M"
+                  }
+                },
+                "runAfter": {}
+              },
+              "Compose_MuleSoft_Awaiting_Branch_Approval": {
+                "type": "Compose",
+                "inputs": "@coalesce(body('Get_MuleSoft_Awaiting_Branch_Approval')?[0], body('Get_MuleSoft_Awaiting_Branch_Approval'), json('[]'))",
+                "runAfter": {
+                  "Get_MuleSoft_Awaiting_Branch_Approval": [
+                    "Succeeded"
+                  ]
+                }
+              },
+              "For_each_MuleSoft_Awaiting_Branch_Approval": {
+                "type": "Foreach",
+                "foreach": "@outputs('Compose_MuleSoft_Awaiting_Branch_Approval')",
+                "actions": {
+                  "Invoke_Onboarding_Launcher_MuleSoft": {
+                    "type": "Workflow",
+                    "inputs": {
+                      "host": {
+                        "workflow": {
+                          "id": "onboarding-launcher"
+                        }
+                      },
+                      "body": {
+                        "correlationId": "@item()?['CorrelationId']",
+                        "domains": "@createArray('mulesoft')",
+                        "launchedBy": "approval-resume-poller@system",
+                        "forceRedeploy": false
+                      }
+                    },
+                    "runAfter": {}
+                  }
+                },
+                "runAfter": {
+                  "Compose_MuleSoft_Awaiting_Branch_Approval": [
+                    "Succeeded"
+                  ]
+                }
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": {}
+      },
+      "Scope-Catch": {
+        "type": "Scope",
+        "actions": {
+          "Insert_Audit_Error": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "tableName": "[dbo].[EnrichmentAuditLog]",
+                "setColumns": {
+                  "Domain": "Orchestrator",
+                  "CorrelationId": "@null",
+                  "EntityKey": "@null",
+                  "Channel": "System",
+                  "ActorEmail": "@null",
+                  "EventType": "Error",
+                  "EventDetail": "@string(result('Scope-Try'))"
+                }
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "insertRow",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "runAfter": {
+          "Scope-Try": [
+            "FAILED"
+          ]
+        }
+      }
+    },
+    "triggers": {
+      "Recurrence": {
+        "type": "Recurrence",
+        "recurrence": {
+          "frequency": "Minute",
+          "interval": 5
+        }
+      }
+    },
+    "contentVersion": "1.0.0.0",
+    "outputs": {}
+  },
+  "kind": "stateful"
+}

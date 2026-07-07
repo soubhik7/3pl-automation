@@ -145,45 +145,76 @@
                     },
                     "runAfter": {}
                   },
-                  "Invoke_MuleSoft_Config_Publish": {
-                    "type": "Workflow",
-                    "inputs": {
-                      "host": {
-                        "workflow": {
-                          "id": "mulesoft-config-publish"
+                  "If_MuleSoft_Awaiting_Branch_Approval": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['status'], '')",
+                            "AwaitingBranchApproval"
+                          ]
                         }
-                      },
-                      "body": {
-                        "correlationId": "@variables('correlationId')",
-                        "repoOwner": "@triggerBody()?['mulesoft']?['publish']?['repoOwner']",
-                        "repoName": "@triggerBody()?['mulesoft']?['publish']?['repoName']",
-                        "baseBranch": "@triggerBody()?['mulesoft']?['publish']?['baseBranch']",
-                        "featureBranchName": "@triggerBody()?['mulesoft']?['publish']?['featureBranchName']",
-                        "filePathPrefix": "@triggerBody()?['mulesoft']?['publish']?['filePathPrefix']",
-                        "appYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['app.yaml'], '')",
-                        "devYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['dev.yaml'], '')",
-                        "tstYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['tst.yaml'], '')",
-                        "prodYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['prod.yaml'], '')",
-                        "commitMessage": "@triggerBody()?['mulesoft']?['publish']?['commitMessage']"
+                      ]
+                    },
+                    "actions": {
+                      "Set_MuleSoft_Result_Awaiting": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "mulesoftResult",
+                          "value": {
+                            "status": "AwaitingBranchApproval",
+                            "generate": "@coalesce(body('Invoke_MuleSoft_Config_Generation'), json('null'))"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Invoke_MuleSoft_Config_Publish": {
+                          "type": "Workflow",
+                          "inputs": {
+                            "host": {
+                              "workflow": {
+                                "id": "mulesoft-config-publish"
+                              }
+                            },
+                            "body": {
+                              "correlationId": "@variables('correlationId')",
+                              "repoOwner": "@triggerBody()?['mulesoft']?['publish']?['repoOwner']",
+                              "repoName": "@triggerBody()?['mulesoft']?['publish']?['repoName']",
+                              "baseBranch": "@triggerBody()?['mulesoft']?['publish']?['baseBranch']",
+                              "featureBranchName": "@triggerBody()?['mulesoft']?['publish']?['featureBranchName']",
+                              "filePathPrefix": "@triggerBody()?['mulesoft']?['publish']?['filePathPrefix']",
+                              "appYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['app.yaml'], '')",
+                              "devYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['dev.yaml'], '')",
+                              "tstYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['tst.yaml'], '')",
+                              "prodYaml": "@coalesce(body('Invoke_MuleSoft_Config_Generation')?['prod.yaml'], '')",
+                              "commitMessage": "@triggerBody()?['mulesoft']?['publish']?['commitMessage']"
+                            }
+                          },
+                          "runAfter": {}
+                        },
+                        "Set_MuleSoft_Result": {
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "mulesoftResult",
+                            "value": {
+                              "generate": "@coalesce(body('Invoke_MuleSoft_Config_Generation'), json('null'))",
+                              "publish": "@coalesce(body('Invoke_MuleSoft_Config_Publish'), json('null'))"
+                            }
+                          },
+                          "runAfter": {
+                            "Invoke_MuleSoft_Config_Publish": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
                       }
                     },
                     "runAfter": {
                       "Invoke_MuleSoft_Config_Generation": [
-                        "Succeeded"
-                      ]
-                    }
-                  },
-                  "Set_MuleSoft_Result": {
-                    "type": "SetVariable",
-                    "inputs": {
-                      "name": "mulesoftResult",
-                      "value": {
-                        "generate": "@coalesce(body('Invoke_MuleSoft_Config_Generation'), json('null'))",
-                        "publish": "@coalesce(body('Invoke_MuleSoft_Config_Publish'), json('null'))"
-                      }
-                    },
-                    "runAfter": {
-                      "Invoke_MuleSoft_Config_Publish": [
                         "Succeeded"
                       ]
                     }
@@ -232,42 +263,73 @@
                     },
                     "runAfter": {}
                   },
-                  "Invoke_Solace_Config_Publish": {
-                    "type": "Workflow",
-                    "inputs": {
-                      "host": {
-                        "workflow": {
-                          "id": "solace-config-publish"
+                  "If_Solace_Awaiting_Branch_Approval": {
+                    "type": "If",
+                    "expression": {
+                      "and": [
+                        {
+                          "equals": [
+                            "@coalesce(body('Invoke_Solace_Config_Generation')?['status'], '')",
+                            "AwaitingBranchApproval"
+                          ]
                         }
-                      },
-                      "body": {
-                        "correlationId": "@variables('correlationId')",
-                        "repoOwner": "@triggerBody()?['solace']?['publish']?['repoOwner']",
-                        "repoName": "@triggerBody()?['solace']?['publish']?['repoName']",
-                        "baseBranch": "@triggerBody()?['solace']?['publish']?['baseBranch']",
-                        "featureBranchName": "@triggerBody()?['solace']?['publish']?['featureBranchName']",
-                        "filePath": "@triggerBody()?['solace']?['publish']?['filePath']",
-                        "solaceConfigJson": "@body('Invoke_Solace_Config_Generation')?['mergedConfigJson']",
-                        "commitMessage": "@triggerBody()?['solace']?['publish']?['commitMessage']"
+                      ]
+                    },
+                    "actions": {
+                      "Set_Solace_Result_Awaiting": {
+                        "type": "SetVariable",
+                        "inputs": {
+                          "name": "solaceResult",
+                          "value": {
+                            "status": "AwaitingBranchApproval",
+                            "generate": "@coalesce(body('Invoke_Solace_Config_Generation'), json('null'))"
+                          }
+                        },
+                        "runAfter": {}
+                      }
+                    },
+                    "else": {
+                      "actions": {
+                        "Invoke_Solace_Config_Publish": {
+                          "type": "Workflow",
+                          "inputs": {
+                            "host": {
+                              "workflow": {
+                                "id": "solace-config-publish"
+                              }
+                            },
+                            "body": {
+                              "correlationId": "@variables('correlationId')",
+                              "repoOwner": "@triggerBody()?['solace']?['publish']?['repoOwner']",
+                              "repoName": "@triggerBody()?['solace']?['publish']?['repoName']",
+                              "baseBranch": "@triggerBody()?['solace']?['publish']?['baseBranch']",
+                              "featureBranchName": "@triggerBody()?['solace']?['publish']?['featureBranchName']",
+                              "filePath": "@triggerBody()?['solace']?['publish']?['filePath']",
+                              "solaceConfigJson": "@body('Invoke_Solace_Config_Generation')?['mergedConfigJson']",
+                              "commitMessage": "@triggerBody()?['solace']?['publish']?['commitMessage']"
+                            }
+                          },
+                          "runAfter": {}
+                        },
+                        "Set_Solace_Result": {
+                          "type": "SetVariable",
+                          "inputs": {
+                            "name": "solaceResult",
+                            "value": {
+                              "generate": "@coalesce(body('Invoke_Solace_Config_Generation'), json('null'))",
+                              "publish": "@coalesce(body('Invoke_Solace_Config_Publish'), json('null'))"
+                            }
+                          },
+                          "runAfter": {
+                            "Invoke_Solace_Config_Publish": [
+                              "Succeeded"
+                            ]
+                          }
+                        }
                       }
                     },
                     "runAfter": {
                       "Invoke_Solace_Config_Generation": [
-                        "Succeeded"
-                      ]
-                    }
-                  },
-                  "Set_Solace_Result": {
-                    "type": "SetVariable",
-                    "inputs": {
-                      "name": "solaceResult",
-                      "value": {
-                        "generate": "@coalesce(body('Invoke_Solace_Config_Generation'), json('null'))",
-                        "publish": "@coalesce(body('Invoke_Solace_Config_Publish'), json('null'))"
-                      }
-                    },
-                    "runAfter": {
-                      "Invoke_Solace_Config_Publish": [
                         "Succeeded"
                       ]
                     }

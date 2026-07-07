@@ -227,6 +227,12 @@
             <div class="form-section-title">BTP Deployment Configuration</div>
             <form id="btp-intake-form" onsubmit="event.preventDefault();">
               <div class="form-grid">
+                <div class="form-group"><label>Direction</label>
+                  <select name="direction">
+                    <option value="Outbound" selected>Outbound (1NAV → 3PL)</option>
+                    <option value="Inbound">Inbound (3PL → 1NAV) — skips SME enrichment</option>
+                  </select>
+                </div>
                 <div class="form-group"><label>SubAccount</label><input type="text" name="subAccount" placeholder="e.g. royal-canin-france-uat" /></div>
                 <div class="form-group"><label>Product Name</label><input type="text" name="productName" placeholder="e.g. royal-canin-france-integration" /></div>
                 <div class="form-group"><label>Environment</label><input type="text" name="environment" placeholder="e.g. UAT" /></div>
@@ -256,6 +262,12 @@
             <div class="form-section-title">Solace Settings</div>
             <form id="solace-intake-form" onsubmit="event.preventDefault();">
               <div class="form-grid">
+                <div class="form-group"><label>Direction</label>
+                  <select name="direction">
+                    <option value="Outbound" selected>Outbound (1NAV → 3PL)</option>
+                    <option value="Inbound">Inbound (3PL → 1NAV) — skips SME enrichment</option>
+                  </select>
+                </div>
                 <div class="form-group"><label>Brand</label><input type="text" name="brand" placeholder="e.g. petc" /></div>
                 <div class="form-group"><label>Env</label><input type="text" name="env" placeholder="e.g. rc" /></div>
                 <div class="form-group"><label>System Name</label><input type="text" name="systemName" placeholder="e.g. navision" /></div>
@@ -356,6 +368,12 @@
             <div class="form-section-title">MuleSoft Partner Configuration</div>
             <form id="mulesoft-intake-form" onsubmit="event.preventDefault();">
               <div class="form-grid">
+                <div class="form-group"><label>Direction</label>
+                  <select name="direction">
+                    <option value="Outbound" selected>Outbound (1NAV → 3PL)</option>
+                    <option value="Inbound">Inbound (3PL → 1NAV) — skips SME enrichment</option>
+                  </select>
+                </div>
                 <div class="form-group"><label>Country Key</label><input type="text" name="countryKey" placeholder="e.g. royal-canin-france" /></div>
                 <div class="form-group"><label>Country Code</label><input type="text" name="countryCode" placeholder="e.g. fr" /></div>
                 <div class="form-group wide"><label>Partner Comment</label><input type="text" name="partnerComment" placeholder="e.g. Royal Canin France onboarding..." /></div>
@@ -488,6 +506,16 @@
 
         <!-- View: Status -->
         <div id="view-status" class="view-panel" style="display:none;">
+          <!-- Architecture Approval (whole-onboarding, not per-domain) -->
+          <div class="status-card" id="card-architecture-approval" style="margin-bottom: 16px;">
+            <div class="sc-header">
+              <span class="sc-title"><i class="ti ti-shield-check"></i> Architecture Approval</span>
+              <span class="badge gray" id="arch-approval-badge">Not Requested</span>
+            </div>
+            <div class="sc-row"><span class="sc-label">Approver</span><span class="sc-value" id="arch-approval-approver">—</span></div>
+            <div class="sc-row"><span class="sc-label">Responded At</span><span class="sc-value" id="arch-approval-responded">—</span></div>
+          </div>
+
           <div class="status-grid">
             <!-- Btp Card -->
             <div class="status-card" id="card-btp">
@@ -495,6 +523,7 @@
                 <span class="sc-title"><i class="ti ti-building-bank"></i> BTP Status</span>
                 <span class="badge gray" id="btp-status-badge">Not Found</span>
               </div>
+              <div class="sc-row"><span class="sc-label">Direction</span><span class="badge gray" id="btp-direction-badge">—</span></div>
               <div class="sc-row"><span class="sc-label">Deploy Status</span><span class="badge gray" id="btp-deploy-badge">—</span></div>
               <div class="sc-row"><span class="sc-label">Card Sent At</span><span class="sc-value" id="btp-sent-time">—</span></div>
               <div class="sc-row"><span class="sc-label">Card Responded At</span><span class="sc-value" id="btp-resp-time">—</span></div>
@@ -510,7 +539,10 @@
                 <span class="sc-title"><i class="ti ti-topology-star"></i> Solace Status</span>
                 <span class="badge gray" id="solace-status-badge">Not Found</span>
               </div>
+              <div class="sc-row"><span class="sc-label">Direction</span><span class="badge gray" id="solace-direction-badge">—</span></div>
               <div class="sc-row"><span class="sc-label">Deploy Status</span><span class="badge gray" id="solace-deploy-badge">—</span></div>
+              <div class="sc-row"><span class="sc-label">Branch Approval</span><span class="badge gray" id="solace-branch-approval-badge">—</span></div>
+              <div class="sc-row"><span class="sc-label">Pending Branch</span><span class="sc-value" id="solace-pending-branch">—</span></div>
               <div class="sc-row"><span class="sc-label">Card Sent At</span><span class="sc-value" id="solace-sent-time">—</span></div>
               <div class="sc-row"><span class="sc-label">Card Responded At</span><span class="sc-value" id="solace-resp-time">—</span></div>
               <div>
@@ -525,7 +557,10 @@
                 <span class="sc-title"><i class="ti ti-cloud"></i> MuleSoft Status</span>
                 <span class="badge gray" id="mulesoft-status-badge">Not Found</span>
               </div>
+              <div class="sc-row"><span class="sc-label">Direction</span><span class="badge gray" id="mulesoft-direction-badge">—</span></div>
               <div class="sc-row"><span class="sc-label">Deploy Status</span><span class="badge gray" id="mulesoft-deploy-badge">—</span></div>
+              <div class="sc-row"><span class="sc-label">Branch Approval</span><span class="badge gray" id="mulesoft-branch-approval-badge">—</span></div>
+              <div class="sc-row"><span class="sc-label">Pending Branch</span><span class="sc-value" id="mulesoft-pending-branch">—</span></div>
               <div class="sc-row"><span class="sc-label">Card Sent At</span><span class="sc-value" id="mulesoft-sent-time">—</span></div>
               <div class="sc-row"><span class="sc-label">Card Responded At</span><span class="sc-value" id="mulesoft-resp-time">—</span></div>
               <div>
@@ -789,7 +824,6 @@
     solaceMessageTypes[index][key] = val;
   }
 
-   Palestine = 'Palestine'; // Mock variable
   function removeSolaceMt(index) {
     solaceMessageTypes.splice(index, 1);
     renderSolaceMessageTypesTable();
@@ -1050,7 +1084,8 @@
         if (launchInFlight[btnId]) return;
         const btn = document.getElementById(btnId);
         const card = data[d] || {};
-        const ready = card.found && card.enrichmentStatus === 'Complete' && card.deploymentStatus !== 'InProgress';
+        const ready = card.found && card.enrichmentStatus === 'Complete'
+          && card.deploymentStatus !== 'InProgress' && card.deploymentStatus !== 'AwaitingBranchApproval';
         btn.disabled = !ready;
         btn.innerHTML = `<i class="ti ti-cloud-upload"></i> ${domainLabels[d]}`;
       });
@@ -1062,15 +1097,31 @@
       let inProgress = presentDomains.some(d => data[d].deploymentStatus === 'InProgress');
       let isDeployed = presentDomains.length > 0 && presentDomains.every(d => data[d].deploymentStatus === 'Deployed');
       let isFailed = presentDomains.some(d => data[d].deploymentStatus === 'Failed');
-      
+      let isAwaitingArchApproval = data.architectureApproval?.status === 'Pending';
+      let isAwaitingBranchApproval = presentDomains.some(d => data[d].deploymentStatus === 'AwaitingBranchApproval');
+
       const progressWrapper = document.getElementById('launch-progress-bar');
       const progressFill = document.getElementById('launch-progress-fill');
       const progressText = document.getElementById('launch-progress-text');
       const progressPct = document.getElementById('launch-progress-pct');
 
-      if (inProgress) {
+      if (isAwaitingArchApproval) {
+        progressWrapper.style.display = 'block';
+        progressFill.style.width = '25%';
+        progressFill.style.background = '';
+        progressText.textContent = 'Waiting on architecture approval email reply…';
+        progressPct.textContent = 'Awaiting approval';
+      } else if (isAwaitingBranchApproval) {
+        const waitingDomain = presentDomains.find(d => data[d].deploymentStatus === 'AwaitingBranchApproval');
+        progressWrapper.style.display = 'block';
+        progressFill.style.width = '65%';
+        progressFill.style.background = '';
+        progressText.textContent = `Waiting on branch-creation approval for ${waitingDomain}…`;
+        progressPct.textContent = 'Awaiting approval';
+      } else if (inProgress) {
         progressWrapper.style.display = 'block';
         progressFill.style.width = '50%';
+        progressFill.style.background = '';
         progressText.textContent = 'Orchestrator publishing configuration...';
         progressPct.textContent = '50%';
       } else if (isDeployed) {
@@ -1098,18 +1149,25 @@
       const card = data[d] || {};
       const statusBadge = document.getElementById(`${d}-status-badge`);
       const deployBadge = document.getElementById(`${d}-deploy-badge`);
+      const directionBadge = document.getElementById(`${d}-direction-badge`);
       const sentTime = document.getElementById(`${d}-sent-time`);
       const respTime = document.getElementById(`${d}-resp-time`);
       const chips = document.getElementById(`${d}-missing-chips`);
+      const branchBadge = document.getElementById(`${d}-branch-approval-badge`);
+      const pendingBranch = document.getElementById(`${d}-pending-branch`);
 
       if (!card.found) {
         statusBadge.className = 'badge gray';
         statusBadge.textContent = 'Not Found';
         deployBadge.className = 'badge gray';
         deployBadge.textContent = '—';
+        directionBadge.className = 'badge gray';
+        directionBadge.textContent = '—';
         sentTime.textContent = '—';
         respTime.textContent = '—';
         chips.innerHTML = '<span class="chip" style="background:none; border:none; color:var(--color-text-tertiary);">no config row</span>';
+        if (branchBadge) { branchBadge.className = 'badge gray'; branchBadge.textContent = '—'; }
+        if (pendingBranch) pendingBranch.textContent = '—';
         return;
       }
 
@@ -1117,12 +1175,28 @@
       statusBadge.textContent = card.enrichmentStatus;
       statusBadge.className = `badge ${card.enrichmentStatus === 'Complete' ? 'green' : 'orange'}`;
 
+      // Direction
+      directionBadge.textContent = card.direction || 'Outbound';
+      directionBadge.className = `badge ${card.direction === 'Inbound' ? 'blue' : 'gray'}`;
+
       // Deploy Status
       deployBadge.textContent = card.deploymentStatus;
       if (card.deploymentStatus === 'Deployed') deployBadge.className = 'badge green';
       else if (card.deploymentStatus === 'InProgress') deployBadge.className = 'badge blue';
+      else if (card.deploymentStatus === 'AwaitingBranchApproval') deployBadge.className = 'badge orange';
       else if (card.deploymentStatus === 'Failed') deployBadge.className = 'badge red';
       else deployBadge.className = 'badge gray';
+
+      // Branch approval (Solace/MuleSoft only — cards for Btp have no such elements)
+      if (branchBadge) {
+        const bas = card.branchApprovalStatus;
+        branchBadge.textContent = bas || '—';
+        if (bas === 'Approved') branchBadge.className = 'badge green';
+        else if (bas === 'Pending') branchBadge.className = 'badge orange';
+        else if (bas === 'Rejected') branchBadge.className = 'badge red';
+        else branchBadge.className = 'badge gray';
+      }
+      if (pendingBranch) pendingBranch.textContent = card.pendingBranchName || '—';
 
       // Timestamps
       sentTime.textContent = card.cardSentAt ? new Date(card.cardSentAt).toLocaleString() : '—';
@@ -1135,6 +1209,24 @@
         chips.innerHTML = `<span class="chip" style="background:#e1f5ee; color:var(--teal-m); border-color:rgba(29,158,117,0.15);"><i class="ti ti-check"></i> None</span>`;
       }
     });
+
+    updateArchitectureApprovalCard(data.architectureApproval || {});
+  }
+
+  function updateArchitectureApprovalCard(arch) {
+    const badge = document.getElementById('arch-approval-badge');
+    const approver = document.getElementById('arch-approval-approver');
+    const responded = document.getElementById('arch-approval-responded');
+
+    const status = arch.status || 'NotRequested';
+    badge.textContent = status === 'NotRequested' ? 'Not Requested' : status;
+    if (status === 'Approved') badge.className = 'badge green';
+    else if (status === 'Pending') badge.className = 'badge orange';
+    else if (status === 'Rejected') badge.className = 'badge red';
+    else badge.className = 'badge gray';
+
+    approver.textContent = arch.approverEmail || '—';
+    responded.textContent = arch.respondedAt ? new Date(arch.respondedAt).toLocaleString() : '—';
   }
 
   function updateAuditTimeline(trail) {
