@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Azure.Functions.Extensions.Workflows;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using ThreePlLocalFunction.Shared;
 
 namespace SolaceConfigGenerator.Functions;
@@ -45,10 +47,14 @@ public class BuildSolaceCsvRequest
 {
     public SolaceClientRow? ParentRow { get; set; }
     public List<SolaceMessageTypeRow>? MessageTypes { get; set; }
+    public string? CorrelationId { get; set; }  // logging only
 }
 
 public class BuildSolaceCsvFunction
 {
+    private readonly ILogger<BuildSolaceCsvFunction> _logger =
+        NullLogger<BuildSolaceCsvFunction>.Instance;
+
     [Function("BuildSolaceCsv")]
     public IDictionary<string, object> Run([WorkflowActionTrigger] BuildSolaceCsvRequest request)
     {
@@ -58,6 +64,10 @@ public class BuildSolaceCsvFunction
             throw new ArgumentException("ParentRow must not be null.");
         if (request.MessageTypes == null || request.MessageTypes.Count == 0)
             throw new ArgumentException("MessageTypes must contain at least one row.");
+
+        _logger.LogInformation(
+            "[{CorrelationId}] BuildSolaceCsv invoked, messageTypeRows={Count}",
+            request.CorrelationId, request.MessageTypes.Count);
 
         var sb = new StringBuilder();
         // Append Header
@@ -112,7 +122,8 @@ public class BuildSolaceCsvFunction
 
         return new Dictionary<string, object>
         {
-            ["csvContent"] = sb.ToString()
+            ["csvContent"] = sb.ToString(),
+            ["correlationId"] = request.CorrelationId ?? ""
         };
     }
 }

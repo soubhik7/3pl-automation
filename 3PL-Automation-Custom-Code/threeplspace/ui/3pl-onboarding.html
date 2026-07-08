@@ -178,6 +178,16 @@
     .toast.success { border-left: 4px solid var(--teal); }
     .toast.error { border-left: 4px solid #d63939; }
 
+    /* ── NEW ONBOARDING MODAL ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(20,24,32,.45); align-items: center; justify-content: center; z-index: 3000; }
+    .modal-overlay.show { display: flex; }
+    .modal-box { background: #fff; border-radius: 12px; width: 100%; max-width: 420px; box-shadow: 0 12px 48px rgba(0,0,0,.25); overflow: hidden; }
+    .modal-header { padding: 16px 20px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--color-border-tertiary); display: flex; align-items: center; gap: 8px; color: var(--color-text-primary); }
+    .modal-body { padding: 20px; }
+    .modal-hint { font-size: 12px; color: var(--color-text-secondary); line-height: 1.5; margin-bottom: 16px; }
+    .modal-preview { margin-top: 14px; font-size: 11px; color: var(--teal-m); font-family: var(--font-mono); word-break: break-all; min-height: 14px; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--color-border-tertiary); display: flex; justify-content: flex-end; gap: 10px; background: var(--color-background-secondary); }
+
   </style>
 </head>
 <body>
@@ -625,6 +635,28 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="new-onboarding-modal" onclick="if(event.target===this) closeNewOnboardingModal();">
+  <div class="modal-box">
+    <div class="modal-header"><i class="ti ti-plus"></i> New Onboarding</div>
+    <div class="modal-body">
+      <p class="modal-hint">The correlation ID links the BTP, Solace, and MuleSoft rows for this onboarding across every table, workflow, and function run. It's generated from the partner and region you enter here.</p>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label>3PL Partner</label>
+        <input type="text" id="new-partner-input" placeholder="e.g. Royal Canin" oninput="updateCorrelationPreview()" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmNewOnboarding();}" />
+      </div>
+      <div class="form-group">
+        <label>Region</label>
+        <input type="text" id="new-region-input" placeholder="e.g. France or EMEA" oninput="updateCorrelationPreview()" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmNewOnboarding();}" />
+      </div>
+      <div class="modal-preview" id="new-correlation-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeNewOnboardingModal()">Cancel</button>
+      <button class="btn primary" onclick="confirmNewOnboarding()"><i class="ti ti-check"></i> Create</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast-el"></div>
 
 <script>
@@ -742,21 +774,67 @@
     }
   }
 
-  function generateUniqueSuffix() {
-    if (window.crypto && crypto.randomUUID) return crypto.randomUUID().replace(/-/g, '').slice(0, 12);
-    return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
+  // Correlation ID format: 3PLPnP-<3PL Partner>-<Region>-<DateTimeStamp>.
+  // This ID is the shared key every SQL table (BtpConfig/SolaceClient/
+  // MuleSoftPartner/EnrichmentAuditLog), every workflow, and every local
+  // function carries end-to-end for one onboarding -- see plan.md's
+  // "shared correlationId" architecture note. Partner/Region are
+  // slug-ified (alphanumeric only, capped) so the 4-segment shape stays
+  // parseable and the value fits well inside the CorrelationId NVARCHAR(100)
+  // columns.
+  function slugifyCorrelationSegment(value, maxLen) {
+    return (value || '')
+      .toString()
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '')
+      .slice(0, maxLen);
+  }
+
+  function buildCorrelationId(partner, region) {
+    const partnerSlug = slugifyCorrelationSegment(partner, 24) || 'PARTNER';
+    const regionSlug = slugifyCorrelationSegment(region, 24) || 'REGION';
+    const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    const ts = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}${pad(now.getUTCSeconds())}`;
+    return `3PLPnP-${partnerSlug}-${regionSlug}-${ts}`;
   }
 
   function startNewOnboarding() {
+    document.getElementById('new-partner-input').value = '';
+    document.getElementById('new-region-input').value = '';
+    document.getElementById('new-correlation-preview').textContent = '';
+    document.getElementById('new-onboarding-modal').classList.add('show');
+    document.getElementById('new-partner-input').focus();
+  }
+
+  function closeNewOnboardingModal() {
+    document.getElementById('new-onboarding-modal').classList.remove('show');
+  }
+
+  function updateCorrelationPreview() {
+    const partner = document.getElementById('new-partner-input').value.trim();
+    const region = document.getElementById('new-region-input').value.trim();
+    const preview = document.getElementById('new-correlation-preview');
+    preview.textContent = (partner || region) ? buildCorrelationId(partner, region) : '';
+  }
+
+  function confirmNewOnboarding() {
+    const partner = document.getElementById('new-partner-input').value.trim();
+    const region = document.getElementById('new-region-input').value.trim();
+    if (!partner || !region) {
+      showToast('error', 'Enter both 3PL Partner and Region to continue.');
+      return;
+    }
+
     stopPolling();
-    const ts = Date.now();
-    const slug = 'onboarding';
-    const newId = `ui-${slug}-${ts}-${generateUniqueSuffix()}`;
+    const newId = buildCorrelationId(partner, region);
 
     activeCorrelationId = newId;
     addRecentSession(newId);
     selectSession(newId);
-    
+    closeNewOnboardingModal();
+
     switchView('intake');
     showToast('success', `Created new onboarding session: ${newId}`);
   }

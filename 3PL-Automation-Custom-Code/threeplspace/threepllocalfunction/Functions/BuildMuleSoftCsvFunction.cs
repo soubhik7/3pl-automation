@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Azure.Functions.Extensions.Workflows;
 using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using ThreePlLocalFunction.Shared;
 
 namespace MuleSoftAutomation.Functions;
@@ -64,10 +66,14 @@ public class BuildMuleSoftCsvRequest
     public List<MuleSoftMessageTypeRow>? MessageTypes { get; set; }
     public List<MuleSoftSourceDestinationRow>? SourceDestinations { get; set; }
     public List<MuleSoftUomMappingRow>? UomMappings { get; set; }
+    public string? CorrelationId { get; set; }  // logging only
 }
 
 public class BuildMuleSoftCsvFunction
 {
+    private readonly ILogger<BuildMuleSoftCsvFunction> _logger =
+        NullLogger<BuildMuleSoftCsvFunction>.Instance;
+
     [Function("BuildMuleSoftCsv")]
     public IDictionary<string, object> Run([WorkflowActionTrigger] BuildMuleSoftCsvRequest request)
     {
@@ -76,7 +82,7 @@ public class BuildMuleSoftCsvFunction
         if (request.ParentRow == null)
             throw new ArgumentException("ParentRow must not be null.");
 
-        int totalChildRows = 
+        int totalChildRows =
             (request.Environments?.Count ?? 0) +
             (request.TransactionTypes?.Count ?? 0) +
             (request.MessageTypes?.Count ?? 0) +
@@ -85,6 +91,10 @@ public class BuildMuleSoftCsvFunction
 
         if (totalChildRows == 0)
             throw new ArgumentException("MuleSoft requirements must contain at least one child row across Environments, TransactionTypes, MessageTypes, SourceDestinations, or UomMappings.");
+
+        _logger.LogInformation(
+            "[{CorrelationId}] BuildMuleSoftCsv invoked, totalChildRows={Count}",
+            request.CorrelationId, totalChildRows);
 
         var sb = new StringBuilder();
         // Append Header
@@ -140,7 +150,8 @@ public class BuildMuleSoftCsvFunction
 
         return new Dictionary<string, object>
         {
-            ["csvContent"] = sb.ToString()
+            ["csvContent"] = sb.ToString(),
+            ["correlationId"] = request.CorrelationId ?? ""
         };
     }
 

@@ -563,7 +563,8 @@
                           "clientUserGuaranteedEndpointPermissionOverrideEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserGuaranteedEndpointPermissionOverrideEnabled']",
                           "clientUserSubscriptionManagerEnabled": "@first(coalesce(body('Get_Solace_Row')?[0], body('Get_Solace_Row'), json('[]')))?['ClientUserSubscriptionManagerEnabled']"
                         },
-                        "messageTypes": "@coalesce(body('Get_SolaceMessageTypes')?[0], body('Get_SolaceMessageTypes'), json('[]'))"
+                        "messageTypes": "@coalesce(body('Get_SolaceMessageTypes')?[0], body('Get_SolaceMessageTypes'), json('[]'))",
+                        "correlationId": "@variables('correlationId')"
                       }
                     },
                     "runAfter": {
@@ -696,7 +697,8 @@
                         "transactionTypes": "@coalesce(body('Get_MuleSoftTransactionTypes')?[0], body('Get_MuleSoftTransactionTypes'), json('[]'))",
                         "messageTypes": "@coalesce(body('Get_MuleSoftMessageTypes')?[0], body('Get_MuleSoftMessageTypes'), json('[]'))",
                         "sourceDestinations": "@coalesce(body('Get_MuleSoftSourceDestinations')?[0], body('Get_MuleSoftSourceDestinations'), json('[]'))",
-                        "uomMappings": "@coalesce(body('Get_MuleSoftUomMappings')?[0], body('Get_MuleSoftUomMappings'), json('[]'))"
+                        "uomMappings": "@coalesce(body('Get_MuleSoftUomMappings')?[0], body('Get_MuleSoftUomMappings'), json('[]'))",
+                        "correlationId": "@variables('correlationId')"
                       }
                     },
                     "runAfter": {

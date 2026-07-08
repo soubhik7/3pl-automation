@@ -151,6 +151,72 @@
           ]
         }
       },
+      "Get_Onboarding_Row": {
+        "type": "ServiceProvider",
+        "inputs": {
+          "parameters": {
+            "query": "@concat('SELECT TOP 1 CorrelationId FROM dbo.Onboarding WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+          },
+          "serviceProviderConfiguration": {
+            "connectionName": "sql",
+            "operationId": "executeQuery",
+            "serviceProviderId": "/serviceProviders/sql"
+          },
+          "retryPolicy": {
+            "type": "exponential",
+            "count": 3,
+            "interval": "PT5S",
+            "maximumInterval": "PT1M"
+          }
+        },
+        "runAfter": {
+          "Initialize_MuleSoftRow": [
+            "Succeeded"
+          ]
+        }
+      },
+      "If_Onboarding_Row_Missing": {
+        "type": "If",
+        "expression": {
+          "equals": [
+            "@empty(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))",
+            true
+          ]
+        },
+        "actions": {
+          "Insert_Onboarding_Row": {
+            "type": "ServiceProvider",
+            "inputs": {
+              "parameters": {
+                "tableName": "[dbo].[Onboarding]",
+                "setColumns": {
+                  "CorrelationId": "@variables('correlationId')"
+                }
+              },
+              "serviceProviderConfiguration": {
+                "connectionName": "sql",
+                "operationId": "insertRow",
+                "serviceProviderId": "/serviceProviders/sql"
+              },
+              "retryPolicy": {
+                "type": "exponential",
+                "count": 3,
+                "interval": "PT5S",
+                "maximumInterval": "PT1M"
+              }
+            },
+            "runAfter": {}
+          }
+        },
+        "else": {
+          "actions": {}
+        },
+        "runAfter": {
+          "Get_Onboarding_Row": [
+            "Succeeded"
+          ]
+        }
+      },
       "Scope-Try": {
         "type": "Scope",
         "actions": {
@@ -2125,7 +2191,7 @@
           }
         },
         "runAfter": {
-          "Initialize_MuleSoftRow": [
+          "If_Onboarding_Row_Missing": [
             "Succeeded"
           ]
         }

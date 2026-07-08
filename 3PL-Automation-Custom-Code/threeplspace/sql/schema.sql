@@ -519,3 +519,72 @@ IF (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID('dbo.MuleSoft
     ALTER TABLE dbo.MuleSoftPartner ALTER COLUMN DeploymentStatus NVARCHAR(30) NOT NULL;
 GO
 
+-- ============================================================================
+-- dbo.Onboarding -- master anchor row, one per CorrelationId. Until now
+-- CorrelationId was only a shared string convention (same value copied into
+-- BtpConfig/SolaceClient/MuleSoftPartner/EnrichmentAuditLog/OnboardingApproval
+-- and indexed on each), with no enforced relationship between the tables.
+-- This table plus the FK constraints below turn that into a real, enforced
+-- link: every one of those tables' CorrelationId now has to exist here.
+-- data-enrichment creates the row on first write for a new CorrelationId
+-- (Get_Onboarding_Row / If_Onboarding_Row_Missing, before the domain Switch),
+-- so by the time any domain/audit row is inserted, its parent already exists.
+-- ============================================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'Onboarding' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.Onboarding
+    (
+        CorrelationId   NVARCHAR(100)   NOT NULL,
+        CreatedAt       DATETIME2       NOT NULL CONSTRAINT DF_Onboarding_CreatedAt DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT PK_Onboarding PRIMARY KEY CLUSTERED (CorrelationId)
+    );
+END
+GO
+
+GRANT SELECT, INSERT ON dbo.Onboarding TO [threepl-logicapp-svc];
+GO
+
+-- Backfill: an Onboarding row for every CorrelationId already referenced by
+-- existing data, so the FK constraints below don't reject historical rows
+-- created before this table existed.
+INSERT INTO dbo.Onboarding (CorrelationId)
+SELECT DISTINCT CorrelationId FROM dbo.BtpConfig
+WHERE CorrelationId IS NOT NULL AND CorrelationId NOT IN (SELECT CorrelationId FROM dbo.Onboarding);
+GO
+INSERT INTO dbo.Onboarding (CorrelationId)
+SELECT DISTINCT CorrelationId FROM dbo.SolaceClient
+WHERE CorrelationId IS NOT NULL AND CorrelationId NOT IN (SELECT CorrelationId FROM dbo.Onboarding);
+GO
+INSERT INTO dbo.Onboarding (CorrelationId)
+SELECT DISTINCT CorrelationId FROM dbo.MuleSoftPartner
+WHERE CorrelationId IS NOT NULL AND CorrelationId NOT IN (SELECT CorrelationId FROM dbo.Onboarding);
+GO
+INSERT INTO dbo.Onboarding (CorrelationId)
+SELECT DISTINCT CorrelationId FROM dbo.EnrichmentAuditLog
+WHERE CorrelationId NOT IN (SELECT CorrelationId FROM dbo.Onboarding);
+GO
+INSERT INTO dbo.Onboarding (CorrelationId)
+SELECT DISTINCT CorrelationId FROM dbo.OnboardingApproval
+WHERE CorrelationId NOT IN (SELECT CorrelationId FROM dbo.Onboarding);
+GO
+
+-- Foreign keys: real, enforced linkage from every CorrelationId-bearing table
+-- back to its one Onboarding row. NULL CorrelationId values on
+-- BtpConfig/SolaceClient/MuleSoftPartner (legacy rows predating this feature)
+-- are exempt from FK checking -- standard SQL Server NULL/FK semantics.
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_BtpConfig_Onboarding')
+    ALTER TABLE dbo.BtpConfig ADD CONSTRAINT FK_BtpConfig_Onboarding FOREIGN KEY (CorrelationId) REFERENCES dbo.Onboarding (CorrelationId);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_SolaceClient_Onboarding')
+    ALTER TABLE dbo.SolaceClient ADD CONSTRAINT FK_SolaceClient_Onboarding FOREIGN KEY (CorrelationId) REFERENCES dbo.Onboarding (CorrelationId);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_MuleSoftPartner_Onboarding')
+    ALTER TABLE dbo.MuleSoftPartner ADD CONSTRAINT FK_MuleSoftPartner_Onboarding FOREIGN KEY (CorrelationId) REFERENCES dbo.Onboarding (CorrelationId);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_EnrichmentAuditLog_Onboarding')
+    ALTER TABLE dbo.EnrichmentAuditLog ADD CONSTRAINT FK_EnrichmentAuditLog_Onboarding FOREIGN KEY (CorrelationId) REFERENCES dbo.Onboarding (CorrelationId);
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_OnboardingApproval_Onboarding')
+    ALTER TABLE dbo.OnboardingApproval ADD CONSTRAINT FK_OnboardingApproval_Onboarding FOREIGN KEY (CorrelationId) REFERENCES dbo.Onboarding (CorrelationId);
+GO
+
