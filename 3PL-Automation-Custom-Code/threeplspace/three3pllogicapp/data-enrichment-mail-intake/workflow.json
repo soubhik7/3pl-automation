@@ -62,7 +62,7 @@
                   "Case_Architecture": {
                     "case": "Architecture",
                     "actions": {
-                      "If_Approval_Decision_Valid": {
+                      "If_Approval_Decision_Valid_Architecture": {
                         "type": "If",
                         "expression": {
                           "and": [
@@ -77,7 +77,7 @@
                           ]
                         },
                         "actions": {
-                          "Update_Approval_Status": {
+                          "Update_Approval_Status_Architecture": {
                             "type": "ServiceProvider",
                             "inputs": {
                               "parameters": {
@@ -105,7 +105,7 @@
                             },
                             "runAfter": {}
                           },
-                          "Insert_Audit_Approval_Decision": {
+                          "Insert_Audit_Approval_Decision_Architecture": {
                             "type": "ServiceProvider",
                             "inputs": {
                               "parameters": {
@@ -133,7 +133,7 @@
                               }
                             },
                             "runAfter": {
-                              "Update_Approval_Status": [
+                              "Update_Approval_Status_Architecture": [
                                 "Succeeded"
                               ]
                             }
@@ -141,7 +141,7 @@
                         },
                         "else": {
                           "actions": {
-                            "Insert_Audit_MailRejected_UnparseableDecision": {
+                            "Insert_Audit_MailRejected_UnparseableDecision_Architecture": {
                               "type": "ServiceProvider",
                               "inputs": {
                                 "parameters": {
@@ -179,7 +179,7 @@
                   "Case_Branch_Solace": {
                     "case": "Branch-Solace",
                     "actions": {
-                      "If_Approval_Decision_Valid": {
+                      "If_Approval_Decision_Valid_Solace": {
                         "type": "If",
                         "expression": {
                           "and": [
@@ -194,7 +194,7 @@
                           ]
                         },
                         "actions": {
-                          "Update_Approval_Status": {
+                          "Update_Approval_Status_Solace": {
                             "type": "ServiceProvider",
                             "inputs": {
                               "parameters": {
@@ -221,7 +221,7 @@
                             },
                             "runAfter": {}
                           },
-                          "Insert_Audit_Approval_Decision": {
+                          "Insert_Audit_Approval_Decision_Solace": {
                             "type": "ServiceProvider",
                             "inputs": {
                               "parameters": {
@@ -249,7 +249,7 @@
                               }
                             },
                             "runAfter": {
-                              "Update_Approval_Status": [
+                              "Update_Approval_Status_Solace": [
                                 "Succeeded"
                               ]
                             }
@@ -257,7 +257,7 @@
                         },
                         "else": {
                           "actions": {
-                            "Insert_Audit_MailRejected_UnparseableDecision": {
+                            "Insert_Audit_MailRejected_UnparseableDecision_Solace": {
                               "type": "ServiceProvider",
                               "inputs": {
                                 "parameters": {
@@ -295,7 +295,7 @@
                   "Case_Branch_MuleSoft": {
                     "case": "Branch-MuleSoft",
                     "actions": {
-                      "If_Approval_Decision_Valid": {
+                      "If_Approval_Decision_Valid_MuleSoft": {
                         "type": "If",
                         "expression": {
                           "and": [
@@ -310,7 +310,7 @@
                           ]
                         },
                         "actions": {
-                          "Update_Approval_Status": {
+                          "Update_Approval_Status_MuleSoft": {
                             "type": "ServiceProvider",
                             "inputs": {
                               "parameters": {
@@ -337,7 +337,7 @@
                             },
                             "runAfter": {}
                           },
-                          "Insert_Audit_Approval_Decision": {
+                          "Insert_Audit_Approval_Decision_MuleSoft": {
                             "type": "ServiceProvider",
                             "inputs": {
                               "parameters": {
@@ -365,7 +365,7 @@
                               }
                             },
                             "runAfter": {
-                              "Update_Approval_Status": [
+                              "Update_Approval_Status_MuleSoft": [
                                 "Succeeded"
                               ]
                             }
@@ -373,7 +373,7 @@
                         },
                         "else": {
                           "actions": {
-                            "Insert_Audit_MailRejected_UnparseableDecision": {
+                            "Insert_Audit_MailRejected_UnparseableDecision_MuleSoft": {
                               "type": "ServiceProvider",
                               "inputs": {
                                 "parameters": {
@@ -1256,7 +1256,7 @@
             },
             "method": "get",
             "queries": {
-              "from": "sou7bhik@gmail.com",
+              "from": "soubhikmukhopadhyay4@gmail.com",
               "importance": "Any",
               "fetchOnlyWithAttachment": false,
               "includeAttachments": false,

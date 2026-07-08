@@ -1,14 +1,27 @@
 {
+  "managedApiConnections": {
+    "outlook": {
+      "api": {
+        "id": "/subscriptions/8dc403fd-471e-4417-8f8f-14ba88bc3118/providers/Microsoft.Web/locations/centralindia/managedApis/outlook"
+      },
+      "authentication": {
+        "type": "ManagedServiceIdentity"
+      },
+      "connection": {
+        "id": "/subscriptions/8dc403fd-471e-4417-8f8f-14ba88bc3118/resourceGroups/ODL-IBM-2263372/providers/Microsoft.Web/connections/outlook"
+      },
+      "connectionRuntimeUrl": "https://661ff6bec582c80b.04.common.logic-centralindia.azure-apihub.net/apim/outlook/cd03f9c44f0245e2a5f50bf05379afbb"
+    }
+  },
   "serviceProviderConnections": {
     "sql": {
+      "displayName": "sql",
       "parameterValues": {
-        "connectionString": "@appsetting('SqlConnectionString')"
+        "connectionString": "@appsetting('sql_connectionString')"
       },
       "serviceProvider": {
         "id": "/serviceProviders/sql"
-      },
-      "displayName": "sql"
+      }
     }
-  },
-  "managedApiConnections": {}
+  }
 }

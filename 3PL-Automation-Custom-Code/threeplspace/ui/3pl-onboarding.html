@@ -633,14 +633,24 @@
      SAS-signed invoke URLs pasted locally only, never committed
   ────────────────────────────────────────────────────────────── */
   const API = {
-    dataEnrichment: 'https://3pl-automation-a2gzhsecbjadb6ew.centralindia-01.azurewebsites.net:443/api/data-enrichment/triggers/When_a_HTTP_request_is_received/invoke?api-version=2022-05-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=8uzDoqbAckQjyQ30XVN5zTX_epg25155a1Xyu3VZOrI',
-    enrichmentStatus: 'https://3pl-automation-a2gzhsecbjadb6ew.centralindia-01.azurewebsites.net:443/api/enrichment-status/triggers/When_a_HTTP_request_is_received/invoke?api-version=2022-05-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=7bGnJ1eBfoONL8zqlBklZjMOC4xj9YXK35J7TkhSJ_E',
-    onboardingLauncher: 'https://3pl-automation-a2gzhsecbjadb6ew.centralindia-01.azurewebsites.net:443/api/onboarding-launcher/triggers/When_a_HTTP_request_is_received/invoke?api-version=2022-05-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=gqjoOdxIYwM1H6BjCi1x20lVyPmRoOJkaOdT0mRIaOE'
+    dataEnrichment: 'https://3pl-automation-a2gzhsecbjadb6ew.centralindia-01.azurewebsites.net:443/api/data-enrichment/triggers/When_a_HTTP_request_is_received/invoke?api-version=2022-05-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=THJ7FsYxr23GtBKV49y_tjM6HsOa71Tltl2O1NZmsGY',
+    // Single endpoint for both status polling and intake prefill. Post
+    // {correlationId} alone for the cheap/light response (badges + audit
+    // trail); add includeDetail:true to also get the full saved record +
+    // child-table arrays (record/messageTypes/environments/etc). Only the
+    // one-shot session-load fetch sets includeDetail — the 10s poll never
+    // does, so it never pays for the extra SQL round trips.
+    enrichmentStatus: 'https://3pl-automation-a2gzhsecbjadb6ew.centralindia-01.azurewebsites.net:443/api/enrichment-status/triggers/When_a_HTTP_request_is_received/invoke?api-version=2022-05-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=mFHTPb5YkOmMwR2jK9T_mDKZSbvB_Qfiq1ZQefOSkZY',
+    onboardingLauncher: 'https://3pl-automation-a2gzhsecbjadb6ew.centralindia-01.azurewebsites.net:443/api/onboarding-launcher/triggers/When_a_HTTP_request_is_received/invoke?api-version=2022-05-01&sp=%2Ftriggers%2FWhen_a_HTTP_request_is_received%2Frun&sv=1.0&sig=qm566oojF-J5-mpJEvW1InbWK0tikdy9VKbA6ZJTL-w'
   };
 
   let activeCorrelationId = null;
   let recentSessions = [];
   let pollInterval = null;
+  // Which top-level tab is showing. Polling only ever runs while this is
+  // 'status' or 'launch' — the Intake tab never renders status data, so
+  // polling while sitting there just burns SQL calls for nothing.
+  let currentView = 'intake';
   // Tracks which launch buttons are mid-request, so the 10s status poll
   // doesn't stomp on a button's "Triggering..." spinner before the server
   // has had a chance to flip that domain's DeploymentStatus to InProgress.
@@ -716,9 +726,20 @@
     // Reset Forms
     resetForms();
 
-    // Load/refresh status
-    fetchStatus();
-    startPolling();
+    // Prefill the intake form from whatever this session already has saved
+    // (if anything) — always needed regardless of which tab is showing.
+    fetchIntakeDetail();
+
+    // Only poll status while a status-showing tab is actually open — polling
+    // while sitting on the Intake tab (which never renders status data) would
+    // just burn SQL calls for nothing. switchView() starts polling itself
+    // when the user navigates to Status/Launch. (No need for an extra
+    // one-off fetchStatus() here — fetchIntakeDetail() above already
+    // refreshes the status cards, and startPolling() does its own initial
+    // fetch before the interval kicks in.)
+    if (currentView === 'status' || currentView === 'launch') {
+      startPolling();
+    }
   }
 
   function generateUniqueSuffix() {
@@ -760,10 +781,83 @@
     renderMuleUomMappingsTable();
   }
 
+  // Fills a form's inputs/selects/checkboxes from a flat {fieldName: value}
+  // record returned by enrichment-status (keys match each input's name attr).
+  function populateFormFromRecord(formId, record) {
+    const form = document.getElementById(formId);
+    if (!form || !record) return;
+    Object.keys(record).forEach(key => {
+      const el = form.elements[key];
+      if (!el) return;
+      const val = record[key];
+      if (el.type === 'checkbox') {
+        el.checked = !!val;
+      } else if (val === null || val === undefined) {
+        el.value = '';
+      } else if (typeof val === 'boolean') {
+        el.value = String(val);
+      } else {
+        el.value = val;
+      }
+    });
+  }
+
+  // Fetches the full saved record (all field values + child tables) for the
+  // active session, prefills the intake tab, and refreshes the status cards
+  // from the same response. Passes includeDetail:true, which makes
+  // enrichment-status run its extra ~9 SQL queries — deliberately NOT part of
+  // the 10s status poll (fetchStatus, below), since that would re-run those
+  // extra queries on every tick just to keep data the form already has.
+  function fetchIntakeDetail() {
+    if (!activeCorrelationId || !API.enrichmentStatus) return;
+
+    fetch(API.enrichmentStatus, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correlationId: activeCorrelationId, includeDetail: true })
+    })
+    .then(r => r.ok ? r.json() : null)
+    .then(data => {
+      if (!data) return;
+      updateStatusCards(data);
+      updateAuditTimeline(data.auditTrail || []);
+      populateIntakeForms(data);
+    })
+    .catch(() => {});
+  }
+
+  // Prefills the intake tab with whatever this correlationId already has
+  // saved, so re-selecting a past session shows its data instead of a blank
+  // form. Only called once on session load (see fetchIntakeDetail above).
+  function populateIntakeForms(data) {
+    if (data.btp && data.btp.found && data.btp.record) {
+      populateFormFromRecord('btp-intake-form', data.btp.record);
+    }
+    if (data.solace && data.solace.found && data.solace.record) {
+      populateFormFromRecord('solace-intake-form', data.solace.record);
+      solaceMessageTypes = data.solace.messageTypes || [];
+      renderSolaceMessageTypesTable();
+    }
+    if (data.mulesoft && data.mulesoft.found && data.mulesoft.record) {
+      populateFormFromRecord('mulesoft-intake-form', data.mulesoft.record);
+      muleEnvironments = data.mulesoft.environments || [];
+      muleTransactionTypes = data.mulesoft.transactionTypes || [];
+      muleMessageTypes = data.mulesoft.messageTypes || [];
+      muleSourceDestinations = data.mulesoft.sourceDestinations || [];
+      muleUomMappings = data.mulesoft.uomMappings || [];
+      renderMuleEnvironmentsTable();
+      renderMuleTransactionTypesTable();
+      renderMuleMessageTypesTable();
+      renderMuleSourceDestinationsTable();
+      renderMuleUomMappingsTable();
+    }
+  }
+
   /* ─────────────────────────────────────────────────────────────
      NAVIGATION
   ───────────────────────────────────────────────────────────── */
   function switchView(viewName) {
+    currentView = viewName;
     ['intake', 'status', 'launch'].forEach(v => {
       document.getElementById(`rbtn-${v}`).classList.toggle('active', v === viewName);
       document.getElementById(`view-${v}`).style.display = (v === viewName) ? 'block' : 'none';
@@ -1062,7 +1156,7 @@
       if (!data) return;
       updateStatusCards(data);
       updateAuditTimeline(data.auditTrail || []);
-      
+
       // Update launch panel triggers
       const launchBtn = document.getElementById('launch-trigger-btn');
       if (!launchInFlight['launch-trigger-btn']) {
@@ -1270,6 +1364,18 @@
       pollInterval = null;
     }
   }
+
+  // Pause polling while the browser tab is in the background (switched away,
+  // minimized) and resume — with an immediate refresh — when it's foregrounded
+  // again, but only if a status-showing tab is actually open. Backgrounded
+  // tabs have no one watching the status cards, so polling them is pure waste.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      stopPolling();
+    } else if (currentView === 'status' || currentView === 'launch') {
+      startPolling();
+    }
+  });
 
   /* ─────────────────────────────────────────────────────────────
      LAUNCH TRIGGER (POST to onboarding-launcher)
