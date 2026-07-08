@@ -1,0 +1,89 @@
+{
+  "config": {
+    "service": {
+      "serviceId": "btpservice123",
+      "name": "btp-service-onboarding",
+      "datacenterId": "aks-europewest",
+      "serviceTypeId": "developer",
+      "serviceClassId": "developer"
+    },
+    "eventPortal": {
+      "domainName": "BTP-Service-DE",
+      "domainDescription": "BTP service integration domain for onboarding requests (DE)",
+      "schemas": [
+        {
+          "name": "BTPMessageSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "BTP payload for onboarding",
+          "usedByInterfaces": [
+            "ITF_BTP_ONBOARD_001"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "name": "BTPInboundEvent",
+          "version": "1.0.0",
+          "topic": "3pl/DE/BTP-SERVICE/btp/in/{correlationId}",
+          "schemaRef": "BTPMessageSchema",
+          "direction": "in",
+          "interfaces": [
+            "ITF_BTP_ONBOARD_001"
+          ]
+        }
+      ],
+      "applications": [
+        {
+          "name": "BTP-Service-App",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": [
+            "BTPInboundEvent"
+          ],
+          "consumes": []
+        }
+      ]
+    },
+    "clusterManagement": {
+      "vpnName": "msgvpn-btpservice123",
+      "clientProfiles": [
+        {
+          "name": "cp-btp-service-onboarding"
+        }
+      ],
+      "aclProfiles": [
+        {
+          "name": "acl-btp-service-onboarding",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "publishExceptions": [
+            "3pl/DE/BTP-SERVICE/btp/in/>"
+          ],
+          "subscribeExceptions": []
+        }
+      ],
+      "clientUsernames": [
+        {
+          "name": "svc-btp-onboard-dev",
+          "password": "<SET_VIA_KEY_VAULT>",
+          "clientProfile": "cp-btp-service-onboarding",
+          "aclProfile": "acl-btp-service-onboarding",
+          "enabled": true
+        }
+      ],
+      "queues": [
+        {
+          "name": "Q/3PL/BTP-SERVICE/DEV/btp/in",
+          "accessType": "non-exclusive",
+          "subscriptions": [
+            "3pl/DE/BTP-SERVICE/btp/in/>"
+          ]
+        }
+      ],
+      "restDeliveryPoints": []
+    }
+  },
+  "skipEventPortal": true,
+  "skipCluster": false
+}

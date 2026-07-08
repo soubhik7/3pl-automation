@@ -1,0 +1,89 @@
+{
+  "config": {
+    "service": {
+      "serviceId": "btp1234567",
+      "name": "btp-service-dev",
+      "datacenterId": "aks-australiaeast",
+      "serviceTypeId": "developer",
+      "serviceClassId": "developer"
+    },
+    "eventPortal": {
+      "domainName": "BTP-BTP-SERVICE-DE",
+      "domainDescription": "BTP integration domain for BTP Service (DE)",
+      "schemas": [
+        {
+          "name": "BTPEventSchema",
+          "type": "jsonSchema",
+          "version": "1.0.0",
+          "description": "Schema for BTP service events",
+          "usedByInterfaces": [
+            "ITF_BTP_001"
+          ]
+        }
+      ],
+      "events": [
+        {
+          "name": "BTPEventInbound",
+          "version": "1.0.0",
+          "topic": "3pl/DE/BTP-SERVICE/btpEvent/in/{correlationId}",
+          "schemaRef": "BTPEventSchema",
+          "direction": "in",
+          "interfaces": [
+            "ITF_BTP_001"
+          ]
+        }
+      ],
+      "applications": [
+        {
+          "name": "BTP-Service-App",
+          "type": "standard",
+          "version": "1.0.0",
+          "produces": [
+            "BTPEventInbound"
+          ],
+          "consumes": []
+        }
+      ]
+    },
+    "clusterManagement": {
+      "vpnName": "msgvpn-btp1234567",
+      "clientProfiles": [
+        {
+          "name": "cp-btp-service-dev"
+        }
+      ],
+      "aclProfiles": [
+        {
+          "name": "acl-btp-service-dev",
+          "publishDefault": "disallow",
+          "subscribeDefault": "disallow",
+          "publishExceptions": [
+            "3pl/DE/BTP-SERVICE/btpEvent/in/>"
+          ],
+          "subscribeExceptions": []
+        }
+      ],
+      "clientUsernames": [
+        {
+          "name": "svc-btp-service-dev",
+          "password": "<SET_VIA_KEY_VAULT>",
+          "clientProfile": "cp-btp-service-dev",
+          "aclProfile": "acl-btp-service-dev",
+          "enabled": true
+        }
+      ],
+      "queues": [
+        {
+          "name": "Q/3PL/BTP-SERVICE/DEV/btpEvent/in",
+          "accessType": "non-exclusive",
+          "subscriptions": [
+            "3pl/DE/BTP-SERVICE/btpEvent/in/>"
+          ]
+        }
+      ],
+      "restDeliveryPoints": []
+    }
+  },
+  "skipEventPortal": true,
+  "skipCluster": false
+}
