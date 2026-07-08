@@ -66,6 +66,23 @@
           ]
         }
       },
+      "Initialize_Common_Final_Fields": {
+        "type": "InitializeVariable",
+        "inputs": {
+          "variables": [
+            {
+              "name": "commonFinalFields",
+              "type": "object",
+              "value": {}
+            }
+          ]
+        },
+        "runAfter": {
+          "Initialize_MuleSoft_Final_Fields": [
+            "Succeeded"
+          ]
+        }
+      },
       "Initialize_SolaceClientId": {
         "type": "InitializeVariable",
         "inputs": {
@@ -78,7 +95,7 @@
           ]
         },
         "runAfter": {
-          "Initialize_MuleSoft_Final_Fields": [
+          "Initialize_Common_Final_Fields": [
             "Succeeded"
           ]
         }
@@ -224,6 +241,205 @@
             "type": "Switch",
             "expression": "@coalesce(triggerBody()?['domain'], '')",
             "cases": {
+              "Case_Common": {
+                "case": "Common",
+                "actions": {
+                  "Insert_Common_Audit_Received": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[EnrichmentAuditLog]",
+                        "setColumns": {
+                          "Domain": "Common",
+                          "CorrelationId": "@variables('correlationId')",
+                          "EntityKey": "@coalesce(triggerBody()?['interfaceId'], '')",
+                          "Channel": "@coalesce(triggerBody()?['channel'], 'Api')",
+                          "ActorEmail": "@null",
+                          "EventType": "Received",
+                          "EventDetail": "@null"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "insertRow",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 3,
+                        "interval": "PT5S",
+                        "maximumInterval": "PT1M"
+                      }
+                    },
+                    "runAfter": {}
+                  },
+                  "Get_Common_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "query": "@concat('SELECT TOP 1 * FROM dbo.Onboarding WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "executeQuery",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 3,
+                        "interval": "PT5S",
+                        "maximumInterval": "PT1M"
+                      }
+                    },
+                    "runAfter": {
+                      "Insert_Common_Audit_Received": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Compose_Known_Common_Fields": {
+                    "type": "Compose",
+                    "inputs": {
+                      "interfaceId": "@coalesce(triggerBody()?['interfaceId'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['InterfaceId'], '')",
+                      "eaRef": "@coalesce(triggerBody()?['eaRef'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['EaRef'], '')",
+                      "sourceApp": "@coalesce(triggerBody()?['sourceApp'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['SourceApp'], '')",
+                      "targetApp": "@coalesce(triggerBody()?['targetApp'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['TargetApp'], '')",
+                      "businessObject": "@coalesce(triggerBody()?['businessObject'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['BusinessObject'], '')",
+                      "country": "@coalesce(triggerBody()?['country'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['Country'], '')",
+                      "sourceFormat": "@coalesce(triggerBody()?['sourceFormat'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['SourceFormat'], '')",
+                      "sourceInterfaceType": "@coalesce(triggerBody()?['sourceInterfaceType'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['SourceInterfaceType'], '')",
+                      "targetFormat": "@coalesce(triggerBody()?['targetFormat'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['TargetFormat'], '')",
+                      "targetInterfaceType": "@coalesce(triggerBody()?['targetInterfaceType'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['TargetInterfaceType'], '')",
+                      "functionalDescription": "@coalesce(triggerBody()?['functionalDescription'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['FunctionalDescription'], '')",
+                      "volume": "@coalesce(triggerBody()?['volume'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['Volume'], '')",
+                      "sizePerMessage": "@coalesce(triggerBody()?['sizePerMessage'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['SizePerMessage'], '')",
+                      "peakVolume": "@coalesce(triggerBody()?['peakVolume'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['PeakVolume'], '')",
+                      "threePlPartnerId": "@coalesce(triggerBody()?['threePlPartnerId'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['ThreePlPartnerId'], '')",
+                      "navInstanceId": "@coalesce(triggerBody()?['navInstanceId'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['NavInstanceId'], '')",
+                      "countryCodeIso": "@coalesce(triggerBody()?['countryCodeIso'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['CountryCodeIso'], '')",
+                      "regionIso": "@coalesce(triggerBody()?['regionIso'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['RegionIso'], '')",
+                      "subscriptionRules": "@coalesce(triggerBody()?['subscriptionRules'], first(coalesce(body('Get_Common_Row')?[0], body('Get_Common_Row'), json('[]')))?['SubscriptionRules'], '')"
+                    },
+                    "runAfter": {
+                      "Get_Common_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Set_Common_Final_Fields": {
+                    "type": "SetVariable",
+                    "inputs": {
+                      "name": "commonFinalFields",
+                      "value": "@outputs('Compose_Known_Common_Fields')"
+                    },
+                    "runAfter": {
+                      "Compose_Known_Common_Fields": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Update_Common_Row": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[Onboarding]",
+                        "setColumns": {
+                          "InterfaceId": "@variables('commonFinalFields')?['interfaceId']",
+                          "EaRef": "@variables('commonFinalFields')?['eaRef']",
+                          "SourceApp": "@variables('commonFinalFields')?['sourceApp']",
+                          "TargetApp": "@variables('commonFinalFields')?['targetApp']",
+                          "BusinessObject": "@variables('commonFinalFields')?['businessObject']",
+                          "Country": "@variables('commonFinalFields')?['country']",
+                          "SourceFormat": "@variables('commonFinalFields')?['sourceFormat']",
+                          "SourceInterfaceType": "@variables('commonFinalFields')?['sourceInterfaceType']",
+                          "TargetFormat": "@variables('commonFinalFields')?['targetFormat']",
+                          "TargetInterfaceType": "@variables('commonFinalFields')?['targetInterfaceType']",
+                          "FunctionalDescription": "@variables('commonFinalFields')?['functionalDescription']",
+                          "Volume": "@variables('commonFinalFields')?['volume']",
+                          "SizePerMessage": "@variables('commonFinalFields')?['sizePerMessage']",
+                          "PeakVolume": "@variables('commonFinalFields')?['peakVolume']",
+                          "ThreePlPartnerId": "@variables('commonFinalFields')?['threePlPartnerId']",
+                          "NavInstanceId": "@variables('commonFinalFields')?['navInstanceId']",
+                          "CountryCodeIso": "@variables('commonFinalFields')?['countryCodeIso']",
+                          "RegionIso": "@variables('commonFinalFields')?['regionIso']",
+                          "SubscriptionRules": "@variables('commonFinalFields')?['subscriptionRules']",
+                          "UpdatedAt": "@utcNow()"
+                        },
+                        "columnValuesForWhereCondition": {
+                          "CorrelationId": "@variables('correlationId')"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "updateRows",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 3,
+                        "interval": "PT5S",
+                        "maximumInterval": "PT1M"
+                      }
+                    },
+                    "runAfter": {
+                      "Set_Common_Final_Fields": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Insert_Common_Audit_Upserted": {
+                    "type": "ServiceProvider",
+                    "inputs": {
+                      "parameters": {
+                        "tableName": "[dbo].[EnrichmentAuditLog]",
+                        "setColumns": {
+                          "Domain": "Common",
+                          "CorrelationId": "@variables('correlationId')",
+                          "EntityKey": "@coalesce(variables('commonFinalFields')?['interfaceId'], '')",
+                          "Channel": "@coalesce(triggerBody()?['channel'], 'Api')",
+                          "ActorEmail": "@null",
+                          "EventType": "Upserted",
+                          "EventDetail": "@null"
+                        }
+                      },
+                      "serviceProviderConfiguration": {
+                        "connectionName": "sql",
+                        "operationId": "insertRow",
+                        "serviceProviderId": "/serviceProviders/sql"
+                      },
+                      "retryPolicy": {
+                        "type": "exponential",
+                        "count": 3,
+                        "interval": "PT5S",
+                        "maximumInterval": "PT1M"
+                      }
+                    },
+                    "runAfter": {
+                      "Update_Common_Row": [
+                        "Succeeded"
+                      ]
+                    }
+                  },
+                  "Response-Common-Success": {
+                    "type": "Response",
+                    "kind": "Http",
+                    "inputs": {
+                      "statusCode": 200,
+                      "body": {
+                        "domain": "Common",
+                        "correlationId": "@variables('correlationId')",
+                        "record": "@variables('commonFinalFields')",
+                        "enrichmentStatus": "Saved"
+                      }
+                    },
+                    "runAfter": {
+                      "Insert_Common_Audit_Upserted": [
+                        "Succeeded"
+                      ]
+                    }
+                  }
+                }
+              },
               "Case_Btp": {
                 "case": "Btp",
                 "actions": {

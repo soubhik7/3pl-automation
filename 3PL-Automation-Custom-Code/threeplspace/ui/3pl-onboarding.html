@@ -227,13 +227,138 @@
         <!-- View: Intake -->
         <div id="view-intake" class="view-panel active">
           <div class="domain-tabs">
-            <div class="domain-tab active" id="dtab-btp" onclick="switchDomainTab('btp')"><i class="ti ti-building-bank"></i> SAP BTP</div>
+            <div class="domain-tab active" id="dtab-common" onclick="switchDomainTab('common')"><i class="ti ti-list-details"></i> Common</div>
+            <div class="domain-tab" id="dtab-btp" onclick="switchDomainTab('btp')"><i class="ti ti-building-bank"></i> SAP BTP</div>
             <div class="domain-tab" id="dtab-solace" onclick="switchDomainTab('solace')"><i class="ti ti-topology-star"></i> Solace Client</div>
             <div class="domain-tab" id="dtab-mulesoft" onclick="switchDomainTab('mulesoft')"><i class="ti ti-cloud"></i> MuleSoft Partner</div>
           </div>
 
+          <!-- Intake Form Common -->
+          <div id="form-common" class="domain-form" style="display:block;">
+            <div class="form-section-title">Common Interface Details</div>
+            <form id="common-intake-form" onsubmit="event.preventDefault();">
+              <div class="form-grid">
+                <div class="form-group"><label>Interface ID</label><input type="text" name="interfaceId" placeholder="e.g. ITF_WMS_010" /></div>
+                <div class="form-group"><label>EA Reference</label><input type="text" name="eaRef" placeholder="e.g. EA1234" /></div>
+                <div class="form-group"><label>Source Application</label><input type="text" name="sourceApp" placeholder="e.g. 1NAV" /></div>
+                <div class="form-group"><label>Target Application</label><input type="text" name="targetApp" placeholder="e.g. 3PL" /></div>
+                <div class="form-group"><label>Business Object</label><input type="text" name="businessObject" placeholder="e.g. stockMovement" /></div>
+                <div class="form-group"><label>Country / Market</label>
+                  <select name="country">
+                    <option value="">Select...</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Netherlands">Netherlands</option>
+                    <option value="India">India</option>
+                    <option value="UK">UK</option>
+                    <option value="France">France</option>
+                    <option value="Belgium">Belgium</option>
+                    <option value="Poland">Poland</option>
+                    <option value="Spain">Spain</option>
+                    <option value="Italy">Italy</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Source Format</label>
+                  <select name="sourceFormat">
+                    <option value="">Select...</option>
+                    <option value="xml">xml</option>
+                    <option value="json">json</option>
+                    <option value="txt">txt</option>
+                    <option value="flat-file">flat-file</option>
+                    <option value="idoc">idoc</option>
+                    <option value="csv">csv</option>
+                    <option value="edifact">edifact</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Source Interface Type</label>
+                  <select name="sourceInterfaceType">
+                    <option value="">Select...</option>
+                    <option value="API">API</option>
+                    <option value="SFTP">SFTP</option>
+                    <option value="IDoc">IDoc</option>
+                    <option value="file">file</option>
+                    <option value="REST">REST</option>
+                    <option value="SOAP">SOAP</option>
+                    <option value="JMS">JMS</option>
+                    <option value="DB">DB</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Target Format</label>
+                  <select name="targetFormat">
+                    <option value="">Select...</option>
+                    <option value="xml">xml</option>
+                    <option value="json">json</option>
+                    <option value="idoc">idoc</option>
+                    <option value="txt">txt</option>
+                    <option value="flat-file">flat-file</option>
+                    <option value="csv">csv</option>
+                    <option value="edifact">edifact</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Target Interface Type</label>
+                  <select name="targetInterfaceType">
+                    <option value="">Select...</option>
+                    <option value="API">API</option>
+                    <option value="SFTP">SFTP</option>
+                    <option value="REST">REST</option>
+                    <option value="SOAP">SOAP</option>
+                    <option value="IDoc">IDoc</option>
+                    <option value="JMS">JMS</option>
+                    <option value="file">file</option>
+                  </select>
+                </div>
+                <div class="form-group wide"><label>Functional Description</label><input type="text" name="functionalDescription" placeholder="Brief description of the interface..." /></div>
+                <div class="form-group"><label>Volume (msgs / period)</label>
+                  <select name="volume">
+                    <option value="">Select...</option>
+                    <option value="<1000/day">&lt;1000/day</option>
+                    <option value="1000–10000/day">1000–10000/day</option>
+                    <option value=">10000/day">&gt;10000/day</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Size Per Message</label>
+                  <select name="sizePerMessage">
+                    <option value="">Select...</option>
+                    <option value="<1KB">&lt;1KB</option>
+                    <option value="1–10KB">1–10KB</option>
+                    <option value=">10KB">&gt;10KB</option>
+                  </select>
+                </div>
+                <div class="form-group wide"><label>Peak Volume</label><input type="text" name="peakVolume" placeholder="e.g. 15000/day during peak season" /></div>
+                <div class="form-group"><label>3PL Partner ID</label><input type="text" name="threePlPartnerId" placeholder="e.g. 3PL-001" /></div>
+                <div class="form-group"><label>1Nav Instance ID</label><input type="text" name="navInstanceId" placeholder="e.g. NAV-EU-02" /></div>
+                <div class="form-group"><label>Country Code ISO</label>
+                  <select name="countryCodeIso">
+                    <option value="">Select...</option>
+                    <option value="DE">DE</option>
+                    <option value="NL">NL</option>
+                    <option value="IN">IN</option>
+                    <option value="GB">GB</option>
+                    <option value="US">US</option>
+                    <option value="FR">FR</option>
+                    <option value="BE">BE</option>
+                    <option value="PL">PL</option>
+                    <option value="ES">ES</option>
+                    <option value="IT">IT</option>
+                  </select>
+                </div>
+                <div class="form-group"><label>Region ISO</label>
+                  <select name="regionIso">
+                    <option value="">Select...</option>
+                    <option value="EU">EU</option>
+                    <option value="APAC">APAC</option>
+                    <option value="NA">NA</option>
+                    <option value="MEA">MEA</option>
+                    <option value="LATAM">LATAM</option>
+                  </select>
+                </div>
+                <div class="form-group wide"><label>Subscription Rules</label><input type="text" name="subscriptionRules" placeholder="e.g. ByPartnerID, ByCountry, None" /></div>
+              </div>
+              <button class="btn primary" onclick="saveDomain('Common')"><i class="ti ti-device-floppy"></i> Save Common Domain</button>
+            </form>
+          </div>
+
           <!-- Intake Form BTP -->
-          <div id="form-btp" class="domain-form" style="display:block;">
+          <div id="form-btp" class="domain-form" style="display:none;">
             <div class="form-section-title">BTP Deployment Configuration</div>
             <form id="btp-intake-form" onsubmit="event.preventDefault();">
               <div class="form-grid">
@@ -840,6 +965,7 @@
   }
 
   function resetForms() {
+    document.getElementById('common-intake-form').reset();
     document.getElementById('btp-intake-form').reset();
     document.getElementById('solace-intake-form').reset();
     document.getElementById('mulesoft-intake-form').reset();
@@ -908,6 +1034,9 @@
   // saved, so re-selecting a past session shows its data instead of a blank
   // form. Only called once on session load (see fetchIntakeDetail above).
   function populateIntakeForms(data) {
+    if (data.common && data.common.found && data.common.record) {
+      populateFormFromRecord('common-intake-form', data.common.record);
+    }
     if (data.btp && data.btp.found && data.btp.record) {
       populateFormFromRecord('btp-intake-form', data.btp.record);
     }
@@ -950,7 +1079,7 @@
   }
 
   function switchDomainTab(tabName) {
-    ['btp', 'solace', 'mulesoft'].forEach(t => {
+    ['common', 'btp', 'solace', 'mulesoft'].forEach(t => {
       document.getElementById(`dtab-${t}`).classList.toggle('active', t === tabName);
       document.getElementById(`form-${t}`).style.display = (t === tabName) ? 'block' : 'none';
     });
@@ -1173,7 +1302,10 @@
       correlationId: activeCorrelationId
     };
 
-    if (domain === 'Btp') {
+    if (domain === 'Common') {
+      const data = getFormData('common-intake-form');
+      payload = { ...payload, ...data };
+    } else if (domain === 'Btp') {
       const data = getFormData('btp-intake-form');
       payload = { ...payload, ...data };
     } else if (domain === 'Solace') {

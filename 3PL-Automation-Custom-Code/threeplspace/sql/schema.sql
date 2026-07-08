@@ -588,3 +588,74 @@ IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_OnboardingApprova
     ALTER TABLE dbo.OnboardingApproval ADD CONSTRAINT FK_OnboardingApproval_Onboarding FOREIGN KEY (CorrelationId) REFERENCES dbo.Onboarding (CorrelationId);
 GO
 
+-- ============================================================================
+-- dbo.Onboarding -- "Common" tab columns. These describe the interface being
+-- onboarded as a whole (one set of values per CorrelationId), independent of
+-- the Btp/Solace/MuleSoft domain-specific rows -- mirrors the reference UI's
+-- Common tab (interfaceId/business object/formats/volume/etc.). Saved via
+-- data-enrichment's new Case_Common (always an UPDATE -- the row already
+-- exists by the time any domain writes, see Get_Onboarding_Row/
+-- If_Onboarding_Row_Missing above), read back via enrichment-status for
+-- intake prefill only (not part of the launch-readiness/chase-loop gate).
+-- ============================================================================
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'UpdatedAt')
+    ALTER TABLE dbo.Onboarding ADD UpdatedAt DATETIME2 NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'InterfaceId')
+    ALTER TABLE dbo.Onboarding ADD InterfaceId NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'EaRef')
+    ALTER TABLE dbo.Onboarding ADD EaRef NVARCHAR(20) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'SourceApp')
+    ALTER TABLE dbo.Onboarding ADD SourceApp NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'TargetApp')
+    ALTER TABLE dbo.Onboarding ADD TargetApp NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'BusinessObject')
+    ALTER TABLE dbo.Onboarding ADD BusinessObject NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'Country')
+    ALTER TABLE dbo.Onboarding ADD Country NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'SourceFormat')
+    ALTER TABLE dbo.Onboarding ADD SourceFormat NVARCHAR(50) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'SourceInterfaceType')
+    ALTER TABLE dbo.Onboarding ADD SourceInterfaceType NVARCHAR(50) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'TargetFormat')
+    ALTER TABLE dbo.Onboarding ADD TargetFormat NVARCHAR(50) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'TargetInterfaceType')
+    ALTER TABLE dbo.Onboarding ADD TargetInterfaceType NVARCHAR(50) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'FunctionalDescription')
+    ALTER TABLE dbo.Onboarding ADD FunctionalDescription NVARCHAR(500) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'Volume')
+    ALTER TABLE dbo.Onboarding ADD Volume NVARCHAR(50) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'SizePerMessage')
+    ALTER TABLE dbo.Onboarding ADD SizePerMessage NVARCHAR(50) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'PeakVolume')
+    ALTER TABLE dbo.Onboarding ADD PeakVolume NVARCHAR(200) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'ThreePlPartnerId')
+    ALTER TABLE dbo.Onboarding ADD ThreePlPartnerId NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'NavInstanceId')
+    ALTER TABLE dbo.Onboarding ADD NavInstanceId NVARCHAR(100) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'CountryCodeIso')
+    ALTER TABLE dbo.Onboarding ADD CountryCodeIso NVARCHAR(10) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'RegionIso')
+    ALTER TABLE dbo.Onboarding ADD RegionIso NVARCHAR(20) NULL;
+GO
+IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboarding') AND name = 'SubscriptionRules')
+    ALTER TABLE dbo.Onboarding ADD SubscriptionRules NVARCHAR(500) NULL;
+GO
+

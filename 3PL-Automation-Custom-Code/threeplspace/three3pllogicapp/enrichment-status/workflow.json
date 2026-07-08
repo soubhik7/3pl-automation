@@ -338,6 +338,26 @@
               ]
             },
             "actions": {
+              "Get_Onboarding_Row": {
+                "type": "ServiceProvider",
+                "inputs": {
+                  "parameters": {
+                    "query": "@concat('SELECT TOP 1 * FROM dbo.Onboarding WHERE CorrelationId = ''', replace(variables('correlationId'), '''', ''''''), '''')"
+                  },
+                  "serviceProviderConfiguration": {
+                    "connectionName": "sql",
+                    "operationId": "executeQuery",
+                    "serviceProviderId": "/serviceProviders/sql"
+                  },
+                  "retryPolicy": {
+                    "type": "exponential",
+                    "count": 3,
+                    "interval": "PT5S",
+                    "maximumInterval": "PT1M"
+                  }
+                },
+                "runAfter": {}
+              },
               "Get_Solace_Message_Types": {
                 "type": "ServiceProvider",
                 "inputs": {
@@ -582,10 +602,37 @@
                       "sourceDestinations": "@coalesce(body('Get_Mule_Source_Destinations')?[0], body('Get_Mule_Source_Destinations'), json('[]'))",
                       "uomMappings": "@coalesce(body('Get_Mule_Uom_Mappings')?[0], body('Get_Mule_Uom_Mappings'), json('[]'))"
                     },
+                    "common": {
+                      "found": "@greater(length(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]'))), 0)",
+                      "record": {
+                        "interfaceId": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['InterfaceId']",
+                        "eaRef": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['EaRef']",
+                        "sourceApp": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['SourceApp']",
+                        "targetApp": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['TargetApp']",
+                        "businessObject": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['BusinessObject']",
+                        "country": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['Country']",
+                        "sourceFormat": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['SourceFormat']",
+                        "sourceInterfaceType": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['SourceInterfaceType']",
+                        "targetFormat": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['TargetFormat']",
+                        "targetInterfaceType": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['TargetInterfaceType']",
+                        "functionalDescription": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['FunctionalDescription']",
+                        "volume": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['Volume']",
+                        "sizePerMessage": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['SizePerMessage']",
+                        "peakVolume": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['PeakVolume']",
+                        "threePlPartnerId": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['ThreePlPartnerId']",
+                        "navInstanceId": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['NavInstanceId']",
+                        "countryCodeIso": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['CountryCodeIso']",
+                        "regionIso": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['RegionIso']",
+                        "subscriptionRules": "@first(coalesce(body('Get_Onboarding_Row')?[0], body('Get_Onboarding_Row'), json('[]')))?['SubscriptionRules']"
+                      }
+                    },
                     "auditTrail": "@coalesce(body('Get_Audit_Log')?[0], body('Get_Audit_Log'), json('[]'))"
                   }
                 },
                 "runAfter": {
+                  "Get_Onboarding_Row": [
+                    "Succeeded"
+                  ],
                   "Get_Solace_Message_Types": [
                     "Succeeded"
                   ],
