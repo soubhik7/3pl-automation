@@ -328,6 +328,25 @@ BEGIN
 END
 GO
 
+-- Drift repair (applied to the live DB on 2026-07-08): an out-of-band change
+-- added UQ_EnrichmentAuditLog_CorrelationId plus three foreign keys pointing
+-- config tables at this audit log. The unique constraint caps the trail at one
+-- row per CorrelationId, so every save after the first fails on its audit
+-- insert -- and because the Scope-Catch audit insert hits the same constraint,
+-- the workflow dies without ever reaching a Response action and the caller
+-- sees HTTP 502 "NoResponse". The table is append-many by design (see header
+-- comment). Drop the referencing FKs first (SQL Server blocks dropping a
+-- unique constraint while FKs target it), then the constraint itself.
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_BtpConfig_EnrichmentAuditLog_CorrelationId')
+    ALTER TABLE dbo.BtpConfig DROP CONSTRAINT FK_BtpConfig_EnrichmentAuditLog_CorrelationId;
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_MuleSoftTransactionType_EnrichmentAuditLog_CorrelationId')
+    ALTER TABLE dbo.MuleSoftTransactionType DROP CONSTRAINT FK_MuleSoftTransactionType_EnrichmentAuditLog_CorrelationId;
+IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_SolaceMessageType_EnrichmentAuditLog_CorrelationId')
+    ALTER TABLE dbo.SolaceMessageType DROP CONSTRAINT FK_SolaceMessageType_EnrichmentAuditLog_CorrelationId;
+IF EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = 'UQ_EnrichmentAuditLog_CorrelationId' AND parent_object_id = OBJECT_ID('dbo.EnrichmentAuditLog'))
+    ALTER TABLE dbo.EnrichmentAuditLog DROP CONSTRAINT UQ_EnrichmentAuditLog_CorrelationId;
+GO
+
 -- ============================================================================
 -- Least-privileged identity for the Logic App's built-in SQL connection.
 -- This is an Azure SQL Database CONTAINED user (password lives in this

@@ -188,6 +188,59 @@
     .modal-preview { margin-top: 14px; font-size: 11px; color: var(--teal-m); font-family: var(--font-mono); word-break: break-all; min-height: 14px; }
     .modal-footer { padding: 14px 20px; border-top: 1px solid var(--color-border-tertiary); display: flex; justify-content: flex-end; gap: 10px; background: var(--color-background-secondary); }
 
+    /* ── MOTION & LOADING ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .animate-spin { display: inline-block; animation: spin .8s linear infinite; }
+    @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .view-panel, .domain-form { animation: fadeSlideIn .28s ease; }
+    .btn:active:not(:disabled), .launch-btn-sm:active:not(:disabled), .role-btn:active { transform: scale(.98); }
+
+    /* Indeterminate bar under the topbar — visible whenever a user-initiated
+       network call is in flight (not the 10s background poll). */
+    #global-progress { position: relative; height: 3px; margin-top: -3px; overflow: hidden; flex-shrink: 0; pointer-events: none; z-index: 10; }
+    #global-progress .gp-fill { position: absolute; height: 100%; width: 40%; left: -40%; background: linear-gradient(90deg, var(--teal), #52c99f); border-radius: 3px; opacity: 0; }
+    #global-progress.active .gp-fill { opacity: 1; animation: gpSlide 1.1s ease-in-out infinite; }
+    @keyframes gpSlide { from { left: -40%; } to { left: 100%; } }
+
+    /* Skeleton shimmer over status-card values while a session is loading */
+    @keyframes shimmer { from { background-position: -200px 0; } to { background-position: 200px 0; } }
+    .status-card.loading .badge,
+    .status-card.loading .sc-value,
+    .status-card.loading .chip { color: transparent !important; border-color: transparent !important; background: linear-gradient(90deg, #eef1f4 25%, #f7f9fb 50%, #eef1f4 75%) !important; background-size: 200px 100% !important; animation: shimmer 1.1s linear infinite; border-radius: 6px; min-width: 48px; min-height: 14px; }
+    #main-info-spinner { display: none; align-items: center; color: var(--teal); font-size: 13px; }
+
+    /* Required markers + invalid highlighting */
+    .req-star { color: #d63939; margin-left: 3px; font-weight: 700; }
+    .form-group input.invalid, .form-group select.invalid { border-color: #d63939 !important; box-shadow: 0 0 0 3px rgba(214,57,57,.08) !important; }
+    .table-container.invalid { border-color: #d63939; box-shadow: 0 0 0 3px rgba(214,57,57,.08); }
+    @keyframes shake { 10%, 90% { transform: translateX(-1px); } 20%, 80% { transform: translateX(2px); } 30%, 50%, 70% { transform: translateX(-3px); } 40%, 60% { transform: translateX(3px); } }
+    .shake { animation: shake .4s ease; }
+
+    /* ── ADMIN: FIELD REQUIREMENT CONFIG ── */
+    .admin-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+    .admin-title { font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .admin-sub { font-size: 12.5px; color: var(--color-text-secondary); line-height: 1.55; max-width: 720px; }
+    .admin-domain { border: 1px solid var(--color-border-secondary); border-radius: 12px; background: #fff; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.03); }
+    .admin-domain-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--color-background-secondary); border-bottom: 1px solid var(--color-border-secondary); font-size: 13px; font-weight: 700; color: var(--teal-m); }
+    .admin-dirnote { font-size: 11px; font-weight: 500; color: var(--color-text-tertiary); }
+    .admin-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--color-border-tertiary); font-size: 12.5px; }
+    .admin-row:last-child { border-bottom: none; }
+    .admin-row:hover { background: #fafbfc; }
+    .admin-field { color: var(--color-text-primary); font-weight: 500; display: flex; align-items: center; gap: 6px; }
+    .admin-hint { color: var(--color-text-tertiary); font-weight: 400; font-size: 11px; }
+    .lock-chip { font-size: 11px; color: var(--color-text-secondary); background: #f1f3f5; border: 1px solid var(--color-border-secondary); border-radius: 12px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px; }
+    .req-seg { display: inline-flex; background: #f0f2f5; border-radius: 8px; padding: 2px; gap: 2px; }
+    .req-seg button { border: none; background: none; font-size: 11px; font-weight: 500; padding: 5px 10px; border-radius: 6px; cursor: pointer; color: var(--color-text-secondary); transition: all .15s; }
+    .req-seg button:hover { color: var(--color-text-primary); }
+    .req-seg button.on.always { background: #fde8e8; color: #c53030; font-weight: 600; }
+    .req-seg button.on.outbound { background: #fff3cd; color: #856404; font-weight: 600; }
+    .req-seg button.on.optional { background: #fff; color: #383d41; font-weight: 600; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+    /* Slim rounded scrollbars for the scrolling panes */
+    #main-body::-webkit-scrollbar, #sb-recent-list::-webkit-scrollbar { width: 8px; }
+    #main-body::-webkit-scrollbar-thumb, #sb-recent-list::-webkit-scrollbar-thumb { background: #d5dbe3; border-radius: 8px; }
+    #main-body::-webkit-scrollbar-thumb:hover, #sb-recent-list::-webkit-scrollbar-thumb:hover { background: #bcc5d1; }
+
   </style>
 </head>
 <body>
@@ -203,9 +256,11 @@
         <button class="role-btn active" id="rbtn-intake" onclick="switchView('intake')"><i class="ti ti-edit"></i> Onboarding Intake</button>
         <button class="role-btn" id="rbtn-status" onclick="switchView('status')"><i class="ti ti-chart-line"></i> Status & Tracking</button>
         <button class="role-btn" id="rbtn-launch" onclick="switchView('launch')"><i class="ti ti-rocket"></i> Launch</button>
+        <button class="role-btn" id="rbtn-admin" onclick="switchView('admin')"><i class="ti ti-settings"></i> Admin</button>
       </div>
     </div>
   </div>
+  <div id="global-progress"><div class="gp-fill"></div></div>
 
   <div id="body">
     <!-- SIDEBAR -->
@@ -221,7 +276,7 @@
 
     <!-- MAIN -->
     <div id="main">
-      <div id="main-info"><i class="ti ti-layout-grid"></i><span id="main-info-txt">Select or start a new onboarding session.</span></div>
+      <div id="main-info"><i class="ti ti-layout-grid"></i><span id="main-info-txt">Select or start a new onboarding session.</span><span id="main-info-spinner"><i class="ti ti-loader animate-spin"></i></span></div>
       <div id="main-body">
         
         <!-- View: Intake -->
@@ -353,7 +408,7 @@
                 </div>
                 <div class="form-group wide"><label>Subscription Rules</label><input type="text" name="subscriptionRules" placeholder="e.g. ByPartnerID, ByCountry, None" /></div>
               </div>
-              <button class="btn primary" onclick="saveDomain('Common')"><i class="ti ti-device-floppy"></i> Save Common Domain</button>
+              <button class="btn primary" id="save-btn-Common" onclick="saveDomain('Common')"><i class="ti ti-device-floppy"></i> Save Common Domain</button>
             </form>
           </div>
 
@@ -388,7 +443,7 @@
                 </div>
                 <div class="form-group"><label>Recipient Email</label><input type="text" name="recipientEmail" placeholder="e.g. devops-owner@example.com" /></div>
               </div>
-              <button class="btn primary" onclick="saveDomain('Btp')"><i class="ti ti-device-floppy"></i> Save BTP Domain</button>
+              <button class="btn primary" id="save-btn-Btp" onclick="saveDomain('Btp')"><i class="ti ti-device-floppy"></i> Save BTP Domain</button>
             </form>
           </div>
 
@@ -494,7 +549,7 @@
                 </div>
               </div>
 
-              <button class="btn primary" onclick="saveDomain('Solace')"><i class="ti ti-device-floppy"></i> Save Solace Domain</button>
+              <button class="btn primary" id="save-btn-Solace" onclick="saveDomain('Solace')"><i class="ti ti-device-floppy"></i> Save Solace Domain</button>
             </form>
           </div>
 
@@ -634,7 +689,7 @@
                 </div>
               </div>
 
-              <button class="btn primary" onclick="saveDomain('MuleSoft')"><i class="ti ti-device-floppy"></i> Save MuleSoft Domain</button>
+              <button class="btn primary" id="save-btn-MuleSoft" onclick="saveDomain('MuleSoft')"><i class="ti ti-device-floppy"></i> Save MuleSoft Domain</button>
             </form>
           </div>
         </div>
@@ -755,6 +810,27 @@
           </div>
         </div>
 
+        <!-- View: Admin (field-requirement configuration) -->
+        <div id="view-admin" class="view-panel" style="display:none;">
+          <div class="admin-head">
+            <div>
+              <div class="admin-title"><i class="ti ti-adjustments-horizontal"></i> Field Requirement Configuration</div>
+              <p class="admin-sub">
+                Control which intake fields are mandatory from this one place.
+                <strong>Required</strong> always blocks saving when empty; <strong>Outbound only</strong> is
+                required only while that domain's Direction is Outbound (Inbound onboardings skip SME
+                enrichment); <strong>Optional</strong> never blocks. Natural-key fields are locked because the
+                enrichment workflow rejects saves without them. Changes are stored in this browser and apply
+                to the intake forms instantly.
+              </p>
+            </div>
+            <div class="admin-actions">
+              <button class="btn" onclick="resetAdminConfig()"><i class="ti ti-restore"></i> Reset Defaults</button>
+            </div>
+          </div>
+          <div id="admin-panels"></div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -822,6 +898,329 @@
   let muleUomMappings = [];
 
   /* ─────────────────────────────────────────────────────────────
+     ADMIN FIELD-REQUIREMENT CONFIGURATION
+     One place controls which intake inputs are mandatory. Levels:
+       'always'   — required regardless of direction (natural keys locked)
+       'outbound' — required only while Direction = Outbound (the
+                    enrichment workflow marks Inbound rows Complete
+                    without SME enrichment, so their fields may stay empty)
+       'optional' — never blocks saving
+     Defaults mirror the data-enrichment workflow's
+     Compose_*_Enrichment_Status rules; overrides persist per-browser.
+     ACL selects and checkboxes always carry a value, so they are not
+     configurable here — they can never be "missing".
+  ───────────────────────────────────────────────────────────── */
+  const FIELD_DEFS = {
+    Common: { formId: 'common-intake-form', hasDirection: false, tables: [], fields: [
+      { n: 'interfaceId', l: 'Interface ID', d: 'always', lock: true },
+      { n: 'eaRef', l: 'EA Reference', d: 'optional' },
+      { n: 'sourceApp', l: 'Source Application', d: 'optional' },
+      { n: 'targetApp', l: 'Target Application', d: 'optional' },
+      { n: 'businessObject', l: 'Business Object', d: 'optional' },
+      { n: 'country', l: 'Country / Market', d: 'optional' },
+      { n: 'sourceFormat', l: 'Source Format', d: 'optional' },
+      { n: 'sourceInterfaceType', l: 'Source Interface Type', d: 'optional' },
+      { n: 'targetFormat', l: 'Target Format', d: 'optional' },
+      { n: 'targetInterfaceType', l: 'Target Interface Type', d: 'optional' },
+      { n: 'functionalDescription', l: 'Functional Description', d: 'optional' },
+      { n: 'volume', l: 'Volume', d: 'optional' },
+      { n: 'sizePerMessage', l: 'Size Per Message', d: 'optional' },
+      { n: 'peakVolume', l: 'Peak Volume', d: 'optional' },
+      { n: 'threePlPartnerId', l: '3PL Partner ID', d: 'optional' },
+      { n: 'navInstanceId', l: '1Nav Instance ID', d: 'optional' },
+      { n: 'countryCodeIso', l: 'Country Code ISO', d: 'optional' },
+      { n: 'regionIso', l: 'Region ISO', d: 'optional' },
+      { n: 'subscriptionRules', l: 'Subscription Rules', d: 'optional' }
+    ]},
+    Btp: { formId: 'btp-intake-form', hasDirection: true, tables: [], fields: [
+      { n: 'subAccount', l: 'SubAccount', d: 'always', lock: true },
+      { n: 'productName', l: 'Product Name', d: 'always', lock: true },
+      { n: 'environment', l: 'Environment', d: 'always', lock: true },
+      { n: 'mode', l: 'Mode', d: 'outbound' },
+      { n: 'developerId', l: 'Developer ID', d: 'outbound' },
+      { n: 'title', l: 'Title', d: 'outbound' },
+      { n: 'shortText', l: 'Short Text', d: 'optional' },
+      { n: 'repoOwner', l: 'Repo Owner', d: 'outbound' },
+      { n: 'repoName', l: 'Repo Name', d: 'outbound' },
+      { n: 'workflowFileName', l: 'Workflow File Name', d: 'outbound' },
+      { n: 'branchRef', l: 'Branch Ref', d: 'outbound' },
+      { n: 'serviceExists', l: 'Service Exists', d: 'outbound' },
+      { n: 'recipientEmail', l: 'Recipient Email', d: 'optional', email: true }
+    ]},
+    Solace: { formId: 'solace-intake-form', hasDirection: true, fields: [
+      { n: 'brand', l: 'Brand', d: 'always', lock: true },
+      { n: 'env', l: 'Env', d: 'always', lock: true },
+      { n: 'systemName', l: 'System Name', d: 'always', lock: true },
+      { n: 'threePLCode', l: 'ThreePL Code', d: 'always', lock: true },
+      { n: 'encryptedPassword', l: 'Encrypted Password', d: 'optional' },
+      { n: 'action', l: 'Action', d: 'outbound' },
+      { n: 'serviceExists', l: 'Service Exists', d: 'outbound' },
+      { n: 'repoOwner', l: 'Repo Owner', d: 'outbound' },
+      { n: 'repoName', l: 'Repo Name', d: 'outbound' },
+      { n: 'filePath', l: 'File Path', d: 'outbound' },
+      { n: 'branch', l: 'Branch', d: 'outbound' },
+      { n: 'baseBranch', l: 'Base Branch', d: 'outbound' },
+      { n: 'featureBranchName', l: 'Feature Branch Name', d: 'outbound' },
+      { n: 'requesterEmail', l: 'Requester Email', d: 'outbound', email: true },
+      { n: 'recipientEmail', l: 'Recipient Email', d: 'outbound', email: true },
+      { n: 'commitMessage', l: 'Commit Message', d: 'outbound' }
+    ], tables: [
+      { n: 'messageTypes', l: 'Message Types (min 1 row)', d: 'outbound', tableId: 'solace-mt-table', rows: () => solaceMessageTypes }
+    ]},
+    MuleSoft: { formId: 'mulesoft-intake-form', hasDirection: true, fields: [
+      { n: 'countryKey', l: 'Country Key', d: 'always', lock: true },
+      { n: 'countryCode', l: 'Country Code', d: 'outbound' },
+      { n: 'partnerComment', l: 'Partner Comment', d: 'outbound' },
+      { n: 'createdBy', l: 'Created By', d: 'outbound' },
+      { n: 'navProtocol', l: 'Nav Protocol', d: 'outbound' },
+      { n: 'navPort', l: 'Nav Port', d: 'outbound' },
+      { n: 'navUsername', l: 'Nav Username', d: 'outbound' },
+      { n: 'navDomain', l: 'Nav Domain', d: 'outbound' },
+      { n: 'navService', l: 'Nav Service', d: 'outbound' },
+      { n: 'navSoapPort', l: 'Nav Soap Port', d: 'outbound' },
+      { n: 'translationReceiverName', l: 'Translation Receiver Name', d: 'outbound' },
+      { n: 'serviceExists', l: 'Service Exists', d: 'outbound' },
+      { n: 'repoOwner', l: 'Repo Owner', d: 'outbound' },
+      { n: 'repoName', l: 'Repo Name', d: 'outbound' },
+      { n: 'filePathPrefix', l: 'File Path Prefix', d: 'outbound' },
+      { n: 'branch', l: 'Branch', d: 'outbound' },
+      { n: 'baseBranch', l: 'Base Branch', d: 'outbound' },
+      { n: 'featureBranchName', l: 'Feature Branch Name', d: 'outbound' },
+      { n: 'requesterEmail', l: 'Requester Email', d: 'outbound', email: true },
+      { n: 'recipientEmail', l: 'Recipient Email', d: 'outbound', email: true },
+      { n: 'commitMessage', l: 'Commit Message', d: 'outbound' }
+    ], tables: [
+      { n: 'environments', l: 'Environments (min 1 row)', d: 'outbound', tableId: 'mule-env-table', rows: () => muleEnvironments },
+      { n: 'transactionTypes', l: 'Transaction Types (min 1 row)', d: 'outbound', tableId: 'mule-tt-table', rows: () => muleTransactionTypes },
+      { n: 'messageTypes', l: 'Message Types (min 1 row)', d: 'outbound', tableId: 'mule-mt-table', rows: () => muleMessageTypes },
+      { n: 'sourceDestinations', l: 'Source/Destination Mappings (min 1 row)', d: 'outbound', tableId: 'mule-sd-table', rows: () => muleSourceDestinations },
+      { n: 'uomMappings', l: 'UOM Mappings (min 1 row)', d: 'outbound', tableId: 'mule-uom-table', rows: () => muleUomMappings }
+    ]}
+  };
+
+  const ADMIN_CONFIG_KEY = '3pl_admin_field_config_v1';
+  let adminConfig = {};
+
+  function loadAdminConfig() {
+    try { adminConfig = JSON.parse(localStorage.getItem(ADMIN_CONFIG_KEY) || '{}'); }
+    catch (e) { adminConfig = {}; }
+  }
+
+  function persistAdminConfig() {
+    try { localStorage.setItem(ADMIN_CONFIG_KEY, JSON.stringify(adminConfig)); } catch (e) {}
+  }
+
+  function findFieldDef(domain, name) {
+    const def = FIELD_DEFS[domain];
+    return def.fields.find(f => f.n === name) || def.tables.find(t => t.n === name) || null;
+  }
+
+  function getLevel(domain, name) {
+    const saved = adminConfig[domain] && adminConfig[domain][name];
+    if (saved === 'always' || saved === 'outbound' || saved === 'optional') return saved;
+    const item = findFieldDef(domain, name);
+    return (item && item.d) || 'optional';
+  }
+
+  function setLevel(domain, name, level) {
+    const item = findFieldDef(domain, name);
+    if (!item || item.lock) return;
+    (adminConfig[domain] = adminConfig[domain] || {})[name] = level;
+    persistAdminConfig();
+    renderAdminPanel();
+    applyAllRequiredMarkers();
+    const levelLabel = level === 'always' ? 'Required' : level === 'outbound' ? 'Outbound only' : 'Optional';
+    showToast('success', `${domain}: "${item.l}" is now ${levelLabel}`);
+  }
+
+  function resetAdminConfig() {
+    adminConfig = {};
+    persistAdminConfig();
+    renderAdminPanel();
+    applyAllRequiredMarkers();
+    showToast('success', 'Field requirements reset to defaults.');
+  }
+
+  function isRequired(domain, name, dir) {
+    const level = getLevel(domain, name);
+    return level === 'always' || (level === 'outbound' && dir !== 'Inbound');
+  }
+
+  function currentDirection(domain) {
+    const def = FIELD_DEFS[domain];
+    if (!def.hasDirection) return 'Outbound';
+    const form = document.getElementById(def.formId);
+    const sel = form && form.elements['direction'];
+    return (sel && sel.value) || 'Outbound';
+  }
+
+  function renderAdminPanel() {
+    const host = document.getElementById('admin-panels');
+    if (!host) return;
+    const DOMAIN_TITLES = { Common: 'Common', Btp: 'SAP BTP', Solace: 'Solace Client', MuleSoft: 'MuleSoft Partner' };
+    const segBtn = (domain, name, level, cur, label) =>
+      `<button class="${cur === level ? `on ${level}` : ''}" onclick="setLevel('${domain}','${name}','${level}')">${label}</button>`;
+    const seg = (domain, name, cur) => `
+          <div class="req-seg">
+            ${segBtn(domain, name, 'always', cur, 'Required')}
+            ${segBtn(domain, name, 'outbound', cur, 'Outbound only')}
+            ${segBtn(domain, name, 'optional', cur, 'Optional')}
+          </div>`;
+
+    host.innerHTML = Object.keys(FIELD_DEFS).map(domain => {
+      const def = FIELD_DEFS[domain];
+      const fieldRows = def.fields.map(f => `
+        <div class="admin-row">
+          <span class="admin-field">${f.l}${f.email ? ' <span class="admin-hint">(must contain @)</span>' : ''}</span>
+          ${f.lock
+            ? '<span class="lock-chip"><i class="ti ti-lock"></i> Natural key — always required</span>'
+            : seg(domain, f.n, getLevel(domain, f.n))}
+        </div>`).join('');
+      const tableRows = def.tables.map(t => `
+        <div class="admin-row">
+          <span class="admin-field"><i class="ti ti-table"></i> ${t.l}</span>
+          ${seg(domain, t.n, getLevel(domain, t.n))}
+        </div>`).join('');
+      const dirNote = def.hasDirection
+        ? 'direction-aware'
+        : 'no direction field — "Outbound only" behaves like Required';
+      return `
+      <div class="admin-domain">
+        <div class="admin-domain-header"><span>${DOMAIN_TITLES[domain]}</span><span class="admin-dirnote">${dirNote}</span></div>
+        ${fieldRows}${tableRows}
+      </div>`;
+    }).join('');
+  }
+
+  // Red asterisks on every currently-required field label, kept in sync with
+  // the admin config and each form's Direction select.
+  function applyAllRequiredMarkers() {
+    Object.keys(FIELD_DEFS).forEach(domain => {
+      const def = FIELD_DEFS[domain];
+      const form = document.getElementById(def.formId);
+      if (!form) return;
+      const dir = currentDirection(domain);
+      def.fields.forEach(f => {
+        const el = form.elements[f.n];
+        if (!el || !el.closest) return;
+        const group = el.closest('.form-group');
+        const label = group && group.querySelector('label');
+        if (!label) return;
+        let star = label.querySelector('.req-star');
+        if (isRequired(domain, f.n, dir)) {
+          if (!star) {
+            star = document.createElement('span');
+            star.className = 'req-star';
+            star.textContent = '*';
+            label.appendChild(star);
+          }
+        } else if (star) {
+          star.remove();
+        }
+      });
+    });
+  }
+
+  // Drop sub-table rows the user added but left entirely blank, so an empty
+  // scaffold row neither fails validation nor lands in the database.
+  function cleanDomainTables(domain) {
+    const has = v => (v ?? '').toString().trim() !== '';
+    if (domain === 'Solace') {
+      solaceMessageTypes = solaceMessageTypes.filter(r => has(r.messageType) || has(r.topic));
+      renderSolaceMessageTypesTable();
+    } else if (domain === 'MuleSoft') {
+      muleEnvironments = muleEnvironments.filter(r => has(r.environment) || has(r.navHost) || has(r.navCompany) || has(r.navSoapPath) || has(r.navRoutingCode));
+      muleTransactionTypes = muleTransactionTypes.filter(r => has(r.transactionTypeCode) || has(r.transactionTypeLabel));
+      muleMessageTypes = muleMessageTypes.filter(r => has(r.messageType));
+      muleSourceDestinations = muleSourceDestinations.filter(r => has(r.sourceDestinationFrom) || has(r.sourceDestinationTo));
+      muleUomMappings = muleUomMappings.filter(r => has(r.uomFrom) || has(r.uomTo));
+      renderMuleEnvironmentsTable();
+      renderMuleTransactionTypesTable();
+      renderMuleMessageTypesTable();
+      renderMuleSourceDestinationsTable();
+      renderMuleUomMappingsTable();
+    }
+  }
+
+  function validateDomain(domain) {
+    const def = FIELD_DEFS[domain];
+    const form = document.getElementById(def.formId);
+    const panel = document.getElementById(`form-${domain.toLowerCase()}`);
+    const dir = currentDirection(domain);
+    const missing = [];
+
+    form.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+    panel.querySelectorAll('.table-container.invalid').forEach(el => el.classList.remove('invalid'));
+
+    def.fields.forEach(f => {
+      const el = form.elements[f.n];
+      if (!el || el.type === 'checkbox') return;
+      const val = (el.value || '').trim();
+      if (isRequired(domain, f.n, dir) && !val) {
+        missing.push(f.l);
+        el.classList.add('invalid');
+      } else if (f.email && val && !val.includes('@')) {
+        missing.push(`${f.l} (invalid email)`);
+        el.classList.add('invalid');
+      }
+    });
+
+    def.tables.forEach(t => {
+      if (!isRequired(domain, t.n, dir)) return;
+      if (t.rows().length === 0) {
+        missing.push(t.l);
+        const table = document.getElementById(t.tableId);
+        const cont = table && table.closest('.table-container');
+        if (cont) cont.classList.add('invalid');
+      }
+    });
+
+    if (missing.length > 0) {
+      const first = form.querySelector('.invalid') || panel.querySelector('.table-container.invalid');
+      if (first) {
+        first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        first.classList.add('shake');
+        setTimeout(() => first.classList.remove('shake'), 500);
+      }
+      const shown = missing.slice(0, 4).join(', ');
+      showToast('error', `Missing required: ${shown}${missing.length > 4 ? ` (+${missing.length - 4} more)` : ''}`);
+      return false;
+    }
+    return true;
+  }
+
+  /* ─────────────────────────────────────────────────────────────
+     LOADING INDICATORS
+     netBusy drives the indeterminate bar under the topbar for
+     user-initiated calls only — the 10s background poll stays silent.
+  ───────────────────────────────────────────────────────────── */
+  let netBusyCount = 0;
+  function netBusy(delta) {
+    netBusyCount = Math.max(0, netBusyCount + delta);
+    const bar = document.getElementById('global-progress');
+    if (bar) bar.classList.toggle('active', netBusyCount > 0);
+  }
+
+  function sessionLoading(on) {
+    const sp = document.getElementById('main-info-spinner');
+    if (sp) sp.style.display = on ? 'inline-flex' : 'none';
+  }
+
+  const STATUS_CARD_IDS = ['card-architecture-approval', 'card-btp', 'card-solace', 'card-mulesoft'];
+  function setStatusCardsLoading() {
+    STATUS_CARD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('loading');
+    });
+  }
+  function clearStatusCardsLoading() {
+    STATUS_CARD_IDS.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('loading');
+    });
+  }
+
+  /* ─────────────────────────────────────────────────────────────
      LOAD/SAVE RECENT ONBOARDINGS
   ───────────────────────────────────────────────────────────── */
   function loadRecentSessions() {
@@ -885,6 +1284,8 @@
 
     // Prefill the intake form from whatever this session already has saved
     // (if anything) — always needed regardless of which tab is showing.
+    sessionLoading(true);
+    setStatusCardsLoading();
     fetchIntakeDetail();
 
     // Only poll status while a status-showing tab is actually open — polling
@@ -1013,8 +1414,13 @@
   // the 10s status poll (fetchStatus, below), since that would re-run those
   // extra queries on every tick just to keep data the form already has.
   function fetchIntakeDetail() {
-    if (!activeCorrelationId || !API.enrichmentStatus) return;
+    if (!activeCorrelationId || !API.enrichmentStatus) {
+      sessionLoading(false);
+      clearStatusCardsLoading();
+      return;
+    }
 
+    netBusy(1);
     fetch(API.enrichmentStatus, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1026,8 +1432,15 @@
       updateStatusCards(data);
       updateAuditTimeline(data.auditTrail || []);
       populateIntakeForms(data);
+      // Prefill may have changed a Direction select — resync the asterisks.
+      applyAllRequiredMarkers();
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => {
+      netBusy(-1);
+      sessionLoading(false);
+      clearStatusCardsLoading();
+    });
   }
 
   // Prefills the intake tab with whatever this correlationId already has
@@ -1065,13 +1478,14 @@
   ───────────────────────────────────────────────────────────── */
   function switchView(viewName) {
     currentView = viewName;
-    ['intake', 'status', 'launch'].forEach(v => {
+    ['intake', 'status', 'launch', 'admin'].forEach(v => {
       document.getElementById(`rbtn-${v}`).classList.toggle('active', v === viewName);
       document.getElementById(`view-${v}`).style.display = (v === viewName) ? 'block' : 'none';
     });
 
     if (viewName === 'status' || viewName === 'launch') {
-      fetchStatus();
+      // startPolling() does its own immediate fetchStatus() before the
+      // interval starts, so no extra one-off call is needed here.
       startPolling();
     } else {
       stopPolling();
@@ -1106,11 +1520,11 @@
     const tbody = document.querySelector('#solace-mt-table tbody');
     tbody.innerHTML = solaceMessageTypes.map((mt, i) => `
       <tr>
-        <td><input type="text" value="${mt.messageType || ''}" onchange="updateSolaceMt(${i}, 'messageType', this.value)" placeholder="e.g. DespatchStock" /></td>
-        <td><input type="text" value="${mt.topic || ''}" onchange="updateSolaceMt(${i}, 'topic', this.value)" placeholder="e.g. scx/whm/..." /></td>
-        <td><input type="text" value="${mt.queuePermission || ''}" onchange="updateSolaceMt(${i}, 'queuePermission', this.value)" placeholder="consume" /></td>
+        <td><input type="text" value="${escapeHtml(mt.messageType || '')}" onchange="updateSolaceMt(${i}, 'messageType', this.value)" placeholder="e.g. DespatchStock" /></td>
+        <td><input type="text" value="${escapeHtml(mt.topic || '')}" onchange="updateSolaceMt(${i}, 'topic', this.value)" placeholder="e.g. scx/whm/..." /></td>
+        <td><input type="text" value="${escapeHtml(mt.queuePermission || '')}" onchange="updateSolaceMt(${i}, 'queuePermission', this.value)" placeholder="consume" /></td>
         <td><input type="checkbox" ${mt.queueEgressEnabled ? 'checked' : ''} onchange="updateSolaceMt(${i}, 'queueEgressEnabled', this.checked)" /></td>
-        <td><input type="text" value="${mt.queueMaxRedeliveryCount ?? ''}" onchange="updateSolaceMt(${i}, 'queueMaxRedeliveryCount', parseInt(this.value)||null)" placeholder="3" /></td>
+        <td><input type="text" value="${escapeHtml(mt.queueMaxRedeliveryCount ?? '')}" onchange="updateSolaceMt(${i}, 'queueMaxRedeliveryCount', parseInt(this.value)||null)" placeholder="3" /></td>
         <td><button class="btn btn-sm danger" onclick="removeSolaceMt(${i})"><i class="ti ti-trash"></i></button></td>
       </tr>
     `).join('');
@@ -1135,11 +1549,11 @@
     const tbody = document.querySelector('#mule-env-table tbody');
     tbody.innerHTML = muleEnvironments.map((env, i) => `
       <tr>
-        <td><input type="text" value="${env.environment || ''}" onchange="updateMuleEnv(${i}, 'environment', this.value)" placeholder="e.g. dev" /></td>
-        <td><input type="text" value="${env.navHost || ''}" onchange="updateMuleEnv(${i}, 'navHost', this.value)" placeholder="e.g. azr-xxx.net" /></td>
-        <td><input type="text" value="${env.navCompany || ''}" onchange="updateMuleEnv(${i}, 'navCompany', this.value)" placeholder="e.g. Company(UAT)" /></td>
-        <td><input type="text" value="${env.navSoapPath || ''}" onchange="updateMuleEnv(${i}, 'navSoapPath', this.value)" placeholder="e.g. /sop/WS/..." /></td>
-        <td><input type="text" value="${env.navRoutingCode || ''}" onchange="updateMuleEnv(${i}, 'navRoutingCode', this.value)" placeholder="e.g. NAV_FM_IN..." /></td>
+        <td><input type="text" value="${escapeHtml(env.environment || '')}" onchange="updateMuleEnv(${i}, 'environment', this.value)" placeholder="e.g. dev" /></td>
+        <td><input type="text" value="${escapeHtml(env.navHost || '')}" onchange="updateMuleEnv(${i}, 'navHost', this.value)" placeholder="e.g. azr-xxx.net" /></td>
+        <td><input type="text" value="${escapeHtml(env.navCompany || '')}" onchange="updateMuleEnv(${i}, 'navCompany', this.value)" placeholder="e.g. Company(UAT)" /></td>
+        <td><input type="text" value="${escapeHtml(env.navSoapPath || '')}" onchange="updateMuleEnv(${i}, 'navSoapPath', this.value)" placeholder="e.g. /sop/WS/..." /></td>
+        <td><input type="text" value="${escapeHtml(env.navRoutingCode || '')}" onchange="updateMuleEnv(${i}, 'navRoutingCode', this.value)" placeholder="e.g. NAV_FM_IN..." /></td>
         <td><button class="btn btn-sm danger" onclick="removeMuleEnv(${i})"><i class="ti ti-trash"></i></button></td>
       </tr>
     `).join('');
@@ -1164,9 +1578,9 @@
     const tbody = document.querySelector('#mule-tt-table tbody');
     tbody.innerHTML = muleTransactionTypes.map((tt, i) => `
       <tr>
-        <td><input type="text" value="${tt.transactionTypeCode || ''}" onchange="updateMuleTt(${i}, 'transactionTypeCode', this.value)" placeholder="e.g. sal_008" /></td>
+        <td><input type="text" value="${escapeHtml(tt.transactionTypeCode || '')}" onchange="updateMuleTt(${i}, 'transactionTypeCode', this.value)" placeholder="e.g. sal_008" /></td>
         <td><input type="checkbox" ${tt.transactionTypeEnabled ? 'checked' : ''} onchange="updateMuleTt(${i}, 'transactionTypeEnabled', this.checked)" /></td>
-        <td><input type="text" value="${tt.transactionTypeLabel || ''}" onchange="updateMuleTt(${i}, 'transactionTypeLabel', this.value)" placeholder="SHIPMENT" /></td>
+        <td><input type="text" value="${escapeHtml(tt.transactionTypeLabel || '')}" onchange="updateMuleTt(${i}, 'transactionTypeLabel', this.value)" placeholder="SHIPMENT" /></td>
         <td><button class="btn btn-sm danger" onclick="removeMuleTt(${i})"><i class="ti ti-trash"></i></button></td>
       </tr>
     `).join('');
@@ -1191,7 +1605,7 @@
     const tbody = document.querySelector('#mule-mt-table tbody');
     tbody.innerHTML = muleMessageTypes.map((mt, i) => `
       <tr>
-        <td><input type="text" value="${mt.messageType || ''}" onchange="updateMuleMt(${i}, 'messageType', this.value)" placeholder="despatchStock" /></td>
+        <td><input type="text" value="${escapeHtml(mt.messageType || '')}" onchange="updateMuleMt(${i}, 'messageType', this.value)" placeholder="despatchStock" /></td>
         <td><button class="btn btn-sm danger" onclick="removeMuleMt(${i})"><i class="ti ti-trash"></i></button></td>
       </tr>
     `).join('');
@@ -1216,8 +1630,8 @@
     const tbody = document.querySelector('#mule-sd-table tbody');
     tbody.innerHTML = muleSourceDestinations.map((sd, i) => `
       <tr>
-        <td><input type="text" value="${sd.sourceDestinationFrom || ''}" onchange="updateMuleSd(${i}, 'sourceDestinationFrom', this.value)" placeholder="PLANT-FR1" /></td>
-        <td><input type="text" value="${sd.sourceDestinationTo || ''}" onchange="updateMuleSd(${i}, 'sourceDestinationTo', this.value)" placeholder="spl_001" /></td>
+        <td><input type="text" value="${escapeHtml(sd.sourceDestinationFrom || '')}" onchange="updateMuleSd(${i}, 'sourceDestinationFrom', this.value)" placeholder="PLANT-FR1" /></td>
+        <td><input type="text" value="${escapeHtml(sd.sourceDestinationTo || '')}" onchange="updateMuleSd(${i}, 'sourceDestinationTo', this.value)" placeholder="spl_001" /></td>
         <td><button class="btn btn-sm danger" onclick="removeMuleSd(${i})"><i class="ti ti-trash"></i></button></td>
       </tr>
     `).join('');
@@ -1242,8 +1656,8 @@
     const tbody = document.querySelector('#mule-uom-table tbody');
     tbody.innerHTML = muleUomMappings.map((uom, i) => `
       <tr>
-        <td><input type="text" value="${uom.uomFrom || ''}" onchange="updateMuleUom(${i}, 'uomFrom', this.value)" placeholder="EA" /></td>
-        <td><input type="text" value="${uom.uomTo || ''}" onchange="updateMuleUom(${i}, 'uomTo', this.value)" placeholder="UNIT" /></td>
+        <td><input type="text" value="${escapeHtml(uom.uomFrom || '')}" onchange="updateMuleUom(${i}, 'uomFrom', this.value)" placeholder="EA" /></td>
+        <td><input type="text" value="${escapeHtml(uom.uomTo || '')}" onchange="updateMuleUom(${i}, 'uomTo', this.value)" placeholder="UNIT" /></td>
         <td><button class="btn btn-sm danger" onclick="removeMuleUom(${i})"><i class="ti ti-trash"></i></button></td>
       </tr>
     `).join('');
@@ -1297,6 +1711,11 @@
       return;
     }
 
+    // Prune blank sub-table rows, then enforce the admin-configured
+    // requirements for the form's current Direction before any network call.
+    cleanDomainTables(domain);
+    if (!validateDomain(domain)) return;
+
     let payload = {
       domain: domain,
       correlationId: activeCorrelationId
@@ -1324,9 +1743,11 @@
       };
     }
 
-    const saveBtn = document.querySelector(`.btn.primary[onclick*="${domain}"]`);
+    const saveBtn = document.getElementById(`save-btn-${domain}`);
+    const originalLabel = saveBtn.innerHTML;
     saveBtn.disabled = true;
     saveBtn.innerHTML = `<i class="ti ti-loader animate-spin"></i> Saving...`;
+    netBusy(1);
 
     fetch(API.dataEnrichment, {
       method: 'POST',
@@ -1345,8 +1766,9 @@
       showToast('error', `Failed to save ${domain}: ${err.message}`);
     })
     .finally(() => {
+      netBusy(-1);
       saveBtn.disabled = false;
-      saveBtn.innerHTML = `<i class="ti ti-device-floppy"></i> Save ${domain} Domain`;
+      saveBtn.innerHTML = originalLabel;
     });
   }
 
@@ -1449,6 +1871,7 @@
   }
 
   function updateStatusCards(data) {
+    clearStatusCardsLoading();
     ['btp', 'solace', 'mulesoft'].forEach(d => {
       const card = data[d] || {};
       const statusBadge = document.getElementById(`${d}-status-badge`);
@@ -1609,6 +2032,7 @@
     document.getElementById('launch-progress-text').textContent = 'Submitting launch request...';
     document.getElementById('launch-progress-pct').textContent = '10%';
 
+    netBusy(1);
     fetch(API.onboardingLauncher, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1634,7 +2058,8 @@
       launchBtn.disabled = false;
       launchBtn.innerHTML = defaultLabel;
       document.getElementById('launch-progress-bar').style.display = 'none';
-    });
+    })
+    .finally(() => netBusy(-1));
   }
 
   /* ─────────────────────────────────────────────────────────────
@@ -1642,6 +2067,21 @@
   ───────────────────────────────────────────────────────────── */
   window.addEventListener('DOMContentLoaded', () => {
     loadRecentSessions();
+    loadAdminConfig();
+    renderAdminPanel();
+    applyAllRequiredMarkers();
+
+    // Direction drives which fields are mandatory — resync markers live.
+    document.querySelectorAll('select[name="direction"]').forEach(sel => {
+      sel.addEventListener('change', applyAllRequiredMarkers);
+    });
+
+    // Clear the red invalid highlight as soon as the user edits a field.
+    document.querySelectorAll('form').forEach(f => {
+      const clear = e => { if (e.target.classList) e.target.classList.remove('invalid'); };
+      f.addEventListener('input', clear);
+      f.addEventListener('change', clear);
+    });
   });
 </script>
 </body>

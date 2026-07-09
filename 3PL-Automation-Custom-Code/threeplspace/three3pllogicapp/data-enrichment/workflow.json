@@ -168,6 +168,9 @@
           ]
         }
       },
+      "Scope-Try": {
+        "type": "Scope",
+        "actions": {
       "Get_Onboarding_Row": {
         "type": "ServiceProvider",
         "inputs": {
@@ -186,11 +189,7 @@
             "maximumInterval": "PT1M"
           }
         },
-        "runAfter": {
-          "Initialize_MuleSoftRow": [
-            "Succeeded"
-          ]
-        }
+        "runAfter": {}
       },
       "If_Onboarding_Row_Missing": {
         "type": "If",
@@ -234,9 +233,6 @@
           ]
         }
       },
-      "Scope-Try": {
-        "type": "Scope",
-        "actions": {
           "Switch_On_Domain": {
             "type": "Switch",
             "expression": "@coalesce(triggerBody()?['domain'], '')",
@@ -560,7 +556,7 @@
                           "workflowFileName": "@coalesce(triggerBody()?['workflowFileName'], variables('btpRow')?['WorkflowFileName'], '')",
                           "branchRef": "@coalesce(triggerBody()?['branchRef'], variables('btpRow')?['BranchRef'], '')",
                           "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('btpRow')?['ServiceExists'])",
-                          "direction": "@coalesce(triggerBody()?['direction'], variables('btpRow')?['Direction'], 'Outbound')"
+                          "direction": "@if(startsWith(coalesce(triggerBody()?['direction'], variables('btpRow')?['Direction'], 'Outbound'), 'Inbound'), 'Inbound', 'Outbound')"
                         },
                         "runAfter": {
                           "If_Btp_Row_Found": [
@@ -1010,7 +1006,7 @@
                           "recipientEmail": "@coalesce(triggerBody()?['recipientEmail'], variables('solaceRow')?['RecipientEmail'], '')",
                           "commitMessage": "@coalesce(triggerBody()?['commitMessage'], variables('solaceRow')?['CommitMessage'], '')",
                           "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('solaceRow')?['ServiceExists'])",
-                          "direction": "@coalesce(triggerBody()?['direction'], variables('solaceRow')?['Direction'], 'Outbound')"
+                          "direction": "@if(startsWith(coalesce(triggerBody()?['direction'], variables('solaceRow')?['Direction'], 'Outbound'), 'Inbound'), 'Inbound', 'Outbound')"
                         },
                         "runAfter": {
                           "If_Solace_Row_Found": [
@@ -1627,7 +1623,7 @@
                           "commitMessage": "@coalesce(triggerBody()?['commitMessage'], variables('muleSoftRow')?['CommitMessage'], '')",
                           "navUseCommonCert": "@coalesce(triggerBody()?['navUseCommonCert'], variables('muleSoftRow')?['NavUseCommonCert'])",
                           "serviceExists": "@coalesce(triggerBody()?['serviceExists'], variables('muleSoftRow')?['ServiceExists'])",
-                          "direction": "@coalesce(triggerBody()?['direction'], variables('muleSoftRow')?['Direction'], 'Outbound')"
+                          "direction": "@if(startsWith(coalesce(triggerBody()?['direction'], variables('muleSoftRow')?['Direction'], 'Outbound'), 'Inbound'), 'Inbound', 'Outbound')"
                         },
                         "runAfter": {
                           "If_MuleSoft_Row_Found": [
@@ -2403,11 +2399,15 @@
                 }
               }
             },
-            "runAfter": {}
+            "runAfter": {
+              "If_Onboarding_Row_Missing": [
+                "Succeeded"
+              ]
+            }
           }
         },
         "runAfter": {
-          "If_Onboarding_Row_Missing": [
+          "Initialize_MuleSoftRow": [
             "Succeeded"
           ]
         }
@@ -2442,7 +2442,12 @@
                 "maximumInterval": "PT1M"
               }
             },
-            "runAfter": {}
+            "runAfter": {
+              "Response-Error": [
+                "Succeeded",
+                "Failed"
+              ]
+            }
           },
           "Response-Error": {
             "type": "Response",
@@ -2455,16 +2460,13 @@
                 "details": "@result('Scope-Try')"
               }
             },
-            "runAfter": {
-              "Insert_Audit_Error": [
-                "Succeeded"
-              ]
-            }
+            "runAfter": {}
           }
         },
         "runAfter": {
           "Scope-Try": [
-            "FAILED"
+            "FAILED",
+            "TIMEDOUT"
           ]
         }
       }
