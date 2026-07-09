@@ -1,0 +1,229 @@
+@page "/"
+@implements IDisposable
+@inject SessionService Sessions
+@inject ToastService Toasts
+
+<div id="shell">
+    <!-- TOPBAR -->
+    <div id="topbar">
+        <div id="tb-logo">IH</div>
+        <span id="tb-brand">Integration Hub</span>
+        <span id="tb-rolepill">3PL Onboarding Portal</span>
+        <div id="tb-right">
+            <div class="role-switcher">
+                <button class="role-btn @(_currentView == "intake" ? "active" : null)" @onclick="@(() => SwitchView("intake"))"><i class="ti ti-edit"></i> Onboarding Intake</button>
+                <button class="role-btn @(_currentView == "status" ? "active" : null)" @onclick="@(() => SwitchView("status"))"><i class="ti ti-chart-line"></i> Status &amp; Tracking</button>
+                <button class="role-btn @(_currentView == "launch" ? "active" : null)" @onclick="@(() => SwitchView("launch"))"><i class="ti ti-rocket"></i> Launch</button>
+                <button class="role-btn @(_currentView == "admin" ? "active" : null)" @onclick="@(() => SwitchView("admin"))"><i class="ti ti-settings"></i> Admin</button>
+            </div>
+        </div>
+    </div>
+    <div id="global-progress" class="@(_busy ? "active" : null)"><div class="gp-fill"></div></div>
+
+    <div id="body">
+        <!-- SIDEBAR -->
+        <div id="sidebar">
+            <div id="sb-info"><i class="ti ti-building-warehouse"></i> Select Onboarding</div>
+            <div id="sb-search">
+                <input type="text" placeholder="Search correlation ID…" value="@_searchFilter"
+                       @oninput="e => _searchFilter = (string?)e.Value ?? string.Empty" />
+            </div>
+            <div id="sb-recent-lbl">Recent Sessions</div>
+            <div id="sb-recent-list">
+                @if (FilteredSessions.Count == 0)
+                {
+                    <p class="sb-empty">No sessions found</p>
+                }
+                else
+                {
+                    @foreach (var id in FilteredSessions)
+                    {
+                        <div class="recent-item @(_activeCorrelationId == id ? "active" : null)" @onclick="() => SelectSession(id)">
+                            <i class="ti ti-hash"></i>
+                            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">@id</span>
+                        </div>
+                    }
+                }
+            </div>
+            <div id="sb-footer">
+                <button class="sb-new" @onclick="OpenNewOnboardingModal"><i class="ti ti-plus"></i> New Onboarding</button>
+            </div>
+        </div>
+
+        <!-- MAIN -->
+        <div id="main">
+            <div id="main-info">
+                <i class="ti ti-layout-grid"></i>
+                <span>@(_activeCorrelationId is null ? "Select or start a new onboarding session." : $"Onboarding Session: {_activeCorrelationId}")</span>
+            </div>
+            <div id="main-body">
+                @if (_currentView == "intake")
+                {
+                    <IntakeView CorrelationId="@_activeCorrelationId" BusyChanged="SetBusy" />
+                }
+                else if (_currentView == "status")
+                {
+                    <StatusView CorrelationId="@_activeCorrelationId" />
+                }
+                else if (_currentView == "launch")
+                {
+                    <LaunchView CorrelationId="@_activeCorrelationId" BusyChanged="SetBusy" />
+                }
+                else if (_currentView == "admin")
+                {
+                    <AdminView />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay @(_modalOpen ? "show" : null)" @onclick="CloseNewOnboardingModal">
+    <div class="modal-box" @onclick:stopPropagation="true">
+        <div class="modal-header"><i class="ti ti-plus"></i> New Onboarding</div>
+        <div class="modal-body">
+            <p class="modal-hint">The correlation ID links the BTP, Solace, and MuleSoft rows for this onboarding across every table, workflow, and function run. It's generated from the partner and region you enter here.</p>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label>3PL Partner</label>
+                <input type="text" placeholder="e.g. Royal Canin" value="@_newPartner"
+                       @oninput="e => _newPartner = (string?)e.Value ?? string.Empty"
+                       @onkeydown="OnModalKeyDown" />
+            </div>
+            <div class="form-group">
+                <label>Region</label>
+                <input type="text" placeholder="e.g. France or EMEA" value="@_newRegion"
+                       @oninput="e => _newRegion = (string?)e.Value ?? string.Empty"
+                       @onkeydown="OnModalKeyDown" />
+            </div>
+            <div class="modal-preview">@CorrelationPreview</div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn" @onclick="CloseNewOnboardingModal">Cancel</button>
+            <button class="btn primary" @onclick="ConfirmNewOnboarding"><i class="ti ti-check"></i> Create</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast @(_toastVisible ? "show" : null) @_toastType">
+    @if (_toastVisible)
+    {
+        <i class="ti ti-@(_toastType == "success" ? "circle-check" : "alert-triangle")"></i> @_toastMessage
+    }
+</div>
+
+@code {
+    private string _currentView = "intake";
+    private string? _activeCorrelationId;
+    private string _searchFilter = "";
+    private List<string> _dbSessions = new();
+    private readonly List<string> _localSessions = new(); // created this circuit, not yet saved to SQL
+    private bool _busy;
+
+    private bool _modalOpen;
+    private string _newPartner = "";
+    private string _newRegion = "";
+
+    private bool _toastVisible;
+    private string _toastType = "success";
+    private string _toastMessage = "";
+    private CancellationTokenSource? _toastCts;
+
+    private string CorrelationPreview =>
+        _newPartner.Trim().Length > 0 || _newRegion.Trim().Length > 0
+            ? SessionService.BuildCorrelationId(_newPartner, _newRegion)
+            : "";
+
+    private IReadOnlyList<string> FilteredSessions =>
+        _localSessions.Concat(_dbSessions).Distinct()
+            .Where(id => id.Contains(_searchFilter, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        Toasts.OnToast += ShowToast;
+        await ReloadSessionsAsync();
+    }
+
+    private async Task ReloadSessionsAsync()
+    {
+        try
+        {
+            _dbSessions = (await Sessions.GetRecentSessionsAsync()).ToList();
+        }
+        catch
+        {
+            // DB unreachable — sidebar just shows locally created sessions.
+            _dbSessions = new List<string>();
+        }
+    }
+
+    private void SwitchView(string view) => _currentView = view;
+
+    private void SetBusy(bool busy)
+    {
+        _busy = busy;
+        StateHasChanged();
+    }
+
+    private async Task SelectSession(string id)
+    {
+        _activeCorrelationId = id;
+        await ReloadSessionsAsync();
+    }
+
+    private void OpenNewOnboardingModal()
+    {
+        _newPartner = "";
+        _newRegion = "";
+        _modalOpen = true;
+    }
+
+    private void CloseNewOnboardingModal() => _modalOpen = false;
+
+    private async Task OnModalKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await ConfirmNewOnboarding();
+    }
+
+    private async Task ConfirmNewOnboarding()
+    {
+        if (_newPartner.Trim().Length == 0 || _newRegion.Trim().Length == 0)
+        {
+            Toasts.Error("Enter both 3PL Partner and Region to continue.");
+            return;
+        }
+
+        var newId = SessionService.BuildCorrelationId(_newPartner, _newRegion);
+        _localSessions.Insert(0, newId);
+        _modalOpen = false;
+        _currentView = "intake";
+        await SelectSession(newId);
+        Toasts.Success($"Created new onboarding session: {newId}");
+    }
+
+    private void ShowToast(string type, string message)
+    {
+        _ = InvokeAsync(async () =>
+        {
+            _toastCts?.Cancel();
+            var cts = _toastCts = new CancellationTokenSource();
+            _toastType = type;
+            _toastMessage = message;
+            _toastVisible = true;
+            StateHasChanged();
+            try
+            {
+                await Task.Delay(4000, cts.Token);
+                _toastVisible = false;
+                StateHasChanged();
+            }
+            catch (TaskCanceledException) { /* superseded by a newer toast */ }
+        });
+    }
+
+    public void Dispose()
+    {
+        Toasts.OnToast -= ShowToast;
+        _toastCts?.Cancel();
+    }
+}

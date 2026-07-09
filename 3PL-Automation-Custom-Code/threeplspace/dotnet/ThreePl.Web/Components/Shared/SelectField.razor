@@ -1,0 +1,19 @@
+<div class="form-group @(Wide ? "wide" : null)">
+    <label>@Label@if (Required)
+        {<span class="req-star">*</span>}</label>
+    <select class="@(Invalid ? "invalid" : null)" value="@Value" @onchange="OnChange">
+        @ChildContent
+    </select>
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Invalid { get; set; }
+    [Parameter] public bool Wide { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task OnChange(ChangeEventArgs e) => ValueChanged.InvokeAsync((string?)e.Value);
+}

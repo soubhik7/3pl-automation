@@ -678,3 +678,37 @@ IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID('dbo.Onboar
     ALTER TABLE dbo.Onboarding ADD SubscriptionRules NVARCHAR(500) NULL;
 GO
 
+-- ============================================================================
+-- dbo.FieldRequirement -- app-owned admin configuration for the Blazor portal
+-- (threeplspace/dotnet): which intake fields are mandatory (Level: Always /
+-- Outbound / Optional), shared across users -- replaces the old HTML UI's
+-- per-browser localStorage config. This is the portal's own settings table,
+-- not onboarding business data: the Blazor app is the only writer, and it is
+-- the ONLY table that app ever writes (all business writes still go through
+-- the data-enrichment / onboarding-launcher Logic Apps). Rows are overrides
+-- on top of code defaults that mirror data-enrichment's
+-- Compose_*_Enrichment_Status rules; an empty table means "defaults".
+-- ============================================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'FieldRequirement' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.FieldRequirement
+    (
+        Id          INT IDENTITY(1,1)  NOT NULL,
+        Domain      NVARCHAR(20)        NOT NULL,
+        FieldName   NVARCHAR(100)       NOT NULL,
+        Level       NVARCHAR(20)        NOT NULL,
+        UpdatedAt   DATETIME2           NOT NULL CONSTRAINT DF_FieldRequirement_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT PK_FieldRequirement PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT UQ_FieldRequirement_DomainField UNIQUE (Domain, FieldName),
+        CONSTRAINT CK_FieldRequirement_Domain CHECK (Domain IN ('Common', 'Btp', 'Solace', 'MuleSoft')),
+        CONSTRAINT CK_FieldRequirement_Level CHECK (Level IN ('Always', 'Outbound', 'Optional'))
+    );
+END
+GO
+
+-- The Blazor portal's read identity needs SELECT everywhere it renders from,
+-- and write access only to its own FieldRequirement table. If the portal
+-- reuses [threepl-logicapp-svc] for now, grant it the extra table too.
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.FieldRequirement TO [threepl-logicapp-svc];
+GO
+

@@ -1,0 +1,193 @@
+@implements IDisposable
+@inject StatusReadService StatusReads
+@inject LogicAppClient LogicApp
+@inject ToastService Toasts
+
+<div class="view-panel">
+    @if (CorrelationId is null)
+    {
+        <div class="empty-state">
+            <i class="ti ti-rocket empty-ico"></i>
+            <p class="title">No session selected</p>
+            <p class="sub">Select an onboarding session from the sidebar (or start a new one) to launch it.</p>
+        </div>
+    }
+    else
+    {
+        <div class="launch-panel-wrapper">
+            <i class="ti ti-rocket" style="font-size: 64px; color: var(--teal); margin-bottom: 12px;"></i>
+            <h2 style="font-size: 20px; font-weight: 700;">Ready to Deploy Onboarding Configuration?</h2>
+            <p style="font-size: 13px; color: var(--color-text-secondary); text-align: center; line-height: 1.5;">
+                This will compile and publish the generated configuration files to GitHub repositories and trigger workflows.
+            </p>
+
+            <div class="form-group checkbox-row" style="padding-top: 0;">
+                <input type="checkbox" id="chk-force" checked="@_forceRedeploy" @onchange="e => _forceRedeploy = (bool)(e.Value ?? false)" />
+                <label for="chk-force" style="cursor:pointer; font-weight: 600;">Force Redeploy (ignore previous deployment checks)</label>
+            </div>
+
+            <button class="launch-btn" disabled="@(!AllLaunchEnabled)" @onclick="@(() => TriggerLaunchAsync(AllDomains, "all"))">
+                @if (_inFlight.Contains("all"))
+                {
+                    <i class="ti ti-loader animate-spin"></i> <span>Triggering...</span>
+                }
+                else if (_status?.ReadyToLaunch == true)
+                {
+                    <i class="ti ti-player-play"></i> <span>Launch Orchestrator</span>
+                }
+                else
+                {
+                    <i class="ti ti-lock"></i> <span>Gated (Complete All Domains)</span>
+                }
+            </button>
+
+            <div class="launch-divider">or deploy a single domain</div>
+
+            <div class="individual-launch-row">
+                <button class="launch-btn-sm" disabled="@(!DomainLaunchEnabled(_status?.Btp, "btp"))" @onclick="@(() => TriggerLaunchAsync(new[] { "btp" }, "btp"))">
+                    @if (_inFlight.Contains("btp")) {<i class="ti ti-loader animate-spin"></i> <span>Triggering...</span>}
+                    else {<i class="ti ti-cloud-upload"></i> <span>Deploy BTP</span>}
+                </button>
+                <button class="launch-btn-sm" disabled="@(!DomainLaunchEnabled(_status?.Solace, "solace"))" @onclick="@(() => TriggerLaunchAsync(new[] { "solace" }, "solace"))">
+                    @if (_inFlight.Contains("solace")) {<i class="ti ti-loader animate-spin"></i> <span>Triggering...</span>}
+                    else {<i class="ti ti-cloud-upload"></i> <span>Deploy Solace</span>}
+                </button>
+                <button class="launch-btn-sm" disabled="@(!DomainLaunchEnabled(_status?.MuleSoft, "mulesoft"))" @onclick="@(() => TriggerLaunchAsync(new[] { "mulesoft" }, "mulesoft"))">
+                    @if (_inFlight.Contains("mulesoft")) {<i class="ti ti-loader animate-spin"></i> <span>Triggering...</span>}
+                    else {<i class="ti ti-cloud-upload"></i> <span>Deploy MuleSoft</span>}
+                </button>
+            </div>
+
+            @if (Progress is { } p)
+            {
+                <div class="status-bar-wrapper">
+                    <div class="status-bar-label">
+                        <span>@p.Text</span>
+                        <span>@p.Pct</span>
+                    </div>
+                    <div class="status-bar">
+                        <div class="status-fill @(p.Failed ? "failed" : null)" style="width: @(p.Width)%"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly string[] AllDomains = { "btp", "solace", "mulesoft" };
+
+    [Parameter] public string? CorrelationId { get; set; }
+    [Parameter] public EventCallback<bool> BusyChanged { get; set; }
+
+    private OnboardingStatusDto? _status;
+    private string? _loadedFor;
+    private bool _forceRedeploy;
+    private bool _launchSubmitting; // just submitted, before the server flips DeploymentStatus
+    private readonly HashSet<string> _inFlight = new();
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == CorrelationId) return;
+        _loadedFor = CorrelationId;
+        _status = null;
+        await RefreshAsync();
+    }
+
+    protected override void OnInitialized() => _ = PollLoopAsync();
+
+    private async Task PollLoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                if (CorrelationId is null) continue;
+                await RefreshAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { /* view closed */ }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (CorrelationId is null) return;
+        try
+        {
+            _status = await StatusReads.GetStatusAsync(CorrelationId, _cts.Token);
+        }
+        catch (OperationCanceledException) { }
+        catch
+        {
+            // DB unreachable — buttons stay gated; the poll will retry.
+        }
+    }
+
+    private bool AllLaunchEnabled =>
+        !_inFlight.Contains("all") && _status?.ReadyToLaunch == true;
+
+    private bool DomainLaunchEnabled(DomainStatusDto? card, string key) =>
+        !_inFlight.Contains(key)
+        && card is { Found: true, EnrichmentStatus: "Complete" }
+        && card.DeploymentStatus != "InProgress"
+        && card.DeploymentStatus != "AwaitingBranchApproval";
+
+    private async Task TriggerLaunchAsync(IReadOnlyList<string> domains, string key)
+    {
+        if (CorrelationId is null) return;
+
+        _inFlight.Add(key);
+        _launchSubmitting = true;
+        await BusyChanged.InvokeAsync(true);
+        try
+        {
+            var result = await LogicApp.LaunchAsync(CorrelationId, domains, _forceRedeploy);
+            if (result.Accepted)
+            {
+                Toasts.Success($"Deployment accepted for: {string.Join(", ", domains)}");
+                await RefreshAsync();
+            }
+            else
+            {
+                Toasts.Error($"Launch failed: {result.Error}");
+                _launchSubmitting = false;
+            }
+        }
+        finally
+        {
+            _inFlight.Remove(key);
+            await BusyChanged.InvokeAsync(false);
+        }
+    }
+
+    private (string Text, string Pct, int Width, bool Failed)? Progress
+    {
+        get
+        {
+            if (_status is null) return _launchSubmitting ? ("Submitting launch request...", "10%", 10, false) : null;
+
+            var present = new List<(string Name, DomainStatusDto Card)>();
+            if (_status.Btp.Found) present.Add(("btp", _status.Btp));
+            if (_status.Solace.Found) present.Add(("solace", _status.Solace));
+            if (_status.MuleSoft.Found) present.Add(("mulesoft", _status.MuleSoft));
+
+            var awaitingArch = _status.ArchitectureApproval.Status == "Pending";
+            var awaitingBranch = present.FirstOrDefault(d => d.Card.DeploymentStatus == "AwaitingBranchApproval");
+            var inProgress = present.Any(d => d.Card.DeploymentStatus == "InProgress");
+            var deployed = present.Count > 0 && present.All(d => d.Card.DeploymentStatus == "Deployed");
+            var failed = present.Any(d => d.Card.DeploymentStatus == "Failed");
+
+            if (awaitingArch) return ("Waiting on architecture approval email reply…", "Awaiting approval", 25, false);
+            if (awaitingBranch.Name is not null) return ($"Waiting on branch-creation approval for {awaitingBranch.Name}…", "Awaiting approval", 65, false);
+            if (inProgress) return ("Orchestrator publishing configuration...", "50%", 50, false);
+            if (deployed) return ("Orchestration Completed Successfully!", "100%", 100, false);
+            if (failed) return ("Orchestration Failed. Check Audit Logs below.", "Failed", 100, true);
+            return _launchSubmitting ? ("Submitting launch request...", "10%", 10, false) : null;
+        }
+    }
+
+    public void Dispose() => _cts.Cancel();
+}

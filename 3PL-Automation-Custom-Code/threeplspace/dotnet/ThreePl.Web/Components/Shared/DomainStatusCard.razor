@@ -1,0 +1,70 @@
+<div class="status-card @(Loading ? "loading" : null)">
+    <div class="sc-header">
+        <span class="sc-title"><i class="ti @Icon"></i> @Title</span>
+        <span class="badge @StatusBadgeClass">@StatusBadgeText</span>
+    </div>
+    <div class="sc-row"><span class="sc-label">Direction</span><span class="badge @DirectionBadgeClass">@DirectionText</span></div>
+    <div class="sc-row"><span class="sc-label">Deploy Status</span><span class="badge @DeployBadgeClass">@DeployText</span></div>
+    @if (ShowBranchApproval)
+    {
+        <div class="sc-row"><span class="sc-label">Branch Approval</span><span class="badge @BranchBadgeClass">@BranchText</span></div>
+        <div class="sc-row"><span class="sc-label">Pending Branch</span><span class="sc-value">@(Status?.PendingBranchName ?? "—")</span></div>
+    }
+    <div class="sc-row"><span class="sc-label">Card Sent At</span><span class="sc-value">@Views.StatusView.FormatTime(Status?.CardSentAt)</span></div>
+    <div class="sc-row"><span class="sc-label">Card Responded At</span><span class="sc-value">@Views.StatusView.FormatTime(Status?.CardRespondedAt)</span></div>
+    <div>
+        <div class="sc-label" style="margin-bottom: 6px;">Missing Fields</div>
+        <div class="chips-container">
+            @if (Status is null || !Status.Found)
+            {
+                <span class="chip absent">no config row</span>
+            }
+            else if (Status.MissingFields.Count > 0)
+            {
+                @foreach (var f in Status.MissingFields)
+                {
+                    <span class="chip">@f</span>
+                }
+            }
+            else
+            {
+                <span class="chip none"><i class="ti ti-check"></i> None</span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public DomainStatusDto? Status { get; set; }
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public bool ShowBranchApproval { get; set; }
+
+    private bool Found => Status?.Found == true;
+
+    private string StatusBadgeText => Found ? Status!.EnrichmentStatus : "Not Found";
+    private string StatusBadgeClass => !Found ? "gray" : Status!.EnrichmentStatus == "Complete" ? "green" : "orange";
+
+    private string DirectionText => Found ? (string.IsNullOrEmpty(Status!.Direction) ? "Outbound" : Status.Direction) : "—";
+    private string DirectionBadgeClass => Found && Status!.Direction == "Inbound" ? "blue" : "gray";
+
+    private string DeployText => Found ? Status!.DeploymentStatus : "—";
+    private string DeployBadgeClass => !Found ? "gray" : Status!.DeploymentStatus switch
+    {
+        "Deployed" => "green",
+        "InProgress" => "blue",
+        "AwaitingBranchApproval" => "orange",
+        "Failed" => "red",
+        _ => "gray",
+    };
+
+    private string BranchText => Found && Status!.BranchApprovalStatus is { Length: > 0 } s ? s : "—";
+    private string BranchBadgeClass => (Found ? Status!.BranchApprovalStatus : null) switch
+    {
+        "Approved" => "green",
+        "Pending" => "orange",
+        "Rejected" => "red",
+        _ => "gray",
+    };
+}

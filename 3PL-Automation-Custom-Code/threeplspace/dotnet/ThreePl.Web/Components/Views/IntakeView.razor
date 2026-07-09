@@ -1,0 +1,545 @@
+@inject IntakePrefillService Prefill
+@inject FieldRequirementService FieldRequirements
+@inject LogicAppClient LogicApp
+@inject ToastService Toasts
+
+<div class="view-panel">
+    <div class="domain-tabs">
+        <div class="domain-tab @(_tab == "common" ? "active" : null)" @onclick="@(() => _tab = "common")"><i class="ti ti-list-details"></i> Common</div>
+        <div class="domain-tab @(_tab == "btp" ? "active" : null)" @onclick="@(() => _tab = "btp")"><i class="ti ti-building-bank"></i> SAP BTP</div>
+        <div class="domain-tab @(_tab == "solace" ? "active" : null)" @onclick="@(() => _tab = "solace")"><i class="ti ti-topology-star"></i> Solace Client</div>
+        <div class="domain-tab @(_tab == "mulesoft" ? "active" : null)" @onclick="@(() => _tab = "mulesoft")"><i class="ti ti-cloud"></i> MuleSoft Partner</div>
+    </div>
+
+    @if (_tab == "common")
+    {
+        <div class="domain-form">
+            <div class="form-section-title">Common Interface Details</div>
+            <div class="form-grid">
+                <TextField Label="Interface ID" Placeholder="e.g. ITF_WMS_010" @bind-Value="_common.InterfaceId" Required="@Req("Common", "interfaceId")" Invalid="@Inv("Common", "interfaceId")" />
+                <TextField Label="EA Reference" Placeholder="e.g. EA1234" @bind-Value="_common.EaRef" Required="@Req("Common", "eaRef")" Invalid="@Inv("Common", "eaRef")" />
+                <TextField Label="Source Application" Placeholder="e.g. 1NAV" @bind-Value="_common.SourceApp" Required="@Req("Common", "sourceApp")" Invalid="@Inv("Common", "sourceApp")" />
+                <TextField Label="Target Application" Placeholder="e.g. 3PL" @bind-Value="_common.TargetApp" Required="@Req("Common", "targetApp")" Invalid="@Inv("Common", "targetApp")" />
+                <TextField Label="Business Object" Placeholder="e.g. stockMovement" @bind-Value="_common.BusinessObject" Required="@Req("Common", "businessObject")" Invalid="@Inv("Common", "businessObject")" />
+                <SelectField Label="Country / Market" @bind-Value="_common.Country" Required="@Req("Common", "country")" Invalid="@Inv("Common", "country")">
+                    <option value="">Select...</option>
+                    <option value="Germany">Germany</option>
+                    <option value="Netherlands">Netherlands</option>
+                    <option value="India">India</option>
+                    <option value="UK">UK</option>
+                    <option value="France">France</option>
+                    <option value="Belgium">Belgium</option>
+                    <option value="Poland">Poland</option>
+                    <option value="Spain">Spain</option>
+                    <option value="Italy">Italy</option>
+                </SelectField>
+                <SelectField Label="Source Format" @bind-Value="_common.SourceFormat" Required="@Req("Common", "sourceFormat")" Invalid="@Inv("Common", "sourceFormat")">
+                    <option value="">Select...</option>
+                    <option value="xml">xml</option>
+                    <option value="json">json</option>
+                    <option value="txt">txt</option>
+                    <option value="flat-file">flat-file</option>
+                    <option value="idoc">idoc</option>
+                    <option value="csv">csv</option>
+                    <option value="edifact">edifact</option>
+                </SelectField>
+                <SelectField Label="Source Interface Type" @bind-Value="_common.SourceInterfaceType" Required="@Req("Common", "sourceInterfaceType")" Invalid="@Inv("Common", "sourceInterfaceType")">
+                    <option value="">Select...</option>
+                    <option value="API">API</option>
+                    <option value="SFTP">SFTP</option>
+                    <option value="IDoc">IDoc</option>
+                    <option value="file">file</option>
+                    <option value="REST">REST</option>
+                    <option value="SOAP">SOAP</option>
+                    <option value="JMS">JMS</option>
+                    <option value="DB">DB</option>
+                </SelectField>
+                <SelectField Label="Target Format" @bind-Value="_common.TargetFormat" Required="@Req("Common", "targetFormat")" Invalid="@Inv("Common", "targetFormat")">
+                    <option value="">Select...</option>
+                    <option value="xml">xml</option>
+                    <option value="json">json</option>
+                    <option value="idoc">idoc</option>
+                    <option value="txt">txt</option>
+                    <option value="flat-file">flat-file</option>
+                    <option value="csv">csv</option>
+                    <option value="edifact">edifact</option>
+                </SelectField>
+                <SelectField Label="Target Interface Type" @bind-Value="_common.TargetInterfaceType" Required="@Req("Common", "targetInterfaceType")" Invalid="@Inv("Common", "targetInterfaceType")">
+                    <option value="">Select...</option>
+                    <option value="API">API</option>
+                    <option value="SFTP">SFTP</option>
+                    <option value="REST">REST</option>
+                    <option value="SOAP">SOAP</option>
+                    <option value="IDoc">IDoc</option>
+                    <option value="JMS">JMS</option>
+                    <option value="file">file</option>
+                </SelectField>
+                <TextField Label="Functional Description" Placeholder="Brief description of the interface..." Wide="true" @bind-Value="_common.FunctionalDescription" Required="@Req("Common", "functionalDescription")" Invalid="@Inv("Common", "functionalDescription")" />
+                <SelectField Label="Volume (msgs / period)" @bind-Value="_common.Volume" Required="@Req("Common", "volume")" Invalid="@Inv("Common", "volume")">
+                    <option value="">Select...</option>
+                    <option value="<1000/day">&lt;1000/day</option>
+                    <option value="1000–10000/day">1000–10000/day</option>
+                    <option value=">10000/day">&gt;10000/day</option>
+                </SelectField>
+                <SelectField Label="Size Per Message" @bind-Value="_common.SizePerMessage" Required="@Req("Common", "sizePerMessage")" Invalid="@Inv("Common", "sizePerMessage")">
+                    <option value="">Select...</option>
+                    <option value="<1KB">&lt;1KB</option>
+                    <option value="1–10KB">1–10KB</option>
+                    <option value=">10KB">&gt;10KB</option>
+                </SelectField>
+                <TextField Label="Peak Volume" Placeholder="e.g. 15000/day during peak season" Wide="true" @bind-Value="_common.PeakVolume" Required="@Req("Common", "peakVolume")" Invalid="@Inv("Common", "peakVolume")" />
+                <TextField Label="3PL Partner ID" Placeholder="e.g. 3PL-001" @bind-Value="_common.ThreePlPartnerId" Required="@Req("Common", "threePlPartnerId")" Invalid="@Inv("Common", "threePlPartnerId")" />
+                <TextField Label="1Nav Instance ID" Placeholder="e.g. NAV-EU-02" @bind-Value="_common.NavInstanceId" Required="@Req("Common", "navInstanceId")" Invalid="@Inv("Common", "navInstanceId")" />
+                <SelectField Label="Country Code ISO" @bind-Value="_common.CountryCodeIso" Required="@Req("Common", "countryCodeIso")" Invalid="@Inv("Common", "countryCodeIso")">
+                    <option value="">Select...</option>
+                    <option value="DE">DE</option>
+                    <option value="NL">NL</option>
+                    <option value="IN">IN</option>
+                    <option value="GB">GB</option>
+                    <option value="US">US</option>
+                    <option value="FR">FR</option>
+                    <option value="BE">BE</option>
+                    <option value="PL">PL</option>
+                    <option value="ES">ES</option>
+                    <option value="IT">IT</option>
+                </SelectField>
+                <SelectField Label="Region ISO" @bind-Value="_common.RegionIso" Required="@Req("Common", "regionIso")" Invalid="@Inv("Common", "regionIso")">
+                    <option value="">Select...</option>
+                    <option value="EU">EU</option>
+                    <option value="APAC">APAC</option>
+                    <option value="NA">NA</option>
+                    <option value="MEA">MEA</option>
+                    <option value="LATAM">LATAM</option>
+                </SelectField>
+                <TextField Label="Subscription Rules" Placeholder="e.g. ByPartnerID, ByCountry, None" Wide="true" @bind-Value="_common.SubscriptionRules" Required="@Req("Common", "subscriptionRules")" Invalid="@Inv("Common", "subscriptionRules")" />
+            </div>
+            <button class="btn primary" disabled="@_saving" @onclick="@(() => SaveAsync("Common"))">
+                @if (_saving) {<i class="ti ti-loader animate-spin"></i> <span>Saving...</span>}
+                else {<i class="ti ti-device-floppy"></i> <span>Save Common Domain</span>}
+            </button>
+        </div>
+    }
+    else if (_tab == "btp")
+    {
+        <div class="domain-form">
+            <div class="form-section-title">BTP Deployment Configuration</div>
+            <div class="form-grid">
+                <SelectField Label="Direction" @bind-Value="_btp.Direction">
+                    <option value="Outbound">Outbound (1NAV → 3PL)</option>
+                    <option value="Inbound">Inbound (3PL → 1NAV) — skips SME enrichment</option>
+                </SelectField>
+                <TextField Label="SubAccount" Placeholder="e.g. royal-canin-france-uat" @bind-Value="_btp.SubAccount" Required="@Req("Btp", "subAccount", _btp.Direction)" Invalid="@Inv("Btp", "subAccount")" />
+                <TextField Label="Product Name" Placeholder="e.g. royal-canin-france-integration" @bind-Value="_btp.ProductName" Required="@Req("Btp", "productName", _btp.Direction)" Invalid="@Inv("Btp", "productName")" />
+                <TextField Label="Environment" Placeholder="e.g. UAT" @bind-Value="_btp.Environment" Required="@Req("Btp", "environment", _btp.Direction)" Invalid="@Inv("Btp", "environment")" />
+                <TextField Label="Mode" Placeholder="e.g. create" @bind-Value="_btp.Mode" Required="@Req("Btp", "mode", _btp.Direction)" Invalid="@Inv("Btp", "mode")" />
+                <TextField Label="Developer ID" Placeholder="e.g. dev123" @bind-Value="_btp.DeveloperId" Required="@Req("Btp", "developerId", _btp.Direction)" Invalid="@Inv("Btp", "developerId")" />
+                <TextField Label="Title" Placeholder="e.g. Royal Canin France BTP onboarding" @bind-Value="_btp.Title" Required="@Req("Btp", "title", _btp.Direction)" Invalid="@Inv("Btp", "title")" />
+                <TextField Label="Short Text" Placeholder="e.g. Description of application..." Wide="true" @bind-Value="_btp.ShortText" Required="@Req("Btp", "shortText", _btp.Direction)" Invalid="@Inv("Btp", "shortText")" />
+                <TextField Label="Repo Owner" Placeholder="e.g. Mars-Incorporated" @bind-Value="_btp.RepoOwner" Required="@Req("Btp", "repoOwner", _btp.Direction)" Invalid="@Inv("Btp", "repoOwner")" />
+                <TextField Label="Repo Name" Placeholder="e.g. marsis-az-core-pipeline" @bind-Value="_btp.RepoName" Required="@Req("Btp", "repoName", _btp.Direction)" Invalid="@Inv("Btp", "repoName")" />
+                <TextField Label="Workflow File Name" Placeholder="e.g. btp-api-management-deploy.yml" @bind-Value="_btp.WorkflowFileName" Required="@Req("Btp", "workflowFileName", _btp.Direction)" Invalid="@Inv("Btp", "workflowFileName")" />
+                <TextField Label="Branch Ref" Placeholder="e.g. main" @bind-Value="_btp.BranchRef" Required="@Req("Btp", "branchRef", _btp.Direction)" Invalid="@Inv("Btp", "branchRef")" />
+                <SelectField Label="Service Exists" @bind-Value="_btp.ServiceExists" Required="@Req("Btp", "serviceExists", _btp.Direction)" Invalid="@Inv("Btp", "serviceExists")">
+                    <option value="">Select...</option>
+                    <option value="true">True</option>
+                    <option value="false">False</option>
+                </SelectField>
+                <TextField Label="Recipient Email" Placeholder="e.g. devops-owner@example.com" @bind-Value="_btp.RecipientEmail" Required="@Req("Btp", "recipientEmail", _btp.Direction)" Invalid="@Inv("Btp", "recipientEmail")" />
+            </div>
+            <button class="btn primary" disabled="@_saving" @onclick="@(() => SaveAsync("Btp"))">
+                @if (_saving) {<i class="ti ti-loader animate-spin"></i> <span>Saving...</span>}
+                else {<i class="ti ti-device-floppy"></i> <span>Save BTP Domain</span>}
+            </button>
+        </div>
+    }
+    else if (_tab == "solace")
+    {
+        <div class="domain-form">
+            <div class="form-section-title">Solace Settings</div>
+            <div class="form-grid">
+                <SelectField Label="Direction" @bind-Value="_solace.Direction">
+                    <option value="Outbound">Outbound (1NAV → 3PL)</option>
+                    <option value="Inbound">Inbound (3PL → 1NAV) — skips SME enrichment</option>
+                </SelectField>
+                <TextField Label="Brand" Placeholder="e.g. petc" @bind-Value="_solace.Brand" Required="@Req("Solace", "brand", _solace.Direction)" Invalid="@Inv("Solace", "brand")" />
+                <TextField Label="Env" Placeholder="e.g. rc" @bind-Value="_solace.Env" Required="@Req("Solace", "env", _solace.Direction)" Invalid="@Inv("Solace", "env")" />
+                <TextField Label="System Name" Placeholder="e.g. navision" @bind-Value="_solace.SystemName" Required="@Req("Solace", "systemName", _solace.Direction)" Invalid="@Inv("Solace", "systemName")" />
+                <TextField Label="ThreePL Code" Placeholder="e.g. 3plpnp" @bind-Value="_solace.ThreePLCode" Required="@Req("Solace", "threePLCode", _solace.Direction)" Invalid="@Inv("Solace", "threePLCode")" />
+                <TextField Label="Encrypted Password" Type="password" Placeholder="Keep blank to remain unchanged" @bind-Value="_solace.EncryptedPassword" Required="@Req("Solace", "encryptedPassword", _solace.Direction)" Invalid="@Inv("Solace", "encryptedPassword")" />
+                <TextField Label="Action" Placeholder="e.g. FullOnboarding" @bind-Value="_solace.Action" Required="@Req("Solace", "action", _solace.Direction)" Invalid="@Inv("Solace", "action")" />
+                <SelectField Label="Acl Client Connect Default Action" @bind-Value="_solace.AclClientConnectDefaultAction">
+                    <option value="allow">Allow</option><option value="disallow">Disallow</option>
+                </SelectField>
+                <SelectField Label="Acl Publish Topic Default Action" @bind-Value="_solace.AclPublishTopicDefaultAction">
+                    <option value="allow">Allow</option><option value="disallow">Disallow</option>
+                </SelectField>
+                <SelectField Label="Acl Subscribe Share Name Default Action" @bind-Value="_solace.AclSubscribeShareNameDefaultAction">
+                    <option value="allow">Allow</option><option value="disallow">Disallow</option>
+                </SelectField>
+                <SelectField Label="Acl Subscribe Topic Default Action" @bind-Value="_solace.AclSubscribeTopicDefaultAction">
+                    <option value="allow">Allow</option><option value="disallow">Disallow</option>
+                </SelectField>
+
+                <CheckboxField Id="chk-s1" Label="Allow Guaranteed Msg Send" @bind-Value="_solace.ClientProfileAllowGuaranteedMsgSendEnabled" />
+                <CheckboxField Id="chk-s2" Label="Allow Guaranteed Msg Receive" @bind-Value="_solace.ClientProfileAllowGuaranteedMsgReceiveEnabled" />
+                <CheckboxField Id="chk-s3" Label="Compression Enabled" @bind-Value="_solace.ClientProfileCompressionEnabled" />
+                <CheckboxField Id="chk-s4" Label="Allow Connection When Standby" @bind-Value="_solace.ClientProfileReplicationAllowClientConnectWhenStandbyEnabled" />
+                <CheckboxField Id="chk-s5" Label="Allow Transacted Sessions" @bind-Value="_solace.ClientProfileAllowTransactedSessionsEnabled" />
+                <CheckboxField Id="chk-s6" Label="Allow Bridge Connections" @bind-Value="_solace.ClientProfileAllowBridgeConnectionsEnabled" />
+                <CheckboxField Id="chk-s7" Label="Allow Guaranteed Endpoint Create" @bind-Value="_solace.ClientProfileAllowGuaranteedEndpointCreateEnabled" />
+                <CheckboxField Id="chk-s8" Label="Allow Shared Subscriptions" @bind-Value="_solace.ClientProfileAllowSharedSubscriptionsEnabled" />
+                <CheckboxField Id="chk-s9" Label="Client User Enabled" @bind-Value="_solace.ClientUserEnabled" />
+                <CheckboxField Id="chk-s10" Label="Guaranteed Endpoint Permission Override" @bind-Value="_solace.ClientUserGuaranteedEndpointPermissionOverrideEnabled" />
+                <CheckboxField Id="chk-s11" Label="Subscription Manager Enabled" @bind-Value="_solace.ClientUserSubscriptionManagerEnabled" />
+
+                <SelectField Label="Service Exists" @bind-Value="_solace.ServiceExists" Required="@Req("Solace", "serviceExists", _solace.Direction)" Invalid="@Inv("Solace", "serviceExists")">
+                    <option value="">Select...</option><option value="true">True</option><option value="false">False</option>
+                </SelectField>
+
+                <div class="form-section-title wide" style="margin-top:20px;">GitHub Publishing Metadata</div>
+                <TextField Label="Repo Owner" Placeholder="e.g. Mars-Incorporated" @bind-Value="_solace.RepoOwner" Required="@Req("Solace", "repoOwner", _solace.Direction)" Invalid="@Inv("Solace", "repoOwner")" />
+                <TextField Label="Repo Name" Placeholder="e.g. marsis-integration-configs" @bind-Value="_solace.RepoName" Required="@Req("Solace", "repoName", _solace.Direction)" Invalid="@Inv("Solace", "repoName")" />
+                <TextField Label="File Path" Placeholder="e.g. config/solace/petc-rc-navision-3plpnp.json" @bind-Value="_solace.FilePath" Required="@Req("Solace", "filePath", _solace.Direction)" Invalid="@Inv("Solace", "filePath")" />
+                <TextField Label="Branch" Placeholder="e.g. main" @bind-Value="_solace.Branch" Required="@Req("Solace", "branch", _solace.Direction)" Invalid="@Inv("Solace", "branch")" />
+                <TextField Label="Base Branch" Placeholder="e.g. main" @bind-Value="_solace.BaseBranch" Required="@Req("Solace", "baseBranch", _solace.Direction)" Invalid="@Inv("Solace", "baseBranch")" />
+                <TextField Label="Feature Branch Name" Placeholder="e.g. feature/solace-config-update" @bind-Value="_solace.FeatureBranchName" Required="@Req("Solace", "featureBranchName", _solace.Direction)" Invalid="@Inv("Solace", "featureBranchName")" />
+                <TextField Label="Requester Email" Placeholder="e.g. requester@example.com" @bind-Value="_solace.RequesterEmail" Required="@Req("Solace", "requesterEmail", _solace.Direction)" Invalid="@Inv("Solace", "requesterEmail")" />
+                <TextField Label="Recipient Email" Placeholder="e.g. devops-owner@example.com" @bind-Value="_solace.RecipientEmail" Required="@Req("Solace", "recipientEmail", _solace.Direction)" Invalid="@Inv("Solace", "recipientEmail")" />
+                <TextField Label="Commit Message" Placeholder="e.g. Update Solace config..." Wide="true" @bind-Value="_solace.CommitMessage" Required="@Req("Solace", "commitMessage", _solace.Direction)" Invalid="@Inv("Solace", "commitMessage")" />
+            </div>
+
+            <div class="form-section-title">Message Types &amp; Topic Subscriptions</div>
+            <div class="table-container @(Inv("Solace", "messageTypes") ? "invalid" : null)">
+                <table class="sub-table">
+                    <thead>
+                        <tr>
+                            <th>Message Type</th>
+                            <th>Topic</th>
+                            <th>Permission</th>
+                            <th>Egress Enabled</th>
+                            <th>Max Redelivery Count</th>
+                            <th style="width: 80px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _solace.MessageTypes)
+                        {
+                            <tr @key="row">
+                                <td><input type="text" value="@row.MessageType" @oninput="e => row.MessageType = (string?)e.Value" placeholder="e.g. DespatchStock" /></td>
+                                <td><input type="text" value="@row.Topic" @oninput="e => row.Topic = (string?)e.Value" placeholder="e.g. scx/whm/..." /></td>
+                                <td><input type="text" value="@row.QueuePermission" @oninput="e => row.QueuePermission = (string?)e.Value" placeholder="consume" /></td>
+                                <td><input type="checkbox" checked="@row.QueueEgressEnabled" @onchange="e => row.QueueEgressEnabled = (bool)(e.Value ?? false)" /></td>
+                                <td><input type="text" value="@row.QueueMaxRedeliveryCount" @oninput="e => row.QueueMaxRedeliveryCount = ParseIntOrNull(e.Value)" placeholder="3" /></td>
+                                <td><button class="btn btn-sm danger" @onclick="() => _solace.MessageTypes.Remove(row)"><i class="ti ti-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="btn btn-sm" @onclick="() => _solace.MessageTypes.Add(new SolaceMessageTypeRow())"><i class="ti ti-plus"></i> Add Row</button>
+                </div>
+            </div>
+
+            <button class="btn primary" disabled="@_saving" @onclick="@(() => SaveAsync("Solace"))">
+                @if (_saving) {<i class="ti ti-loader animate-spin"></i> <span>Saving...</span>}
+                else {<i class="ti ti-device-floppy"></i> <span>Save Solace Domain</span>}
+            </button>
+        </div>
+    }
+    else if (_tab == "mulesoft")
+    {
+        <div class="domain-form">
+            <div class="form-section-title">MuleSoft Partner Configuration</div>
+            <div class="form-grid">
+                <SelectField Label="Direction" @bind-Value="_mule.Direction">
+                    <option value="Outbound">Outbound (1NAV → 3PL)</option>
+                    <option value="Inbound">Inbound (3PL → 1NAV) — skips SME enrichment</option>
+                </SelectField>
+                <TextField Label="Country Key" Placeholder="e.g. royal-canin-france" @bind-Value="_mule.CountryKey" Required="@Req("MuleSoft", "countryKey", _mule.Direction)" Invalid="@Inv("MuleSoft", "countryKey")" />
+                <TextField Label="Country Code" Placeholder="e.g. fr" @bind-Value="_mule.CountryCode" Required="@Req("MuleSoft", "countryCode", _mule.Direction)" Invalid="@Inv("MuleSoft", "countryCode")" />
+                <TextField Label="Partner Comment" Placeholder="e.g. Royal Canin France onboarding..." Wide="true" @bind-Value="_mule.PartnerComment" Required="@Req("MuleSoft", "partnerComment", _mule.Direction)" Invalid="@Inv("MuleSoft", "partnerComment")" />
+                <TextField Label="Created By" Placeholder="e.g. integration-pulse-mulesoft-publisher" @bind-Value="_mule.CreatedBy" Required="@Req("MuleSoft", "createdBy", _mule.Direction)" Invalid="@Inv("MuleSoft", "createdBy")" />
+                <TextField Label="Nav Protocol" Placeholder="e.g. https" @bind-Value="_mule.NavProtocol" Required="@Req("MuleSoft", "navProtocol", _mule.Direction)" Invalid="@Inv("MuleSoft", "navProtocol")" />
+                <TextField Label="Nav Port" Placeholder="e.g. 7124" @bind-Value="_mule.NavPort" Required="@Req("MuleSoft", "navPort", _mule.Direction)" Invalid="@Inv("MuleSoft", "navPort")" />
+                <TextField Label="Nav Username" Placeholder="e.g. SVC_UAT_MULESOFT" @bind-Value="_mule.NavUsername" Required="@Req("MuleSoft", "navUsername", _mule.Direction)" Invalid="@Inv("MuleSoft", "navUsername")" />
+                <TextField Label="Nav Domain" Placeholder="e.g. mars-ad.net" @bind-Value="_mule.NavDomain" Required="@Req("MuleSoft", "navDomain", _mule.Direction)" Invalid="@Inv("MuleSoft", "navDomain")" />
+                <TextField Label="Nav Service" Placeholder="e.g. InterfaceWebServices" @bind-Value="_mule.NavService" Required="@Req("MuleSoft", "navService", _mule.Direction)" Invalid="@Inv("MuleSoft", "navService")" />
+                <TextField Label="Nav Soap Port" Placeholder="e.g. 7124" @bind-Value="_mule.NavSoapPort" Required="@Req("MuleSoft", "navSoapPort", _mule.Direction)" Invalid="@Inv("MuleSoft", "navSoapPort")" />
+                <CheckboxField Id="chk-m1" Label="Use Common Cert" @bind-Value="_mule.NavUseCommonCert" />
+                <TextField Label="Translation Receiver Name" Placeholder="e.g. petc-rc-navision-3plspl-sys" @bind-Value="_mule.TranslationReceiverName" Required="@Req("MuleSoft", "translationReceiverName", _mule.Direction)" Invalid="@Inv("MuleSoft", "translationReceiverName")" />
+                <SelectField Label="Service Exists" @bind-Value="_mule.ServiceExists" Required="@Req("MuleSoft", "serviceExists", _mule.Direction)" Invalid="@Inv("MuleSoft", "serviceExists")">
+                    <option value="">Select...</option><option value="true">True</option><option value="false">False</option>
+                </SelectField>
+
+                <div class="form-section-title wide" style="margin-top:20px;">GitHub Publishing Metadata</div>
+                <TextField Label="Repo Owner" Placeholder="e.g. Mars-Incorporated" @bind-Value="_mule.RepoOwner" Required="@Req("MuleSoft", "repoOwner", _mule.Direction)" Invalid="@Inv("MuleSoft", "repoOwner")" />
+                <TextField Label="Repo Name" Placeholder="e.g. marsis-integration-configs" @bind-Value="_mule.RepoName" Required="@Req("MuleSoft", "repoName", _mule.Direction)" Invalid="@Inv("MuleSoft", "repoName")" />
+                <TextField Label="File Path Prefix" Placeholder="e.g. config/mulesoft/royal-canin-france" @bind-Value="_mule.FilePathPrefix" Required="@Req("MuleSoft", "filePathPrefix", _mule.Direction)" Invalid="@Inv("MuleSoft", "filePathPrefix")" />
+                <TextField Label="Branch" Placeholder="e.g. main" @bind-Value="_mule.Branch" Required="@Req("MuleSoft", "branch", _mule.Direction)" Invalid="@Inv("MuleSoft", "branch")" />
+                <TextField Label="Base Branch" Placeholder="e.g. main" @bind-Value="_mule.BaseBranch" Required="@Req("MuleSoft", "baseBranch", _mule.Direction)" Invalid="@Inv("MuleSoft", "baseBranch")" />
+                <TextField Label="Feature Branch Name" Placeholder="e.g. feature/mulesoft-config-update" @bind-Value="_mule.FeatureBranchName" Required="@Req("MuleSoft", "featureBranchName", _mule.Direction)" Invalid="@Inv("MuleSoft", "featureBranchName")" />
+                <TextField Label="Requester Email" Placeholder="e.g. requester@example.com" @bind-Value="_mule.RequesterEmail" Required="@Req("MuleSoft", "requesterEmail", _mule.Direction)" Invalid="@Inv("MuleSoft", "requesterEmail")" />
+                <TextField Label="Recipient Email" Placeholder="e.g. devops-owner@example.com" @bind-Value="_mule.RecipientEmail" Required="@Req("MuleSoft", "recipientEmail", _mule.Direction)" Invalid="@Inv("MuleSoft", "recipientEmail")" />
+                <TextField Label="Commit Message" Placeholder="e.g. Update MuleSoft config..." Wide="true" @bind-Value="_mule.CommitMessage" Required="@Req("MuleSoft", "commitMessage", _mule.Direction)" Invalid="@Inv("MuleSoft", "commitMessage")" />
+            </div>
+
+            <div class="form-section-title">Environments</div>
+            <div class="table-container @(Inv("MuleSoft", "environments") ? "invalid" : null)">
+                <table class="sub-table">
+                    <thead>
+                        <tr>
+                            <th>Environment</th><th>Nav Host</th><th>Nav Company</th><th>Nav Soap Path</th><th>Nav Routing Code</th><th style="width: 80px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _mule.Environments)
+                        {
+                            <tr @key="row">
+                                <td><input type="text" value="@row.Environment" @oninput="e => row.Environment = (string?)e.Value" placeholder="e.g. dev" /></td>
+                                <td><input type="text" value="@row.NavHost" @oninput="e => row.NavHost = (string?)e.Value" placeholder="e.g. azr-xxx.net" /></td>
+                                <td><input type="text" value="@row.NavCompany" @oninput="e => row.NavCompany = (string?)e.Value" placeholder="e.g. Company(UAT)" /></td>
+                                <td><input type="text" value="@row.NavSoapPath" @oninput="e => row.NavSoapPath = (string?)e.Value" placeholder="e.g. /sop/WS/..." /></td>
+                                <td><input type="text" value="@row.NavRoutingCode" @oninput="e => row.NavRoutingCode = (string?)e.Value" placeholder="e.g. NAV_FM_IN..." /></td>
+                                <td><button class="btn btn-sm danger" @onclick="() => _mule.Environments.Remove(row)"><i class="ti ti-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="btn btn-sm" @onclick="() => _mule.Environments.Add(new MuleEnvironmentRow())"><i class="ti ti-plus"></i> Add Row</button>
+                </div>
+            </div>
+
+            <div class="form-section-title">Transaction Types</div>
+            <div class="table-container @(Inv("MuleSoft", "transactionTypes") ? "invalid" : null)">
+                <table class="sub-table">
+                    <thead>
+                        <tr><th>Transaction Type Code</th><th>Enabled</th><th>Label</th><th style="width: 80px;">Action</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _mule.TransactionTypes)
+                        {
+                            <tr @key="row">
+                                <td><input type="text" value="@row.TransactionTypeCode" @oninput="e => row.TransactionTypeCode = (string?)e.Value" placeholder="e.g. sal_008" /></td>
+                                <td><input type="checkbox" checked="@row.TransactionTypeEnabled" @onchange="e => row.TransactionTypeEnabled = (bool)(e.Value ?? false)" /></td>
+                                <td><input type="text" value="@row.TransactionTypeLabel" @oninput="e => row.TransactionTypeLabel = (string?)e.Value" placeholder="SHIPMENT" /></td>
+                                <td><button class="btn btn-sm danger" @onclick="() => _mule.TransactionTypes.Remove(row)"><i class="ti ti-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="btn btn-sm" @onclick="() => _mule.TransactionTypes.Add(new MuleTransactionTypeRow())"><i class="ti ti-plus"></i> Add Row</button>
+                </div>
+            </div>
+
+            <div class="form-section-title">Message Types</div>
+            <div class="table-container @(Inv("MuleSoft", "messageTypes") ? "invalid" : null)">
+                <table class="sub-table">
+                    <thead>
+                        <tr><th>Message Type</th><th style="width: 80px;">Action</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _mule.MessageTypes)
+                        {
+                            <tr @key="row">
+                                <td><input type="text" value="@row.MessageType" @oninput="e => row.MessageType = (string?)e.Value" placeholder="despatchStock" /></td>
+                                <td><button class="btn btn-sm danger" @onclick="() => _mule.MessageTypes.Remove(row)"><i class="ti ti-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="btn btn-sm" @onclick="() => _mule.MessageTypes.Add(new MuleMessageTypeRow())"><i class="ti ti-plus"></i> Add Row</button>
+                </div>
+            </div>
+
+            <div class="form-section-title">Source/Destination Mappings</div>
+            <div class="table-container @(Inv("MuleSoft", "sourceDestinations") ? "invalid" : null)">
+                <table class="sub-table">
+                    <thead>
+                        <tr><th>From</th><th>To</th><th style="width: 80px;">Action</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _mule.SourceDestinations)
+                        {
+                            <tr @key="row">
+                                <td><input type="text" value="@row.SourceDestinationFrom" @oninput="e => row.SourceDestinationFrom = (string?)e.Value" placeholder="PLANT-FR1" /></td>
+                                <td><input type="text" value="@row.SourceDestinationTo" @oninput="e => row.SourceDestinationTo = (string?)e.Value" placeholder="spl_001" /></td>
+                                <td><button class="btn btn-sm danger" @onclick="() => _mule.SourceDestinations.Remove(row)"><i class="ti ti-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="btn btn-sm" @onclick="() => _mule.SourceDestinations.Add(new MuleSourceDestinationRow())"><i class="ti ti-plus"></i> Add Row</button>
+                </div>
+            </div>
+
+            <div class="form-section-title">UOM Mappings</div>
+            <div class="table-container @(Inv("MuleSoft", "uomMappings") ? "invalid" : null)">
+                <table class="sub-table">
+                    <thead>
+                        <tr><th>From</th><th>To</th><th style="width: 80px;">Action</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _mule.UomMappings)
+                        {
+                            <tr @key="row">
+                                <td><input type="text" value="@row.UomFrom" @oninput="e => row.UomFrom = (string?)e.Value" placeholder="EA" /></td>
+                                <td><input type="text" value="@row.UomTo" @oninput="e => row.UomTo = (string?)e.Value" placeholder="UNIT" /></td>
+                                <td><button class="btn btn-sm danger" @onclick="() => _mule.UomMappings.Remove(row)"><i class="ti ti-trash"></i></button></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-actions">
+                    <button class="btn btn-sm" @onclick="() => _mule.UomMappings.Add(new MuleUomMappingRow())"><i class="ti ti-plus"></i> Add Row</button>
+                </div>
+            </div>
+
+            <button class="btn primary" disabled="@_saving" @onclick="@(() => SaveAsync("MuleSoft"))">
+                @if (_saving) {<i class="ti ti-loader animate-spin"></i> <span>Saving...</span>}
+                else {<i class="ti ti-device-floppy"></i> <span>Save MuleSoft Domain</span>}
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? CorrelationId { get; set; }
+    [Parameter] public EventCallback<bool> BusyChanged { get; set; }
+
+    private string _tab = "common";
+    private bool _saving;
+    private string? _loadedFor = "\0unloaded"; // sentinel so a null CorrelationId still triggers the first load
+
+    private CommonForm _common = new();
+    private BtpForm _btp = new();
+    private SolaceForm _solace = new();
+    private MuleSoftForm _mule = new();
+
+    private Dictionary<(string Domain, string Field), RequirementLevel> _levels = new();
+    private readonly Dictionary<string, IReadOnlySet<string>> _invalid = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _levels = await FieldRequirements.GetEffectiveLevelsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == CorrelationId) return;
+        _loadedFor = CorrelationId;
+        ResetForms();
+        if (CorrelationId is null) return;
+
+        try
+        {
+            var prefill = await Prefill.GetPrefillAsync(CorrelationId);
+            if (prefill.Common is not null) _common = prefill.Common;
+            if (prefill.Btp is not null) _btp = prefill.Btp;
+            if (prefill.Solace is not null) _solace = prefill.Solace;
+            if (prefill.MuleSoft is not null) _mule = prefill.MuleSoft;
+        }
+        catch
+        {
+            // DB unreachable — start from blank forms; saves still go to the Logic App.
+        }
+    }
+
+    private void ResetForms()
+    {
+        _common = new CommonForm();
+        _btp = new BtpForm();
+        _solace = new SolaceForm();
+        _mule = new MuleSoftForm();
+        _invalid.Clear();
+    }
+
+    private bool Req(string domain, string field, string? direction = null)
+    {
+        var def = FieldDefinitions.Get(domain);
+        var level = _levels.TryGetValue((domain, field), out var l)
+            ? l
+            : def.Find(field)?.DefaultLevel ?? RequirementLevel.Optional;
+        return FieldRequirementService.IsRequired(level, def.HasDirection ? direction : "Outbound");
+    }
+
+    private bool Inv(string domain, string field) =>
+        _invalid.TryGetValue(domain, out var set) && set.Contains(field);
+
+    private static int? ParseIntOrNull(object? value) =>
+        int.TryParse(value?.ToString(), out var n) ? n : null;
+
+    private async Task SaveAsync(string domain)
+    {
+        if (CorrelationId is null)
+        {
+            Toasts.Error("No active onboarding session. Click New Onboarding.");
+            return;
+        }
+
+        // Prune blank sub-table rows, then enforce the admin-configured
+        // requirements for the form's current Direction before any network call.
+        string? direction;
+        System.Text.Json.Nodes.JsonObject fields;
+        IReadOnlyDictionary<string, string?> values;
+        IReadOnlyDictionary<string, int> tables;
+        switch (domain)
+        {
+            case "Common":
+                direction = null;
+                values = _common.FieldValues;
+                tables = new Dictionary<string, int>();
+                fields = _common.ToPayloadFields();
+                break;
+            case "Btp":
+                direction = _btp.Direction;
+                values = _btp.FieldValues;
+                tables = new Dictionary<string, int>();
+                fields = _btp.ToPayloadFields();
+                break;
+            case "Solace":
+                _solace.PruneBlankRows();
+                direction = _solace.Direction;
+                values = _solace.FieldValues;
+                tables = _solace.TableCounts;
+                fields = _solace.ToPayloadFields();
+                break;
+            default:
+                _mule.PruneBlankRows();
+                direction = _mule.Direction;
+                values = _mule.FieldValues;
+                tables = _mule.TableCounts;
+                fields = _mule.ToPayloadFields();
+                break;
+        }
+
+        var result = IntakeValidator.Validate(domain, direction, values, tables, _levels);
+        _invalid[domain] = result.InvalidFields;
+        if (!result.IsValid)
+        {
+            var shown = string.Join(", ", result.MissingLabels.Take(4));
+            var more = result.MissingLabels.Count > 4 ? $" (+{result.MissingLabels.Count - 4} more)" : "";
+            Toasts.Error($"Missing required: {shown}{more}");
+            return;
+        }
+
+        _saving = true;
+        await BusyChanged.InvokeAsync(true);
+        try
+        {
+            var save = await LogicApp.SaveDomainAsync(domain, CorrelationId, fields);
+            if (save.Success)
+                Toasts.Success($"{domain} domain configuration saved! Status: {save.EnrichmentStatus ?? "AwaitingInput"}");
+            else
+                Toasts.Error($"Failed to save {domain}: {save.Error}");
+        }
+        finally
+        {
+            _saving = false;
+            await BusyChanged.InvokeAsync(false);
+        }
+    }
+}

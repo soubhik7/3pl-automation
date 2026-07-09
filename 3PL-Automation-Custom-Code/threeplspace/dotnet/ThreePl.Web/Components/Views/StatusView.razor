@@ -1,0 +1,151 @@
+@implements IDisposable
+@inject StatusReadService StatusReads
+
+<div class="view-panel">
+    @if (CorrelationId is null)
+    {
+        <div class="empty-state">
+            <i class="ti ti-chart-line empty-ico"></i>
+            <p class="title">No session selected</p>
+            <p class="sub">Select an onboarding session from the sidebar (or start a new one) to see its status.</p>
+        </div>
+    }
+    else
+    {
+        @if (_error is not null)
+        {
+            <div class="db-warning"><i class="ti ti-alert-triangle"></i> Could not read status from the database: @_error</div>
+        }
+
+        <!-- Architecture Approval (whole-onboarding, not per-domain) -->
+        <div class="status-card @(_loading ? "loading" : null)" style="margin-bottom: 16px;">
+            <div class="sc-header">
+                <span class="sc-title"><i class="ti ti-shield-check"></i> Architecture Approval</span>
+                <span class="badge @ArchBadgeClass">@ArchBadgeText</span>
+            </div>
+            <div class="sc-row"><span class="sc-label">Approver</span><span class="sc-value">@(_status?.ArchitectureApproval.ApproverEmail ?? "—")</span></div>
+            <div class="sc-row"><span class="sc-label">Responded At</span><span class="sc-value">@FormatTime(_status?.ArchitectureApproval.RespondedAt)</span></div>
+        </div>
+
+        <div class="status-grid">
+            <DomainStatusCard Title="BTP Status" Icon="ti-building-bank" Status="_status?.Btp" Loading="_loading" ShowBranchApproval="false" />
+            <DomainStatusCard Title="Solace Status" Icon="ti-topology-star" Status="_status?.Solace" Loading="_loading" ShowBranchApproval="true" />
+            <DomainStatusCard Title="MuleSoft Status" Icon="ti-cloud" Status="_status?.MuleSoft" Loading="_loading" ShowBranchApproval="true" />
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline-container">
+            <div class="timeline-title"><i class="ti ti-clock"></i> Audit Trail &amp; Onboarding Timeline</div>
+            @if (_status is null || _status.AuditTrail.Count == 0)
+            {
+                <p class="tl-empty">No audit logs recorded yet.</p>
+            }
+            else
+            {
+                <div class="timeline">
+                    @foreach (var entry in _status.AuditTrail)
+                    {
+                        var isErr = entry.EventType is "Error" or "ValidationFailed" or "OrchestrationFailed";
+                        <div class="tl-item">
+                            <span class="tl-dot @(isErr ? "error" : "success")"></span>
+                            <div class="tl-header">
+                                <span class="tl-time">@FormatTime(entry.CreatedAt)</span>
+                                <span class="tl-type">@entry.EventType</span>
+                                <span class="tl-channel">@entry.Channel</span>
+                                @if (!string.IsNullOrEmpty(entry.ActorEmail))
+                                {
+                                    <span class="tl-actor"><i class="ti ti-user" style="font-size:10px;"></i> @entry.ActorEmail</span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(entry.EventDetail))
+                            {
+                                <div class="tl-detail">@entry.EventDetail</div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string? CorrelationId { get; set; }
+
+    private OnboardingStatusDto? _status;
+    private bool _loading;
+    private string? _error;
+    private string? _loadedFor;
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedFor == CorrelationId) return;
+        _loadedFor = CorrelationId;
+        _status = null;
+        if (CorrelationId is not null)
+        {
+            _loading = true;
+            await RefreshAsync();
+            _loading = false;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // Live refresh replacing the old 10s JS fetch poll.
+        _ = PollLoopAsync();
+    }
+
+    private async Task PollLoopAsync()
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(_cts.Token))
+            {
+                if (CorrelationId is null) continue;
+                await RefreshAsync();
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { /* view closed */ }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (CorrelationId is null) return;
+        try
+        {
+            _status = await StatusReads.GetStatusAsync(CorrelationId, _cts.Token);
+            _error = null;
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private string ArchBadgeText
+    {
+        get
+        {
+            var s = _status?.ArchitectureApproval.Status ?? "NotRequested";
+            return s == "NotRequested" ? "Not Requested" : s;
+        }
+    }
+
+    private string ArchBadgeClass => (_status?.ArchitectureApproval.Status) switch
+    {
+        "Approved" => "green",
+        "Pending" => "orange",
+        "Rejected" => "red",
+        _ => "gray",
+    };
+
+    public static string FormatTime(DateTime? utc) =>
+        utc is null ? "—" : DateTime.SpecifyKind(utc.Value, DateTimeKind.Utc).ToLocalTime().ToString("g");
+
+    public void Dispose() => _cts.Cancel();
+}

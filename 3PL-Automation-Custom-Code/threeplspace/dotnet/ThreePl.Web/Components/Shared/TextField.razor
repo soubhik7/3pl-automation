@@ -1,0 +1,19 @@
+<div class="form-group @(Wide ? "wide" : null)">
+    <label>@Label@if (Required)
+        {<span class="req-star">*</span>}</label>
+    <input type="@Type" class="@(Invalid ? "invalid" : null)" placeholder="@Placeholder"
+           value="@Value" @oninput="OnInput" autocomplete="off" />
+</div>
+
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Invalid { get; set; }
+    [Parameter] public bool Wide { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    private Task OnInput(ChangeEventArgs e) => ValueChanged.InvokeAsync((string?)e.Value);
+}

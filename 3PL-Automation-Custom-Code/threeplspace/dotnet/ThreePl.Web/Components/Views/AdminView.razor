@@ -1,0 +1,104 @@
+@inject FieldRequirementService FieldRequirements
+@inject ToastService Toasts
+
+<div class="view-panel">
+    <div class="admin-head">
+        <div>
+            <div class="admin-title"><i class="ti ti-adjustments-horizontal"></i> Field Requirement Configuration</div>
+            <p class="admin-sub">
+                Control which intake fields are mandatory from this one place.
+                <strong>Required</strong> always blocks saving when empty; <strong>Outbound only</strong> is
+                required only while that domain's Direction is Outbound (Inbound onboardings skip SME
+                enrichment); <strong>Optional</strong> never blocks. Natural-key fields are locked because the
+                enrichment workflow rejects saves without them. Changes are stored on the server and apply
+                to the intake forms for every user.
+            </p>
+        </div>
+        <div class="admin-actions">
+            <button class="btn" @onclick="ResetAsync"><i class="ti ti-restore"></i> Reset Defaults</button>
+        </div>
+    </div>
+
+    @foreach (var domain in FieldDefinitions.All)
+    {
+        <div class="admin-domain">
+            <div class="admin-domain-header">
+                <span>@domain.Title</span>
+                <span class="admin-dirnote">@(domain.HasDirection ? "direction-aware" : "no direction field — \"Outbound only\" behaves like Required")</span>
+            </div>
+            @foreach (var field in domain.Fields)
+            {
+                <div class="admin-row">
+                    <span class="admin-field">
+                        @if (field.IsTable)
+                        {
+                            <i class="ti ti-table"></i>
+                        }
+                        @field.Label
+                        @if (field.Email)
+                        {
+                            <span class="admin-hint">(must contain @@)</span>
+                        }
+                    </span>
+                    @if (field.Locked)
+                    {
+                        <span class="lock-chip"><i class="ti ti-lock"></i> Natural key — always required</span>
+                    }
+                    else
+                    {
+                        var current = Level(domain.Domain, field);
+                        <div class="req-seg">
+                            <button class="@(current == RequirementLevel.Always ? "on always" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Always))">Required</button>
+                            <button class="@(current == RequirementLevel.Outbound ? "on outbound" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Outbound))">Outbound only</button>
+                            <button class="@(current == RequirementLevel.Optional ? "on optional" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Optional))">Optional</button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private Dictionary<(string Domain, string Field), RequirementLevel> _levels = new();
+
+    protected override async Task OnInitializedAsync() =>
+        _levels = await FieldRequirements.GetEffectiveLevelsAsync();
+
+    private RequirementLevel Level(string domain, FieldDefinition field) =>
+        _levels.TryGetValue((domain, field.Name), out var l) ? l : field.DefaultLevel;
+
+    private async Task SetLevelAsync(string domain, FieldDefinition field, RequirementLevel level)
+    {
+        try
+        {
+            await FieldRequirements.SetLevelAsync(domain, field.Name, level);
+            _levels[(domain, field.Name)] = level;
+            var levelLabel = level switch
+            {
+                RequirementLevel.Always => "Required",
+                RequirementLevel.Outbound => "Outbound only",
+                _ => "Optional",
+            };
+            Toasts.Success($"{domain}: \"{field.Label}\" is now {levelLabel}");
+        }
+        catch (Exception ex)
+        {
+            Toasts.Error($"Could not persist the change: {ex.Message}");
+        }
+    }
+
+    private async Task ResetAsync()
+    {
+        try
+        {
+            await FieldRequirements.ResetAsync();
+            _levels = await FieldRequirements.GetEffectiveLevelsAsync();
+            Toasts.Success("Field requirements reset to defaults.");
+        }
+        catch (Exception ex)
+        {
+            Toasts.Error($"Could not reset: {ex.Message}");
+        }
+    }
+}
