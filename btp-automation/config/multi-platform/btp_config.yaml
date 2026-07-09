@@ -1,0 +1,56 @@
+# SAP BTP per-partner config — Multi-Platform Onboarding Example.
+# https://github.com/solace-onboarding/btp-automation/config/multi-platform/btp_config.yaml
+
+global_account:
+  subdomain: multi-platform
+  guid: <SET_VIA_KEY_VAULT>
+  display_name: Multi-Platform Integration Account
+
+subaccount:
+  guid: <SET_VIA_KEY_VAULT>
+  subdomain: multi-platform
+  region: eu10
+  display_name: Multi-Platform Integration Subaccount
+
+cloud_foundry:
+  api_endpoint: https://api.cf.eu10.hana.ondemand.com
+  org_name: multi-platform
+  org_guid: <SET_VIA_KEY_VAULT>
+  default_space: dev
+  region: eu10
+
+endpoints:
+  accounts_service: https://accounts-service.cfapps.eu10.hana.ondemand.com
+  entitlements_service: https://entitlements-service.cfapps.eu10.hana.ondemand.com
+  provisioning_service: https://provisioning-service.cfapps.eu10.hana.ondemand.com
+  xsuaa_api: https://multi-platform.authentication.eu10.hana.ondemand.com
+  xsuaa_subaccount_api: https://multi-platform.authentication.eu10.hana.ondemand.com
+
+auth:
+  cis_central:
+    client_id_env: "<SET_VIA_KEY_VAULT>"
+    client_secret_env: "<SET_VIA_KEY_VAULT>"
+    token_url: https://multi-platform-ga.authentication.eu10.hana.ondemand.com/oauth/token
+    grant_type: client_credentials
+  xsuaa:
+    client_id_env: "<SET_VIA_KEY_VAULT>"
+    client_secret_env: "<SET_VIA_KEY_VAULT>"
+    token_url: https://multi-platform.authentication.eu10.hana.ondemand.com/oauth/token
+    grant_type: client_credentials
+
+api_paths:
+  accounts: /accounts/v1
+  entitlements: /entitlements/v1
+  provisioning: /provisioning/v1
+  authorization: /sap/rest/authorization/v2
+
+defaults:
+  timeout_seconds: 30
+  retry_attempts: 3
+  retry_delay_seconds: 2
+  output_format: table
+  page_size: 100
+
+entitlements:
+  - service: cloudfoundry
+    plan: standard
