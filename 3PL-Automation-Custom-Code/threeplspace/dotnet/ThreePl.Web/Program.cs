@@ -26,12 +26,15 @@ builder.Services.AddDbContextFactory<OnboardingDbContext>(options =>
 });
 
 builder.Services.Configure<LogicAppOptions>(builder.Configuration.GetSection(LogicAppOptions.SectionName));
+builder.Services.Configure<AdminAuthOptions>(builder.Configuration.GetSection(AdminAuthOptions.SectionName));
 builder.Services.AddHttpClient<LogicAppClient>(http => http.Timeout = TimeSpan.FromSeconds(120));
 
 builder.Services.AddScoped<StatusReadService>();
 builder.Services.AddScoped<IntakePrefillService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<FieldRequirementService>();
+builder.Services.AddScoped<AdminSettingsService>();
+builder.Services.AddScoped<AdminAuthService>();
 builder.Services.AddScoped<ToastService>();
 
 var app = builder.Build();

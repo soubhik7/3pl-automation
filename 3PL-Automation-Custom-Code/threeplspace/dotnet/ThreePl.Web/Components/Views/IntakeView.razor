@@ -1,5 +1,6 @@
 @inject IntakePrefillService Prefill
 @inject FieldRequirementService FieldRequirements
+@inject AdminSettingsService AdminSettings
 @inject LogicAppClient LogicApp
 @inject ToastService Toasts
 
@@ -432,20 +433,28 @@
         if (_loadedFor == CorrelationId) return;
         _loadedFor = CorrelationId;
         ResetForms();
-        if (CorrelationId is null) return;
 
-        try
+        if (CorrelationId is not null)
         {
-            var prefill = await Prefill.GetPrefillAsync(CorrelationId);
-            if (prefill.Common is not null) _common = prefill.Common;
-            if (prefill.Btp is not null) _btp = prefill.Btp;
-            if (prefill.Solace is not null) _solace = prefill.Solace;
-            if (prefill.MuleSoft is not null) _mule = prefill.MuleSoft;
+            try
+            {
+                var prefill = await Prefill.GetPrefillAsync(CorrelationId);
+                if (prefill.Common is not null) _common = prefill.Common;
+                if (prefill.Btp is not null) _btp = prefill.Btp;
+                if (prefill.Solace is not null) _solace = prefill.Solace;
+                if (prefill.MuleSoft is not null) _mule = prefill.MuleSoft;
+            }
+            catch
+            {
+                // DB unreachable — start from blank forms; saves still go to the Logic App.
+            }
         }
-        catch
-        {
-            // DB unreachable — start from blank forms; saves still go to the Logic App.
-        }
+
+        // Admin-configured SME approval addresses pre-fill each form's
+        // Recipient Email when it's still empty (saved values always win) —
+        // including on blank forms before a session is selected.
+        var defaults = await AdminSettings.GetDefaultEmailsAsync();
+        defaults.ApplyTo(_btp, _solace, _mule);
     }
 
     private void ResetForms()

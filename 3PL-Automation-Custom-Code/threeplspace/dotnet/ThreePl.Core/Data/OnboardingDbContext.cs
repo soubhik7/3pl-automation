@@ -25,6 +25,7 @@ public class OnboardingDbContext : DbContext
     public DbSet<EnrichmentAuditLog> EnrichmentAuditLogs => Set<EnrichmentAuditLog>();
     public DbSet<OnboardingApproval> OnboardingApprovals => Set<OnboardingApproval>();
     public DbSet<FieldRequirement> FieldRequirements => Set<FieldRequirement>();
+    public DbSet<AdminSetting> AdminSettings => Set<AdminSetting>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -102,6 +103,15 @@ public class OnboardingDbContext : DbContext
             e.Property(x => x.Domain).HasMaxLength(20);
             e.Property(x => x.FieldName).HasMaxLength(100);
             e.Property(x => x.Level).HasMaxLength(20);
+        });
+
+        modelBuilder.Entity<AdminSetting>(e =>
+        {
+            e.ToTable("AdminSetting", "dbo");
+            e.HasKey(x => x.Id);
+            e.HasIndex(x => x.Key).IsUnique();
+            e.Property(x => x.Key).HasMaxLength(100);
+            e.Property(x => x.Value).HasMaxLength(500);
         });
     }
 }

@@ -1,69 +1,178 @@
 @inject FieldRequirementService FieldRequirements
+@inject AdminSettingsService AdminSettings
+@inject AdminAuthService AdminAuth
 @inject ToastService Toasts
 
 <div class="view-panel">
-    <div class="admin-head">
-        <div>
-            <div class="admin-title"><i class="ti ti-adjustments-horizontal"></i> Field Requirement Configuration</div>
-            <p class="admin-sub">
-                Control which intake fields are mandatory from this one place.
-                <strong>Required</strong> always blocks saving when empty; <strong>Outbound only</strong> is
-                required only while that domain's Direction is Outbound (Inbound onboardings skip SME
-                enrichment); <strong>Optional</strong> never blocks. Natural-key fields are locked because the
-                enrichment workflow rejects saves without them. Changes are stored on the server and apply
-                to the intake forms for every user.
-            </p>
-        </div>
-        <div class="admin-actions">
-            <button class="btn" @onclick="ResetAsync"><i class="ti ti-restore"></i> Reset Defaults</button>
-        </div>
-    </div>
-
-    @foreach (var domain in FieldDefinitions.All)
+    @if (!AdminAuth.IsAuthenticated)
     {
+        <div class="login-wrapper">
+            <div class="login-card">
+                <div class="login-title"><i class="ti ti-lock"></i> Admin sign-in</div>
+                <p class="login-sub">The Admin area (field requirements and approval email defaults) is restricted. Sign in to continue.</p>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label>Username</label>
+                    <input type="text" placeholder="admin" value="@_username"
+                           @oninput="e => _username = (string?)e.Value ?? string.Empty"
+                           @onkeydown="OnLoginKeyDown" />
+                </div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label>Password</label>
+                    <input type="password" placeholder="••••••••" value="@_password"
+                           @oninput="e => _password = (string?)e.Value ?? string.Empty"
+                           @onkeydown="OnLoginKeyDown" />
+                </div>
+                <button class="btn primary" style="width:100%; justify-content:center;" @onclick="LoginAsync">
+                    <i class="ti ti-login"></i> Sign in
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="admin-head">
+            <div>
+                <div class="admin-title"><i class="ti ti-adjustments-horizontal"></i> Field Requirement Configuration</div>
+                <p class="admin-sub">
+                    Control which intake fields are mandatory from this one place.
+                    <strong>Required</strong> always blocks saving when empty; <strong>Outbound only</strong> is
+                    required only while that domain's Direction is Outbound (Inbound onboardings skip SME
+                    enrichment); <strong>Optional</strong> never blocks. Natural-key fields are locked because the
+                    enrichment workflow rejects saves without them. Changes are stored on the server and apply
+                    to the intake forms for every user.
+                </p>
+            </div>
+            <div class="admin-actions" style="display:flex; gap:8px;">
+                <button class="btn" @onclick="ResetAsync"><i class="ti ti-restore"></i> Reset Defaults</button>
+                <button class="btn" @onclick="Lock"><i class="ti ti-lock"></i> Sign out</button>
+            </div>
+        </div>
+
+        <!-- Approval email defaults -->
         <div class="admin-domain">
             <div class="admin-domain-header">
-                <span>@domain.Title</span>
-                <span class="admin-dirnote">@(domain.HasDirection ? "direction-aware" : "no direction field — \"Outbound only\" behaves like Required")</span>
+                <span><i class="ti ti-mail"></i> Approval Email Defaults</span>
+                <span class="admin-dirnote">pre-filled into each intake form's Recipient Email when empty</span>
             </div>
-            @foreach (var field in domain.Fields)
-            {
-                <div class="admin-row">
-                    <span class="admin-field">
-                        @if (field.IsTable)
-                        {
-                            <i class="ti ti-table"></i>
-                        }
-                        @field.Label
-                        @if (field.Email)
-                        {
-                            <span class="admin-hint">(must contain @@)</span>
-                        }
-                    </span>
-                    @if (field.Locked)
-                    {
-                        <span class="lock-chip"><i class="ti ti-lock"></i> Natural key — always required</span>
-                    }
-                    else
-                    {
-                        var current = Level(domain.Domain, field);
-                        <div class="req-seg">
-                            <button class="@(current == RequirementLevel.Always ? "on always" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Always))">Required</button>
-                            <button class="@(current == RequirementLevel.Outbound ? "on outbound" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Outbound))">Outbound only</button>
-                            <button class="@(current == RequirementLevel.Optional ? "on optional" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Optional))">Optional</button>
-                        </div>
-                    }
-                </div>
-            }
+            <div class="admin-row">
+                <span class="admin-field">SAP BTP SME approval email</span>
+                <input class="admin-email-input @(_invalidEmails.Contains("btp") ? "invalid" : null)" type="text"
+                       placeholder="e.g. btp-sme@example.com" value="@_emails.BtpSmeEmail"
+                       @oninput="e => _emails.BtpSmeEmail = (string?)e.Value" />
+            </div>
+            <div class="admin-row">
+                <span class="admin-field">Solace SME approval email</span>
+                <input class="admin-email-input @(_invalidEmails.Contains("solace") ? "invalid" : null)" type="text"
+                       placeholder="e.g. solace-sme@example.com" value="@_emails.SolaceSmeEmail"
+                       @oninput="e => _emails.SolaceSmeEmail = (string?)e.Value" />
+            </div>
+            <div class="admin-row">
+                <span class="admin-field">MuleSoft SME approval email</span>
+                <input class="admin-email-input @(_invalidEmails.Contains("mulesoft") ? "invalid" : null)" type="text"
+                       placeholder="e.g. mulesoft-sme@example.com" value="@_emails.MuleSoftSmeEmail"
+                       @oninput="e => _emails.MuleSoftSmeEmail = (string?)e.Value" />
+            </div>
+            <div class="admin-row">
+                <span class="admin-field">Architecture approval email</span>
+                <input class="admin-email-input @(_invalidEmails.Contains("architecture") ? "invalid" : null)" type="text"
+                       placeholder="e.g. architecture-board@example.com" value="@_emails.ArchitectureApprovalEmail"
+                       @oninput="e => _emails.ArchitectureApprovalEmail = (string?)e.Value" />
+            </div>
+            <div class="admin-row" style="justify-content:flex-end; background: var(--color-background-secondary);">
+                <button class="btn primary" disabled="@_savingEmails" @onclick="SaveEmailsAsync">
+                    @if (_savingEmails) {<i class="ti ti-loader animate-spin"></i> <span>Saving...</span>}
+                    else {<i class="ti ti-device-floppy"></i> <span>Save Email Defaults</span>}
+                </button>
+            </div>
         </div>
+
+        @foreach (var domain in FieldDefinitions.All)
+        {
+            <div class="admin-domain">
+                <div class="admin-domain-header">
+                    <span>@domain.Title</span>
+                    <span class="admin-dirnote">@(domain.HasDirection ? "direction-aware" : "no direction field — \"Outbound only\" behaves like Required")</span>
+                </div>
+                @foreach (var field in domain.Fields)
+                {
+                    <div class="admin-row">
+                        <span class="admin-field">
+                            @if (field.IsTable)
+                            {
+                                <i class="ti ti-table"></i>
+                            }
+                            @field.Label
+                            @if (field.Email)
+                            {
+                                <span class="admin-hint">(must contain @@)</span>
+                            }
+                        </span>
+                        @if (field.Locked)
+                        {
+                            <span class="lock-chip"><i class="ti ti-lock"></i> Natural key — always required</span>
+                        }
+                        else
+                        {
+                            var current = Level(domain.Domain, field);
+                            <div class="req-seg">
+                                <button class="@(current == RequirementLevel.Always ? "on always" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Always))">Required</button>
+                                <button class="@(current == RequirementLevel.Outbound ? "on outbound" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Outbound))">Outbound only</button>
+                                <button class="@(current == RequirementLevel.Optional ? "on optional" : null)" @onclick="@(() => SetLevelAsync(domain.Domain, field, RequirementLevel.Optional))">Optional</button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
     }
 </div>
 
 @code {
     private Dictionary<(string Domain, string Field), RequirementLevel> _levels = new();
+    private DefaultEmails _emails = new();
+    private bool _savingEmails;
+    private readonly HashSet<string> _invalidEmails = new();
 
-    protected override async Task OnInitializedAsync() =>
+    private string _username = "";
+    private string _password = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AdminAuth.IsAuthenticated)
+            await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
         _levels = await FieldRequirements.GetEffectiveLevelsAsync();
+        _emails = await AdminSettings.GetDefaultEmailsAsync();
+    }
+
+    private async Task OnLoginKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await LoginAsync();
+    }
+
+    private async Task LoginAsync()
+    {
+        if (AdminAuth.Login(_username, _password))
+        {
+            _password = "";
+            await LoadAsync();
+            Toasts.Success("Signed in to Admin.");
+        }
+        else
+        {
+            Toasts.Error("Invalid admin username or password.");
+        }
+    }
+
+    private void Lock()
+    {
+        AdminAuth.Logout();
+        _username = "";
+        _password = "";
+    }
 
     private RequirementLevel Level(string domain, FieldDefinition field) =>
         _levels.TryGetValue((domain, field.Name), out var l) ? l : field.DefaultLevel;
@@ -84,7 +193,47 @@
         }
         catch (Exception ex)
         {
-            Toasts.Error($"Could not persist the change: {ex.Message}");
+            Toasts.Error($"Could not persist the change: {WithDdlHint(ex)}");
+        }
+    }
+
+    // The two portal tables are created by the DDL at the bottom of
+    // threeplspace/sql/schema.sql — point there when they're missing.
+    private static string WithDdlHint(Exception ex) =>
+        ex.Message.Contains("Invalid object name", StringComparison.OrdinalIgnoreCase)
+            ? $"{ex.Message} — run the dbo.FieldRequirement / dbo.AdminSetting DDL from threeplspace/sql/schema.sql against this database once."
+            : ex.Message;
+
+    private async Task SaveEmailsAsync()
+    {
+        _invalidEmails.Clear();
+        void Validate(string key, string? value)
+        {
+            if (!string.IsNullOrWhiteSpace(value) && !value.Contains('@')) _invalidEmails.Add(key);
+        }
+        Validate("btp", _emails.BtpSmeEmail);
+        Validate("solace", _emails.SolaceSmeEmail);
+        Validate("mulesoft", _emails.MuleSoftSmeEmail);
+        Validate("architecture", _emails.ArchitectureApprovalEmail);
+        if (_invalidEmails.Count > 0)
+        {
+            Toasts.Error("Each filled email address must contain '@'.");
+            return;
+        }
+
+        _savingEmails = true;
+        try
+        {
+            await AdminSettings.SaveDefaultEmailsAsync(_emails);
+            Toasts.Success("Approval email defaults saved — new intake sessions pre-fill these addresses.");
+        }
+        catch (Exception ex)
+        {
+            Toasts.Error($"Could not save email defaults: {WithDdlHint(ex)}");
+        }
+        finally
+        {
+            _savingEmails = false;
         }
     }
 

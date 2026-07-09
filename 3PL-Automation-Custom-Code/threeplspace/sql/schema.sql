@@ -383,6 +383,13 @@ GO
 -- 2026 Integration Updates: Orchestration event types and tracking indexes
 -- ============================================================================
 
+-- NOTE: this intermediate migration originally recreated the constraint with
+-- only the orchestration-era values. Once the live table contains the later
+-- approval-era events (ArchitectureApproval*/BranchApproval*, added further
+-- down), re-running that narrower list fails validation ("ALTER TABLE
+-- statement conflicted with the CHECK constraint"). The script must stay
+-- re-runnable against the live DB, so this recreate now uses the same full
+-- final list as the approval-flow block below.
 IF EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = 'CK_EnrichmentAuditLog_EventType' AND parent_object_id = OBJECT_ID('dbo.EnrichmentAuditLog'))
 BEGIN
     ALTER TABLE dbo.EnrichmentAuditLog DROP CONSTRAINT CK_EnrichmentAuditLog_EventType;
@@ -390,7 +397,9 @@ END
 GO
 ALTER TABLE dbo.EnrichmentAuditLog ADD CONSTRAINT CK_EnrichmentAuditLog_EventType CHECK (EventType IN (
     'Received', 'ValidationFailed', 'Upserted', 'CardSent', 'CardResponded',
-    'CardTimedOut', 'MailRejected', 'Error', 'OrchestrationStarted', 'OrchestrationSucceeded', 'OrchestrationFailed'
+    'CardTimedOut', 'MailRejected', 'Error', 'OrchestrationStarted', 'OrchestrationSucceeded', 'OrchestrationFailed',
+    'ArchitectureApprovalRequested', 'ArchitectureApprovalApproved', 'ArchitectureApprovalRejected',
+    'BranchApprovalRequested', 'BranchApprovalApproved', 'BranchApprovalRejected'
 ));
 GO
 
@@ -710,5 +719,30 @@ GO
 -- and write access only to its own FieldRequirement table. If the portal
 -- reuses [threepl-logicapp-svc] for now, grant it the extra table too.
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.FieldRequirement TO [threepl-logicapp-svc];
+GO
+
+-- ============================================================================
+-- dbo.AdminSetting -- app-owned key/value portal settings for the Blazor
+-- portal's Admin tab (currently the default SME approval email per domain
+-- plus the architecture-approval email, pre-filled into the intake forms'
+-- Recipient Email when empty). Same ownership rule as FieldRequirement: the
+-- Blazor app is the only writer, and this is portal config, not onboarding
+-- business data.
+-- ============================================================================
+IF NOT EXISTS (SELECT 1 FROM sys.tables WHERE name = 'AdminSetting' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE dbo.AdminSetting
+    (
+        Id          INT IDENTITY(1,1)  NOT NULL,
+        [Key]       NVARCHAR(100)       NOT NULL,
+        [Value]     NVARCHAR(500)       NULL,
+        UpdatedAt   DATETIME2           NOT NULL CONSTRAINT DF_AdminSetting_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+        CONSTRAINT PK_AdminSetting PRIMARY KEY CLUSTERED (Id),
+        CONSTRAINT UQ_AdminSetting_Key UNIQUE ([Key])
+    );
+END
+GO
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.AdminSetting TO [threepl-logicapp-svc];
 GO
 
