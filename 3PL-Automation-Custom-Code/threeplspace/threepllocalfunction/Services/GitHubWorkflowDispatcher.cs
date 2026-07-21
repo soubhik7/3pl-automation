@@ -67,6 +67,18 @@ public sealed class GitHubWorkflowDispatcher
                 ["inputs"] = inputs
             };
         }
+        catch (InvalidOperationException ex)
+        {
+            return new Dictionary<string, object>
+            {
+                ["success"] = false,
+                ["statusCode"] = 0,
+                ["message"] = ex.Message,
+                ["workflow"] = workflow,
+                ["ref"] = branchRef,
+                ["inputs"] = inputs
+            };
+        }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             return new Dictionary<string, object>

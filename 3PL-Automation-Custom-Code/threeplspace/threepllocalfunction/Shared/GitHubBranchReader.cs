@@ -124,6 +124,10 @@ public static class GitHubBranchReader
         {
             return FailureResult(repo, branch, filePath, (int)ex.StatusCode, ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            return FailureResult(repo, branch, filePath, 0, ex.Message);
+        }
         catch (Exception ex) when (ex is JsonException or FormatException)
         {
             return FailureResult(repo, branch, filePath, 0, $"Unexpected response from GitHub: {ex.Message}");

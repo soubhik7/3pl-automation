@@ -93,6 +93,10 @@ public static class GitHubBranchChecker
         {
             return FailureResult(repo, branch, (int)ex.StatusCode, ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            return FailureResult(repo, branch, 0, ex.Message);
+        }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
             return FailureResult(repo, branch, 0, $"Network error talking to GitHub: {ex.Message}");

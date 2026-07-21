@@ -96,6 +96,10 @@ public static class GitHubBranchPublisher
         {
             return FailureResult(repo, baseBranch, featureBranchName, filesPushed, (int)ex.StatusCode, ex.Message);
         }
+        catch (InvalidOperationException ex)
+        {
+            return FailureResult(repo, baseBranch, featureBranchName, filesPushed, 0, ex.Message);
+        }
         catch (Exception ex) when (ex is JsonException or FormatException)
         {
             return FailureResult(repo, baseBranch, featureBranchName, filesPushed, 0,
