@@ -23,5 +23,55 @@
         "id": "/serviceProviders/sql"
       }
     }
-  }
+  },
+  "AzureBlob": {
+            "displayName": "wf-pfx-inventory-msi",
+            "parameterSetName": "ManagedServiceIdentity",
+            "parameterValues": {
+                "authProvider": {
+                    "Type": "ManagedServiceIdentity"
+                },
+                "blobStorageEndpoint": "@appsetting('AzureBlob_blobStorageEndpoint')",
+                "managedIdentityType": "SystemAssigned"
+            },
+            "serviceProvider": {
+                "id": "/serviceProviders/AzureBlob"
+            }
+        },
+        "AzureBlob-1": {
+            "displayName": "wf-pfx-omp-msi",
+            "parameterSetName": "ManagedServiceIdentity",
+            "parameterValues": {
+                "authProvider": {
+                    "Type": "ManagedServiceIdentity"
+                },
+                "blobStorageEndpoint": "@appsetting('AzureBlob_11_blobStorageEndpoint')",
+                "managedIdentityType": "SystemAssigned"
+            },
+            "serviceProvider": {
+                "id": "/serviceProviders/AzureBlob"
+            }
+        },
+        "serviceBus": {
+            "displayName": "wf-pfx-msi",
+            "parameterSetName": "ManagedServiceIdentity",
+            "parameterValues": {
+                "authProvider": {
+                    "Type": "ManagedServiceIdentity"
+                },
+                "fullyQualifiedNamespace": "@appsetting('serviceBus_fullyQualifiedNamespace')"
+            },
+            "serviceProvider": {
+                "id": "/serviceProviders/serviceBus"
+            }
+        },
+        "sql": {
+            "displayName": "sql",
+            "parameterValues": {
+                "connectionString": "@appsetting('sql_connectionString')"
+            },
+            "serviceProvider": {
+                "id": "/serviceProviders/sql"
+            }
+        }
 }
